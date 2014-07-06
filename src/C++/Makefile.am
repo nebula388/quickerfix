@@ -5,6 +5,7 @@ pkgincludedir=$(includedir)/quickfix
 LEX += -+ -olex.yy.c
 
 lib_LTLIBRARIES = libquickfix.la
+
 libquickfix_la_SOURCES = \
 	Config.h \
 	Session.cpp \
@@ -118,6 +119,21 @@ libquickfix_la_SOURCES = \
 	pugiconfig.hpp \
 	MessageCracker.h \
 	Responder.h
+	
+if HAVE_SSL
+libquickfix_la_ssl_SOURCES = ThreadedSSLSocketAcceptor.cpp \
+	ThreadedSSLSocketAcceptor.h \
+	ThreadedSSLSocketInitiator.cpp \
+	ThreadedSSLSocketInitiator.h \
+	ThreadedSSLSocketConnection.cpp \
+	ThreadedSSLSocketConnection.h \
+	UtilitySSL.cpp \
+	UtilitySSL.h
+else
+libquickfix_la_ssl_SOURCES =
+endif
+
+libquickfix_la_SOURCES += $(libquickfix_la_ssl_SOURCES)
 
 BUILT_SOURCES = Config.h
 CLEANFILES = Config.h

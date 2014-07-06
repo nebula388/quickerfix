@@ -11,6 +11,7 @@ m4_include([m4/ax_lib_postgresql.m4])
 m4_include([m4/ax_lib_boost.m4])
 m4_include([m4/ax_lib_tbb.m4])
 m4_include([m4/ax_lib_stlport.m4])
+m4_include([m4/ax_lib_ssl.m4])
 m4_include([m4/ax_allocator.m4])
 m4_include([m4/ax_python.m4])
 m4_include([m4/ax_ruby.m4])
@@ -37,12 +38,13 @@ AX_LIB_POSTGRESQL()
 AX_LIB_BOOST()
 AX_LIB_TBB()
 AX_LIB_STLPORT()
+AX_LIB_SSL()
 AX_PYTHON()
 AX_RUBY()
 AX_JAVA()
 
 # libs
-LIBS="$STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $LIBS"
+LIBS="$OPENSSL_LIBS $STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $LIBS"
 # gcc flags
 if test `uname` == SunOS; then
    	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"

@@ -75,6 +75,7 @@ const char VALIDATE_USER_DEFINED_FIELDS[] = "ValidateUserDefinedFields";
 const char VALIDATE_REQUIRED_FIELDS[] = "ValidateRequiredFields";
 const char VALIDATE_UNKNOWN_FIELDS[] = "ValidateUnknownFields";
 const char VALIDATE_UNKNOWN_MSGTYPE[] = "ValidateUnknownMsgType";
+const char PRESERVE_MESSAGE_FIELDS_ORDER[] = "PreserveMessageFieldsOrder";
 const char LOGON_TIMEOUT[] = "LogonTimeout";
 const char LOGOUT_TIMEOUT[] = "LogoutTimeout";
 const char FILE_STORE_PATH[] = "FileStorePath";
@@ -130,6 +131,15 @@ const char REFRESH_ON_LOGON[] = "RefreshOnLogon";
 const char MILLISECONDS_IN_TIMESTAMP[] = "MillisecondsInTimeStamp";
 const char HTTP_ACCEPT_PORT[] = "HttpAcceptPort";
 const char PERSIST_MESSAGES[] = "PersistMessages";
+const char SERVER_CERT_FILE[] = "ServerCertificateFile";
+const char SERVER_CERT_KEY_FILE[] = "ServerCertificateKeyFile";
+const char CLIENT_CERT_FILE[] = "ClientCertificateFile";
+const char CLIENT_CERT_KEY_FILE[] = "ClientCertificateKeyFile";
+const char CERT_AUTH_FILE[] = "CertificationAuthoritiesFile";
+const char CERT_AUTH_DIR[] = "CertificationAuthoritiesDirectory";
+const char CRL_FILE[] = "CertificateRevocationListFile";
+const char CRL_DIR[] = "CertificateRevocationListDirectory";
+const char VERIFY_LEVEL[] = "VerifyLevel";
 
 /// Container for setting dictionaries mapped to sessions.
 class SessionSettings
