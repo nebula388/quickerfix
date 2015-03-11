@@ -117,7 +117,9 @@ struct IntConvertor
 	      unsigned_value_type v = neg ? unsigned(~value) + 1 : value;
           std::size_t len = Util::UInt::numDigits(v);
           Util::UInt::generate(buf += neg, v, len);
+#ifndef ENABLE_SSO_NOZERO
 	  buf[len] = '\0';
+#endif
           return len + neg;
         }
 
@@ -274,7 +276,9 @@ struct PositiveIntConvertor
           value_type value = m_value;
           std::size_t len = Util::UInt::numDigits(value);
           Util::UInt::generate(buf, value, len);
+#ifndef ENABLE_SSO_NOZERO
 	  buf[len] = '\0';
+#endif
           return len;
         }
 
@@ -521,7 +525,7 @@ struct DoubleConvertor
 
     PREFETCH((const char*)m_mul1, 0, 0);
 
-    while( b < pdot )
+    while ( b < pdot )
     {
       value = value * 10. + (*b++ - '0');
     }
@@ -607,7 +611,9 @@ struct DoubleConvertor
 		buf[i++] = _byteswap_uint64(*p);
 #endif 
           } while (p-- > (uint64_t*)m_p);
+#ifndef ENABLE_SSO_NOZERO
           ((char*)buf)[m_length] = '\0';
+#endif
           return m_length;
         }
 #endif
@@ -632,8 +638,8 @@ struct DoubleConvertor
         do 
         {
           if (LIKELY(Util::Char::isdigit(*p))) continue;
-          if (*p != '.' || pdot != end) return false;
-          pdot = p;
+          if (LIKELY(*p == '.' && pdot == end)) pdot = p;
+          else return false;
         }
         while( ++p < end);
 
@@ -1070,7 +1076,9 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value, m_precision);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
@@ -1221,7 +1229,9 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value, m_precision);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
@@ -1354,7 +1364,9 @@ struct UtcDateConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
