@@ -963,16 +963,16 @@ class UtcTimeStampField : public FieldBase
     typedef UtcTimeStampConvertor Convertor;
 
     UtcTimeStamp m_data;
-    bool m_msec;
+    int m_precision;
 
-    Data(const UtcTimeStamp& data, bool showMilliseconds)
-    : m_data(data), m_msec(showMilliseconds) {}
+    Data(const UtcTimeStamp& data, int precision)
+    : m_data(data), m_precision(precision) {}
 
     template <typename S> void assign_to(S& s) const
-    { Convertor::set(s, m_data, m_msec); }
+    { Convertor::set(s, m_data, m_precision); }
 
     operator string_type () const
-    { return Convertor::convert<string_type>(m_data, m_msec); }
+    { return Convertor::convert<string_type>(m_data, m_precision); }
   };
 
 protected:
@@ -981,8 +981,8 @@ protected:
   {
     typedef UtcTimeStampField result_type;
 
-    explicit Packed( const UtcTimeStamp& data, bool showMilliseconds = false )
-    : Data( data, showMilliseconds) {}
+    explicit Packed( const UtcTimeStamp& data, int precision = 0 )
+    : Data( data, precision) {}
 
     static inline int getField() { return Tag; }
     static inline char getTagLength()
@@ -991,17 +991,17 @@ protected:
     { return FieldTag::Traits<Tag>::checksum; }
 
     private:
-      Packed() : Data(UtcTimeStamp(0, 0, 0, 0, 0, 0), false) {}
+      Packed() : Data(UtcTimeStamp(0, 0, 0, 0, 0, 0), 0) {}
   };
 
   template <int Field>
-  explicit UtcTimeStampField( FieldTag::Traits<Field>, bool showMilliseconds )
-  : FieldBase( Packed<Field>( UtcTimeStamp(), showMilliseconds) ) {}
+  explicit UtcTimeStampField( FieldTag::Traits<Field>, int precision )
+  : FieldBase( Packed<Field>( UtcTimeStamp(), precision) ) {}
 
   template <int Field>
   explicit UtcTimeStampField( FieldTag::Traits<Field>,
-                              const UtcTimeStamp& data, bool showMilliseconds )
-  : FieldBase( Packed<Field>(data, showMilliseconds) ) {}
+                              const UtcTimeStamp& data, int precision )
+  : FieldBase( Packed<Field>(data, precision) ) {}
 
 public:
 
@@ -1010,18 +1010,18 @@ public:
     typedef UtcTimeStampField result_type;
 
     explicit Pack( int field,
-               const UtcTimeStamp& data, bool showMilliseconds = false )
-    : FieldTag(field), Data(data, showMilliseconds) {}
+               const UtcTimeStamp& data, int precision = 0 )
+    : FieldTag(field), Data(data, precision) {}
 
     private:
-      Pack() : FieldTag(0), Data(UtcTimeStamp(0, 0, 0, 0, 0, 0), false) {}
+      Pack() : FieldTag(0), Data(UtcTimeStamp(0, 0, 0, 0, 0, 0), 0) {}
   };
 
   explicit UtcTimeStampField( int field,
-               const UtcTimeStamp& data, bool showMilliseconds = false )
-: FieldBase( Pack( field, data, showMilliseconds ) ) {}
-  UtcTimeStampField( int field, bool showMilliseconds = false )
-: FieldBase( Pack( field, UtcTimeStamp(), showMilliseconds ) ) {}
+               const UtcTimeStamp& data, int precision )
+: FieldBase( Pack( field, data, precision ) ) {}
+  UtcTimeStampField( int field, int precision )
+: FieldBase( Pack( field, UtcTimeStamp(), precision ) ) {}
 
   void setValue( const UtcTimeStamp& value )
     { setPacked( Packed<0>( value ) ); }
@@ -1133,16 +1133,16 @@ class UtcTimeOnlyField : public FieldBase
     typedef UtcTimeOnlyConvertor Convertor;
 
     UtcTimeOnly m_data;
-    bool m_msec;
+    int m_precision;
 
-    Data(const UtcTimeOnly& data, bool showMilliseconds)
-    : m_data(data), m_msec(showMilliseconds) {}
+    Data(const UtcTimeOnly& data, int precision)
+    : m_data(data), m_precision(precision) {}
 
     template <typename S> void assign_to(S& s) const
-    { Convertor::set(s, m_data, m_msec); }
+    { Convertor::set(s, m_data, m_precision); }
 
     operator string_type () const
-    { return Convertor::convert<string_type>(m_data, m_msec); }
+    { return Convertor::convert<string_type>(m_data, m_precision); }
   };
 
 protected:
@@ -1151,8 +1151,8 @@ protected:
   {
     typedef UtcTimeOnlyField result_type;
 
-    explicit Packed( const UtcTimeOnly& data, bool showMilliseconds = false )
-    : Data( data, showMilliseconds) {}
+    explicit Packed( const UtcTimeOnly& data, int precision = 0 )
+    : Data( data, precision ) {}
 
     static inline int getField() { return Tag; }
     static inline char getTagLength()
@@ -1161,17 +1161,17 @@ protected:
     { return FieldTag::Traits<Tag>::checksum; }
 
     private:
-      Packed() : Data(UtcTimeOnly(0, 0, 0, 0), false) {}
+      Packed() : Data(UtcTimeOnly(0, 0, 0, 0), 0) {}
   };
 
   template <int Field>
-  explicit UtcTimeOnlyField( FieldTag::Traits<Field>, bool showMilliseconds )
-  : FieldBase( Packed<Field>( UtcTimeOnly(), showMilliseconds ) ) {}
+  explicit UtcTimeOnlyField( FieldTag::Traits<Field>, int precision )
+  : FieldBase( Packed<Field>( UtcTimeOnly(), precision ) ) {}
 
   template <int Field>
   explicit UtcTimeOnlyField( FieldTag::Traits<Field>,
-                             const UtcTimeOnly& data, bool showMilliseconds )
-  : FieldBase( Packed<Field>( data, showMilliseconds ) ) {}
+                             const UtcTimeOnly& data, int precision )
+  : FieldBase( Packed<Field>( data, precision ) ) {}
 
 public:
 
@@ -1180,18 +1180,18 @@ public:
     typedef UtcTimeOnlyField result_type;
 
     explicit Pack( int field,
-                     const UtcTimeOnly& data, bool showMilliseconds = false )
-    : FieldTag(field), Data( data, showMilliseconds) {}
+                     const UtcTimeOnly& data, int precision = 0 )
+    : FieldTag(field), Data( data, precision ) {}
 
     private:
-      Pack() : FieldTag(0), Data(UtcTimeOnly(0, 0, 0, 0), false) {}
+      Pack() : FieldTag(0), Data(UtcTimeOnly(0, 0, 0, 0), 0) {}
   };
 
   explicit UtcTimeOnlyField( int field,
-                     const UtcTimeOnly& data, bool showMilliseconds = false )
-: FieldBase( Pack( field, data, showMilliseconds ) ) {}
-  UtcTimeOnlyField( int field, bool showMilliseconds = false )
-: FieldBase( Pack( field, UtcTimeOnly(), showMilliseconds ) ) {}
+                     const UtcTimeOnly& data, int precision = 0 )
+: FieldBase( Pack( field, data, precision ) ) {}
+  UtcTimeOnlyField( int field, int precision = 0 )
+: FieldBase( Pack( field, UtcTimeOnly(), precision ) ) {}
 
   void setValue( const UtcTimeOnly& value )
     { setPacked( Packed<0>( value ) ); }
@@ -1331,9 +1331,9 @@ DEFINE_FIELD_CLASS_NUM(NAME, TOK, TYPE, DEPRECATED_FIELD::NAME)
 class NAME : public TOK##Field { public: \
 typedef TOK##Field::Packed<NUM> Pack; \
 NAME() : TOK##Field( FieldTag::Traits<NUM>(), false) {} \
-NAME(bool showMilliseconds) : TOK##Field( FieldTag::Traits<NUM>(), showMilliseconds) {} \
+NAME(int precision) : TOK##Field( FieldTag::Traits<NUM>(), precision) {} \
 NAME(const TYPE& value) : TOK##Field( FieldTag::Traits<NUM>(), value, false) {} \
-NAME(const TYPE& value, bool showMilliseconds) : TOK##Field( FieldTag::Traits<NUM>(), value, showMilliseconds) {} \
+NAME(const TYPE& value, int precision) : TOK##Field( FieldTag::Traits<NUM>(), value, precision) {} \
 }
 
 #define DEFINE_FIELD_TIMECLASS( NAME, TOK, TYPE ) \

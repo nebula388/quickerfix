@@ -147,20 +147,25 @@ public:
   void setSendRedundantResendRequests ( bool value )
     { m_sendRedundantResendRequests = value; } 
 
-  bool getCheckCompId()
+  bool getCheckCompId() 
     { return m_checkCompId; }
   void setCheckCompId ( bool value )
     { m_checkCompId = value; }
 
-  bool getCheckLatency()
+  bool getCheckLatency() 
     { return m_checkLatency; }
   void setCheckLatency ( bool value )
     { m_checkLatency = value; }
 
-  int getMaxLatency()
+  int getMaxLatency() 
     { return m_maxLatency; }
   void setMaxLatency ( int value )
     { m_maxLatency = value; }
+
+  int getPollSpin() 
+    { return m_pollSpin; }
+  void setPollSpin( int value )
+    { m_pollSpin = value; }
 
   int getLogonTimeout()
     { return m_state.logonTimeout(); }
@@ -193,10 +198,15 @@ public:
     { m_refreshOnLogon = value; } 
 
   bool getMillisecondsInTimeStamp()
-    { return m_millisecondsInTimeStamp; }
+    { return (m_timestampPrecision == 3); }
   void setMillisecondsInTimeStamp ( bool value )
-    { m_millisecondsInTimeStamp = value; }
+    { m_timestampPrecision = 3 * value; }
 
+  int getTimestampPrecision()
+    { return m_timestampPrecision; }
+  void setTimestampPrecision(int precision)
+    { m_timestampPrecision = ( precision >= 0 && precision <= 9 )
+                             ? precision : m_timestampPrecision; }
   bool getPersistMessages()
     { return m_persistMessages; }
   void setPersistMessages ( bool value )
@@ -274,14 +284,14 @@ private:
                           const UtcTimeStamp& now = UtcTimeStamp () )
   {
     Message::Sequence::set_in_ordered(header, SendingTime::Pack(now,
-                     m_millisecondsAllowed && m_millisecondsInTimeStamp) );
+                     m_fractionAllowed ? m_timestampPrecision : 0) );
   }
 
   void insertOrigSendingTime( Header& header,
                               const UtcTimeStamp& when = UtcTimeStamp () )
   {
     Message::Sequence::set_in_ordered(header, OrigSendingTime::Pack(when,
-                     m_millisecondsAllowed && m_millisecondsInTimeStamp) );
+                     m_fractionAllowed ? m_timestampPrecision : 0) );
   }
 
   void fill( Header&, UtcTimeStamp now = UtcTimeStamp()  );
@@ -396,10 +406,11 @@ private:
   bool m_resetOnLogout;
   bool m_resetOnDisconnect;
   bool m_refreshOnLogon;
+  int  m_timestampPrecision;
   bool m_persistMessages;
   bool m_validateLengthAndChecksum;
-  bool m_millisecondsInTimeStamp;
-  const bool m_millisecondsAllowed;
+  const bool m_fractionAllowed;
+  int m_pollSpin;
 
   SessionState m_state;
   DataDictionaryProvider m_dataDictionaryProvider;
