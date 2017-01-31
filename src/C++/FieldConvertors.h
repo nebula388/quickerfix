@@ -525,10 +525,7 @@ struct DoubleConvertor
 
     PREFETCH((const char*)m_mul1, 0, 0);
 
-    while ( b < pdot )
-    {
-      value = value * 10. + (*b++ - '0');
-    }
+    while ( b < pdot ) value = value * 10. + (*b++ - '0');
 
     if( ++b < e )
     {

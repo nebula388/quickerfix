@@ -608,8 +608,7 @@ throw ( IOException )
 
 void Session::generateLogon()
 {
-  Message logon;
-  logon.getHeader().setField( MsgType::Pack( "A", 1 ) );
+  Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   logon.setField( EncryptMethod::Pack( 0 ) );
   logon.setField( m_state.heartBtInt() );
   if( m_sessionID.isFIXT() )
@@ -631,7 +630,7 @@ void Session::generateLogon()
 
 void Session::generateLogon( const Message& aLogon )
 {
-  Message logon;
+  Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   EncryptMethod encryptMethod;
   HeartBtInt heartBtInt;
   logon.setField( EncryptMethod::Pack( 0 ) );
@@ -640,7 +639,6 @@ void Session::generateLogon( const Message& aLogon )
   if( m_state.receivedReset() )
     logon.setField( ResetSeqNumFlag::Pack(true) );
   aLogon.getField( heartBtInt );
-  logon.getHeader().setField( MsgType::Pack( "A", 1 ) );
   logon.setField( heartBtInt );
   sendRaw( logon );
   m_state.sentLogon( true );
@@ -648,14 +646,13 @@ void Session::generateLogon( const Message& aLogon )
 
 void Session::generateResendRequest( const BeginString& beginString, const MsgSeqNum& msgSeqNum )
 {
-  Message resendRequest;
+  Message resendRequest( MsgType::Pack( "2", 1 ), m_sessionDD, m_sendAllocator );
   BeginSeqNo beginSeqNo( ( int ) getExpectedTargetNum() );
   EndSeqNo endSeqNo( msgSeqNum - 1 );
   if ( beginString >= FIX::BeginString_FIX42 )
     endSeqNo = 0;
   else if( beginString <= FIX::BeginString_FIX41 )
     endSeqNo = 999999;
-  resendRequest.getHeader().setField( MsgType::Pack( "2", 1 ) );
   resendRequest.setField( beginSeqNo );
   resendRequest.setField( endSeqNo );
   sendRaw( resendRequest );
@@ -670,9 +667,8 @@ void Session::generateResendRequest( const BeginString& beginString, const MsgSe
 void Session::generateSequenceReset
 ( int beginSeqNo, int endSeqNo )
 {
-  Message sequenceReset;
+  Message sequenceReset( MsgType::Pack( "4", 1 ), m_sessionDD, m_sendAllocator );
   NewSeqNo newSeqNo( endSeqNo );
-  sequenceReset.getHeader().setField( MsgType::Pack( "4", 1 ) );
   sequenceReset.getHeader().setField( PossDupFlag( true ) );
   sequenceReset.setField( newSeqNo );
   fill( sequenceReset.getHeader() );
@@ -689,15 +685,13 @@ void Session::generateSequenceReset
 
 void Session::generateHeartbeat()
 {
-  Message heartbeat;
-  heartbeat.getHeader().setField( MsgType::Pack( "0", 1 ) );
+  Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   sendRaw( heartbeat );
 }
 
 void Session::generateHeartbeat( const Message& testRequest )
 {
-  Message heartbeat;
-  heartbeat.getHeader().setField( MsgType::Pack( "0", 1 ) );
+  Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   try
   {
     TestReqID testReqID;
@@ -711,8 +705,7 @@ void Session::generateHeartbeat( const Message& testRequest )
 
 void Session::generateTestRequest( const std::string& id )
 {
-  Message testRequest;
-  testRequest.getHeader().setField( MsgType::Pack( "1", 1 ) );
+  Message testRequest( MsgType::Pack( "1", 1 ), m_sessionDD, m_sendAllocator );
 
   TestReqID testReqID( id );
   testRequest.setField( testReqID );
@@ -724,8 +717,7 @@ void Session::generateReject( const Message& message, int err, int field )
 {
   const BeginString& beginString = m_sessionID.getBeginString();
 
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( "3", 1 ) );
+  Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
   reject.reverseRoute( message.getHeader() );
   fill( reject.getHeader() );
 
@@ -819,8 +811,7 @@ void Session::generateReject( const Message& message, const std::string& str )
 {
   const BeginString& beginString = m_sessionID.getBeginString();
 
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( "3", 1 ) );
+  Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
   reject.reverseRoute( message.getHeader() );
   fill( reject.getHeader() );
 
@@ -844,8 +835,8 @@ void Session::generateReject( const Message& message, const std::string& str )
 
 void Session::generateBusinessReject( const Message& message, int err, int field )
 {
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( MsgType_BusinessMessageReject ) );
+  Message reject( MsgType::Pack( MsgType_BusinessMessageReject ),
+                  m_sessionDD, m_sessionID.isFIXT() ? m_defaultApplicationDD : m_sessionDD, m_sendAllocator );
   if( m_sessionID.isFIXT() )
     reject.setField( DefaultApplVerID::Pack( m_senderDefaultApplVerID ) );
   fill( reject.getHeader() );
@@ -907,8 +898,7 @@ void Session::generateBusinessReject( const Message& message, int err, int field
 
 void Session::generateLogout( const std::string& text )
 {
-  Message logout;
-  logout.getHeader().setField( MsgType::Pack( MsgType_Logout ) );
+  Message logout( MsgType::Pack( MsgType_Logout ), m_sessionDD, m_sendAllocator );
   if ( text.length() )
     logout.setField( Text::Pack( text ) );
   sendRaw( logout );

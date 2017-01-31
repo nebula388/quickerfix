@@ -58,6 +58,7 @@ class FieldMap
     int first;
     FieldBase second;
 
+    // uses a reference to a message_order member of FieldMap
     struct compare_type : public message_order::comparator {
       typedef message_order::comparator base_type;
       compare_type( const message_order& order ) : base_type( order ) {}

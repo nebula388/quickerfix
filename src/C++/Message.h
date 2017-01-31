@@ -38,8 +38,43 @@
 
 namespace FIX
 {
-typedef FieldMap Header;
-typedef FieldMap Trailer;
+class Header : public FieldMap
+{
+public:
+  Header() : FieldMap(message_order( message_order::header ) )
+  {}
+
+  Header(const message_order& order) : FieldMap(order)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const message_order& order) : FieldMap(a, order)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const message_order& order, const FieldMap::Options& opt) : FieldMap( a, order, opt)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const Header& other) : FieldMap(a, other)
+  {}
+};
+
+class Trailer : public FieldMap
+{
+public:
+  Trailer() : FieldMap(message_order( message_order::trailer ) )
+  {}
+
+  Trailer(const message_order& order) : FieldMap(order)
+  {}
+
+  Trailer(FieldMap::allocator_type& a, const message_order& order) : FieldMap(a, order)
+  {}
+
+  Trailer(const FieldMap::allocator_type& a, const message_order& order, const FieldMap::Options& opt) : FieldMap( a, order, opt)
+  {}
+
+  Trailer(const FieldMap::allocator_type& a, const Trailer& other) : FieldMap(a, other)
+  {}
+};
 
 static int const headerOrder[] =
   {
@@ -47,6 +82,8 @@ static int const headerOrder[] =
     FIELD::BodyLength,
     FIELD::MsgType
   };
+
+MsgType::Pack identifyType( const char* message, std::size_t length ) throw( MessageParseError );
 
 /**
  * Base class for all %FIX messages.
@@ -385,6 +422,7 @@ private:
            ? (available - HeaderFieldCountEstimate - TrailerFieldCountEstimate) : HeaderFieldCountEstimate;
   }
 
+  // session interface for incoming messages
   HEAVYUSE Message( const char* p, std::size_t n,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* dataDictionary,
@@ -403,6 +441,20 @@ private:
       msgInfo.messageType( readString( reader, validate ) );
   }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  void resetOrder( const MsgType::Pack& msgType,
+                   const DataDictionary& sessionDataDictionary,
+                   const DataDictionary& applicationDataDictionary )
+  {
+    // this substitution depends on the compare_type of the field container
+    // using a reference to the m_order of its FieldMap wrapper 
+    m_header.m_order = sessionDataDictionary.getHeaderOrderedFields();
+    m_trailer.m_order = sessionDataDictionary.getTrailerOrderedFields();
+    m_order = applicationDataDictionary.getMessageOrderedFields(msgType);
+  }
+#endif
+
+  // session interface for incoming FIXT messages
   HEAVYUSE Message( const char* p, std::size_t n,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* sessionDataDictionary,
@@ -422,6 +474,7 @@ private:
                 dictionaryProvider );
   }
 
+  // session interface for resending messages
   Message( const std::string& s,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* sessionDataDictionary,
@@ -435,18 +488,71 @@ private:
     m_status( 0 )
   {
     FieldReader reader(String::data(s), String::size(s));
-    if (dictionaryProvider)
-      readString( reader, validate, msgInfo,
-                  sessionDataDictionary ? *sessionDataDictionary
-                                        : dictionaryProvider->defaultSessionDataDictionary(),
-                 *dictionaryProvider );
+    if (dictionaryProvider) // FIXT
+    {
+      if (sessionDataDictionary)
+      {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+        if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        {
+          const DataDictionary* applicationDictionary = msgInfo.defaultApplicationDictionary(); 
+          MsgType::Pack t = identifyType( String::data(s), String::size(s) );
+          resetOrder( t, *sessionDataDictionary, ( !isAdminMsgType(t) && applicationDictionary)
+                                                   ? *applicationDictionary : *sessionDataDictionary );
+        }
+#endif
+      }
+      else
+        sessionDataDictionary = &dictionaryProvider->defaultSessionDataDictionary();
+      readString( reader, validate, msgInfo, *sessionDataDictionary, *dictionaryProvider );
+    }
     else if (sessionDataDictionary)
     {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+        if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+          resetOrder( identifyType(String::data(s), String::size(s) ),
+                      *sessionDataDictionary, *sessionDataDictionary );
+#endif
       msgInfo.applicationDictionary( sessionDataDictionary );
       readString( reader, validate, msgInfo, *sessionDataDictionary );
     }
     else
       readString( reader, validate );
+  }
+
+  // session interface for protocol messages
+  Message( const MsgType::Pack& msgType, const DataDictionary* sessionDataDictionary, FieldMap::allocator_type& a)
+  : FieldMap(a),
+    m_header( a, message_order( message_order::header ) ),
+    m_trailer( a, message_order( message_order::trailer ) ),
+    m_status( 0 )
+  {
+    if (sessionDataDictionary)
+    {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+      if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        resetOrder( msgType, *sessionDataDictionary, *sessionDataDictionary );
+#endif
+    }
+    m_header.setField( msgType );
+  }
+  Message( const MsgType::Pack& msgType,
+           const DataDictionary* sessionDataDictionary,
+           const DataDictionary* applicationDataDictionary, FieldMap::allocator_type& a)
+  : FieldMap(a),
+    m_header( a, message_order( message_order::header ) ),
+    m_trailer( a, message_order( message_order::trailer ) ),
+    m_status( 0 )
+  {
+    if (sessionDataDictionary)
+    {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+      if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        resetOrder( msgType, *sessionDataDictionary,
+                    applicationDataDictionary ? *applicationDataDictionary : *sessionDataDictionary );
+#endif
+    }
+    m_header.setField( msgType );
   }
 
   std::string& toString( const FieldCounter&, std::string& ) const;
@@ -566,6 +672,7 @@ public:
     FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
+
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary,
            FieldMap::allocator_type& allocator, bool validate = true )
@@ -580,13 +687,45 @@ public:
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 ) {}
+
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
+           const std::string& string, bool validate = true )
+  throw( InvalidMessage )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 )
+  {
+    FieldReader reader( String::data(string), String::size(string) );
+    readString( reader, validate );
+  }
+
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
+           const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
+           const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
+  throw( InvalidMessage )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 )
+  {
+    DataDictionary::MsgInfo msgInfo( applicationDataDictionary );
+    FieldReader reader( String::data(string), String::size(string) );
+    readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
+  }
+#endif // ENABLE_DICTIONARY_FIELD_ORDER
+
   Message( const Message& copy )
   : FieldMap( FieldMap::create_allocator(), copy ),
-    m_header( get_allocator(), message_order( message_order::header ) ),
-    m_trailer( get_allocator(), message_order( message_order::trailer ) )
+    m_header( get_allocator(), copy.m_header ),
+    m_trailer( get_allocator(), copy.m_trailer )
   {
-    m_header = copy.m_header;
-    m_trailer = copy.m_trailer;
     m_status = copy.m_status;
     m_status_data = copy.m_status_data;
   }
@@ -740,7 +879,7 @@ public:
   /// Mutable getter for the message header
   Header& getHeader() { return m_header; }
   /// Getter for the message trailer
-  const Header& getTrailer() const { return m_trailer; }
+  const Trailer& getTrailer() const { return m_trailer; }
   /// Mutable getter for the message trailer
   Trailer& getTrailer() { return m_trailer; }
 
@@ -823,6 +962,9 @@ public:
 
   static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
   { return msgType.forString( TestAdminMsgType() ); }
+
+  static inline bool NOTHROW isAdminMsgType( const MsgType::Pack& msgType )
+  { return msgType.m_length == 1 && s_adminTypeSet.test(msgType.m_data[0]); }
 
   static ApplVerID toApplVerID(const BeginString& value)
   {
@@ -969,13 +1111,13 @@ private:
   { return msgType.forString( TestAdminTrait() ); }
 
 protected:
-  mutable FieldMap m_header;
-  mutable FieldMap m_trailer;
+  mutable Header m_header;
+  mutable Trailer m_trailer;
   intptr_t m_status;
   intptr_t m_status_data;
 
   static ALIGN_DECL_DEFAULT AdminSet s_adminTypeSet;
-  static std::auto_ptr<DataDictionary> s_dataDictionary;
+  static SmartPtr<DataDictionary> s_dataDictionary;
 };
 /*! @} */
 
@@ -1128,7 +1270,7 @@ inline void Message::setSessionID( const SessionID& sessionID )
 }
 
 /// Parse the type of a message from a string.
-inline MsgType identifyType( const char* message, std::size_t length )
+inline MsgType::Pack identifyType( const char* message, std::size_t length )
 throw( MessageParseError )
 {
   const char* p = Util::CharBuffer::memmem( message, length, "\00135=", 4 );
@@ -1137,14 +1279,15 @@ throw( MessageParseError )
     p += 4;
     const char* e = (const char*)::memchr( p, '\001', length - (p - message) );
     if ( e != NULL )
-      return MsgType( p, e - p );
+      return MsgType::Pack( p, e - p );
   }
   throw MessageParseError();
 }
 inline MsgType identifyType( const std::string& message )
 throw( MessageParseError )
 {
-  return identifyType( String::data(message), String::size(message) );
+  MsgType::Pack pack( identifyType( String::data(message), String::size(message) ) );
+  return MsgType( pack.m_data, pack.m_length );
 }
 }
 

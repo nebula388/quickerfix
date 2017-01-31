@@ -373,6 +373,11 @@ template <unsigned N> class TFieldProperty
 
 typedef TFieldProperty<NumFastFields> FieldProps;
 
+typedef std::vector <
+  int,
+  pool_allocator<int>::type
+> OrderedFields;
+
 typedef Container::DictionaryMap <
   int,
   std::pair < int, DataDictionary* >,
@@ -408,9 +413,49 @@ typedef std::map <
 
 struct MsgTypeData
 {
+  struct MessageFieldsOrderHolder
+  {
+    MessageFieldsOrderHolder()
+    {}
+
+    ~MessageFieldsOrderHolder()
+    {}
+
+    void push_back(int field)
+    {
+      m_orderedFlds.push_back(field);
+    }
+
+    const message_order & getMessageOrder() const
+    {
+      if (m_msgOrder)
+        return m_msgOrder;
+
+      int * tmp = new int[m_orderedFlds.size() + 1];
+      int * i = tmp;
+
+      OrderedFields::const_iterator iter;
+      for( iter = m_orderedFlds.begin(); iter != m_orderedFlds.end(); *(i++) = *(iter++) ) {}
+      *i = 0;
+
+      m_msgOrder = message_order(tmp);
+      delete [] tmp;
+
+      return m_msgOrder;
+    }
+
+  private:
+
+    mutable message_order  m_msgOrder;
+    OrderedFields m_orderedFlds;
+  };
+
   MsgFields& m_required; 
   FieldToGroup* m_groups;
   FieldToProps& m_defined; // is in message
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  MessageFieldsOrderHolder m_ordered;
+#endif
 
   MsgTypeData(MsgFields& required, FieldToGroup& groups, FieldToProps& props)
   : m_required(required), m_groups(&groups), m_defined(props) {}
@@ -450,24 +495,15 @@ typedef Container::DictionaryMap <
   >::type
 > FieldToValue;
 
-typedef std::vector <
-  int,
-  pool_allocator<int>::type
-> OrderedFields;
-
 typedef std::map < int, std::string > FieldToName;
 typedef std::map < std::string, int > NameToField;
 typedef std::map < std::pair < int, std::string > ,
                    std::string  > ValueToName;
 
-  static struct group_key_holder {
-	string_type Header, Trailer;
-  } ALIGN_DECL_DEFAULT const GroupKey;
-
   DataDictionary();
   DataDictionary( const DataDictionary& copy );
-  DataDictionary( std::istream& stream ) throw( ConfigError );
-  DataDictionary( const std::string& url ) throw( ConfigError );
+  DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder = false ) throw( ConfigError );
+  DataDictionary( const std::string& url, bool preserveMsgFieldsOrder = false ) throw( ConfigError );
   virtual ~DataDictionary();
 
   void LIGHTUSE readFromURL( const std::string& url ) throw( ConfigError );
@@ -475,7 +511,16 @@ typedef std::map < std::pair < int, std::string > ,
   void LIGHTUSE readFromStream( std::istream& stream ) throw( ConfigError );
 
   message_order const& getOrderedFields() const;
-
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  message_order const& LIGHTUSE getHeaderOrderedFields() const throw( ConfigError );
+  message_order const& LIGHTUSE getTrailerOrderedFields() const throw( ConfigError );
+  message_order const& LIGHTUSE getMessageOrderedFields(const string_type& msgType) const throw( ConfigError )
+  {
+    MsgTypeToData::const_iterator i = m_messageData.find( msgType );
+    if ( LIKELY(i != m_messageData.end()) ) return i->second.m_ordered.getMessageOrder();
+    throw ConfigError("<Message> " + std::string(msgType.data(), msgType.size()) + " does not have a stored message order");
+  }
+#endif
   FieldProperties getProps( int field ) const
   { return m_fieldProps.at( field ); }
 
@@ -649,6 +694,13 @@ typedef std::map < std::pair < int, std::string > ,
   void checkUnknownMsgType( bool value )
   { checkFor(UnknownMsgType, value); }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  void preserveMessageFieldOrder( bool value )
+  { m_storeMsgFieldsOrder = value; }
+  bool isMessageFieldsOrderPreserved() const
+  { return m_storeMsgFieldsOrder; }
+#endif
+
   class MsgInfo
   {
     const DataDictionary* m_default_application_dictionary;
@@ -705,6 +757,9 @@ typedef std::map < std::pair < int, std::string > ,
   DataDictionary& operator=( const DataDictionary& rhs );
 
 private:
+
+  struct group_key_holder { string_type Header, Trailer; };
+  static ALIGN_DECL_DEFAULT const group_key_holder GroupKey;
 
   /// Retrieve body fields from the group dictionary nested within FieldToGroup
   const MsgFields& getNestedBodyFields() const
@@ -923,11 +978,17 @@ private:
   MsgTypeFieldProps m_messageFields;
   MsgTypeRequiredFields m_requiredFields;
   MsgTypeToData m_messageData;
-
   OrderedFields m_orderedFields;
   mutable OrderedFieldsArray m_orderedFieldsArray;
   HeaderFields m_requiredHeaderFields;
   TrailerFields m_requiredTrailerFields;
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  bool m_storeMsgFieldsOrder;
+  OrderedFields m_headerOrderedFields;
+  mutable OrderedFieldsArray m_headerOrderArray;
+  OrderedFields m_trailerOrderedFields;
+  mutable OrderedFieldsArray m_trailerOrderArray;
+#endif
   FieldTypes m_fieldTypes;
   FieldToValue m_fieldValues;
   FieldToName m_fieldNames;

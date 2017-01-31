@@ -34,7 +34,7 @@ const char* Message::FieldReader::ErrDelimiter = "Equal sign not found in field"
 const char* Message::FieldReader::ErrSOH = "SOH not found at end of field";
 
 ALIGN_DECL_DEFAULT Message::AdminSet Message::s_adminTypeSet;
-std::auto_ptr<DataDictionary> Message::s_dataDictionary;
+SmartPtr<DataDictionary> Message::s_dataDictionary;
 
 int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
                                const FieldMap::g_const_iterator& gend)
@@ -146,8 +146,10 @@ bool Message::extractField ( Message::FieldReader& reader,
     int field = reader.getField();
     return (LIKELY(!pSessionDD || !pSessionDD->isDataField(field)) &&
             LIKELY(!pAppDD || pAppDD == pSessionDD || !pAppDD->isDataField(field))) ||
-            extractFieldDataLength( reader, pGroup ? static_cast<const FieldMap&>(*pGroup)
-                                                   : (isHeaderField(field) ? m_header : *this), field );
+            extractFieldDataLength( reader,
+                                    pGroup ? static_cast<const FieldMap&>(*pGroup)
+                                           : (isHeaderField(field) ? static_cast<const FieldMap&>(m_header)
+                                                                   : static_cast<const FieldMap&>(*this)), field );
   }
 
   setErrorStatusBit( invalid_tag_format, (intptr_t)errpos );
@@ -593,7 +595,7 @@ void HEAVYUSE Message::setGroup( Message::FieldReader& reader,
                         int group, int delim,
                         const DataDictionary& groupDD )
 {
-  std::auto_ptr<Group> pGroup;
+  SmartPtr<Group> pGroup;
   while ( reader )
   {
     const char* pos = reader.pos();
@@ -849,8 +851,8 @@ bool Message::InitializeXML( const std::string& url )
 {
   try
   {
-    std::auto_ptr<DataDictionary> p =
-      std::auto_ptr<DataDictionary>(new DataDictionary(url));
+    SmartPtr<DataDictionary> p =
+      SmartPtr<DataDictionary>(new DataDictionary(url));
     s_dataDictionary = p;
     return true;
   }

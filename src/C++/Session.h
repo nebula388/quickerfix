@@ -419,7 +419,7 @@ private:
   LogFactory* m_pLogFactory;
   Responder* m_pResponder;
   Mutex m_mutex;
-  FieldMap::allocator_type m_rcvAllocator;
+  FieldMap::allocator_type m_rcvAllocator, m_sendAllocator;
   std::string m_sendStringBuffer;
 
   static Sessions s_sessions;

@@ -6,6 +6,7 @@ AC_PREREQ([2.59])
 AC_INIT([QuickFIX], [1.14.3], [ask@quickfixengine.org])
 AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_sso.m4])
+m4_include([m4/ax_fieldorder.m4])
 m4_include([m4/ax_lib_mysql.m4])
 m4_include([m4/ax_lib_postgresql.m4])
 m4_include([m4/ax_lib_boost.m4])
@@ -33,6 +34,7 @@ AM_PROG_LEX
 AX_ORDERING()
 AX_FIELDMAP()
 AX_SSO()
+AX_FIELD_ORDER()
 AX_LIB_MYSQL()
 AX_LIB_POSTGRESQL()
 AX_LIB_BOOST()
@@ -211,8 +213,20 @@ AC_TRY_COMPILE(
 	The system supports std::shared_ptr),
 	AC_MSG_RESULT(no))
 
+AC_MSG_CHECKING(for std::unique_ptr)
+AC_TRY_COMPILE(
+        [#include<memory>],
+        [std::unique_ptr<int> ptr;],
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_STD_UNIQUE_PTR, 1,
+        The system supports std::unique_ptr),
+        AC_MSG_RESULT(no))
+
 # check for SSO
 AX_SSO_CHECK()
+
+# check for dictionary field order
+AX_FIELD_ORDER_CHECK()
 
 # check for tbb
 AX_LIB_TBB_CHECK()

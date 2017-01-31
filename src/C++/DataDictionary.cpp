@@ -59,6 +59,11 @@ DataDictionary::DataDictionary()
   m_requiredFields(MsgTypeRequiredFields::key_compare(), get_allocator<MsgTypeRequiredFields>() ),
   m_messageData( get_allocator<MsgTypeToData>() ),
   m_orderedFields( get_allocator<OrderedFields>() ),
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  m_storeMsgFieldsOrder( false ),
+  m_headerOrderedFields( get_allocator<OrderedFields>() ),
+  m_trailerOrderedFields( get_allocator<OrderedFields>() ),
+#endif
   m_fieldTypes( get_allocator<FieldTypes>() ),
   m_fieldValues(get_allocator<FieldToValue>() )
 {
@@ -66,7 +71,7 @@ DataDictionary::DataDictionary()
   Message::TrailerFieldSet::spec( *this );
 }
 
-DataDictionary::DataDictionary( std::istream& stream )
+DataDictionary::DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder )
 throw( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
@@ -77,15 +82,23 @@ throw( ConfigError )
   m_requiredFields(MsgTypeRequiredFields::key_compare(), get_allocator<MsgTypeRequiredFields>() ),
   m_messageData( get_allocator<MsgTypeToData>() ),
   m_orderedFields( get_allocator<OrderedFields>() ),
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  m_storeMsgFieldsOrder( preserveMsgFieldsOrder ),
+  m_headerOrderedFields( get_allocator<OrderedFields>() ),
+  m_trailerOrderedFields( get_allocator<OrderedFields>() ),
+#endif
   m_fieldTypes( get_allocator<FieldTypes>() ),
   m_fieldValues(get_allocator<FieldToValue>() )
 {
+#ifndef ENABLE_DICTIONARY_FIELD_ORDER
+  if (preserveMsgFieldsOrder) throw ConfigError("Custom message field order was not enabled for this build");
+#endif
   Message::HeaderFieldSet::spec( *this );
   Message::TrailerFieldSet::spec( *this );
   readFromStream( stream );
 }
 
-DataDictionary::DataDictionary( const std::string& url )
+DataDictionary::DataDictionary( const std::string& url, bool preserveMsgFieldsOrder )
 throw( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
@@ -96,9 +109,17 @@ throw( ConfigError )
   m_requiredFields(MsgTypeRequiredFields::key_compare(), get_allocator<MsgTypeRequiredFields>() ),
   m_messageData( get_allocator<MsgTypeToData>() ),
   m_orderedFields( get_allocator<OrderedFields>() ),
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  m_storeMsgFieldsOrder( preserveMsgFieldsOrder ),
+  m_headerOrderedFields( get_allocator<OrderedFields>() ),
+  m_trailerOrderedFields( get_allocator<OrderedFields>() ),
+#endif
   m_fieldTypes( get_allocator<FieldTypes>() ),
   m_fieldValues(get_allocator<FieldToValue>() )
 {
+#ifndef ENABLE_DICTIONARY_FIELD_ORDER
+  if (preserveMsgFieldsOrder) throw ConfigError("Custom message field order was not enabled for this build");
+#endif
   Message::HeaderFieldSet::spec( *this );
   Message::TrailerFieldSet::spec( *this );
   readFromURL( url );
@@ -115,6 +136,11 @@ DataDictionary::DataDictionary( const DataDictionary& copy )
   m_requiredFields(MsgTypeRequiredFields::key_compare(), get_allocator<MsgTypeRequiredFields>() ),
   m_messageData( get_allocator<MsgTypeToData>() ),
   m_orderedFields( get_allocator<OrderedFields>() ),
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  m_storeMsgFieldsOrder( false ),
+  m_headerOrderedFields( get_allocator<OrderedFields>() ),
+  m_trailerOrderedFields( get_allocator<OrderedFields>() ),
+#endif
   m_fieldTypes( get_allocator<FieldTypes>() ),
   m_fieldValues(get_allocator<FieldToValue>() )
 {
@@ -147,6 +173,13 @@ DataDictionary& DataDictionary::operator=( const DataDictionary& rhs )
   m_fieldProps = rhs.m_fieldProps;
   m_orderedFields = rhs.m_orderedFields;
   m_orderedFieldsArray = rhs.m_orderedFieldsArray;
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  m_storeMsgFieldsOrder = rhs.m_storeMsgFieldsOrder;
+  m_headerOrderedFields = rhs.m_headerOrderedFields;
+  m_headerOrderArray = rhs.m_headerOrderArray;
+  m_trailerOrderedFields = rhs.m_trailerOrderedFields;
+  m_trailerOrderArray = rhs.m_trailerOrderArray;
+#endif
   m_requiredHeaderFields = rhs.m_requiredHeaderFields;
   m_requiredTrailerFields = rhs.m_requiredTrailerFields;
   m_fieldTypes = rhs.m_fieldTypes;
@@ -654,6 +687,36 @@ message_order const&  DataDictionary::getOrderedFields() const
   return  (m_orderedFieldsArray = message_order(ordered.get()));
 }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+message_order const& LIGHTUSE DataDictionary::getHeaderOrderedFields() const throw( ConfigError )
+{
+  if( m_headerOrderArray ) return m_headerOrderArray;
+
+  if (m_headerOrderedFields.size() == 0)
+    throw ConfigError("<Header> does not have a stored message order");
+
+  Util::scoped_array<int>::type ordered( new int[m_headerOrderedFields.size() + 1] );
+  copy_to_array(m_headerOrderedFields.begin(), m_headerOrderedFields.end(), ordered.get(), m_headerOrderedFields.size() + 1);
+  ordered.get()[m_headerOrderedFields.size()] = 0;
+
+  return  (m_headerOrderArray = message_order(ordered.get()));
+}
+
+message_order const& LIGHTUSE DataDictionary::getTrailerOrderedFields() const throw( ConfigError )
+{
+  if( m_trailerOrderArray ) return m_trailerOrderArray;
+
+  if (m_trailerOrderedFields.size() == 0)
+    throw ConfigError("<Trailer> does not have a stored message order");
+
+  Util::scoped_array<int>::type ordered( new int[m_trailerOrderedFields.size() + 1] );
+  copy_to_array(m_trailerOrderedFields.begin(), m_trailerOrderedFields.end(), ordered.get(), m_trailerOrderedFields.size() + 1);
+  ordered.get()[m_trailerOrderedFields.size()] = 0;
+
+  return  (m_trailerOrderArray = message_order(ordered.get()));
+}
+#endif
+
 int DataDictionary::lookupXMLFieldNumber( DOMDocument* pDoc, DOMNode* pNode ) const
 {
   DOMAttributesPtr attrs = pNode->getAttributes();
@@ -881,10 +944,18 @@ void LIGHTUSE DataDictionary::addMsgField( const std::string& msgType, int field
     m_fieldProps[ field ].hasData(true);
     r.first->second.hasData(true);
   }
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  if ( m_storeMsgFieldsOrder )
+    i->second.m_ordered.push_back( field );
+#endif
 }
 
 void LIGHTUSE DataDictionary::addHeaderField( int field, bool required )
 {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  if ( m_storeMsgFieldsOrder )
+    m_headerOrderedFields.push_back(field);
+#endif
   m_fieldProps[ field ].userLocation( FieldProperties::Header );
   if ( isDataField( field ) )
     m_headerData = true;
@@ -894,6 +965,10 @@ void LIGHTUSE DataDictionary::addHeaderField( int field, bool required )
 
 void LIGHTUSE DataDictionary::addTrailerField( int field, bool required )
 {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  if ( m_storeMsgFieldsOrder )
+    m_trailerOrderedFields.push_back(field);
+#endif
   m_fieldProps[ field ].userLocation( FieldProperties::Trailer );
   if ( isDataField( field ) )
     m_trailerData = true;
