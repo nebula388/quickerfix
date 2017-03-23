@@ -38,6 +38,13 @@
 
 namespace FIX
 {
+static int const headerOrder[] =
+  {
+    FIELD::BeginString,
+    FIELD::BodyLength,
+    FIELD::MsgType
+  };
+
 class Header : public FieldMap
 {
 public:
@@ -55,6 +62,28 @@ public:
 
   Header(const FieldMap::allocator_type& a, const Header& other) : FieldMap(a, other)
   {}
+
+  void addGroup( const FIX::Group& group )
+  { FieldMap::addGroup( group.field(), group ); }
+
+  void replaceGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::replaceGroup( num, group.field(), group ); }
+
+  Group& getGroup( unsigned num, FIX::Group& group ) const throw( FieldNotFound )
+  { group.clear();
+    return static_cast < Group& >
+      ( FieldMap::getGroup( num, group.field(), group ) );
+  }
+
+  void removeGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::removeGroup( num, group.field() ); }
+  void removeGroup( const FIX::Group& group )
+  { FieldMap::removeGroup( group.field() ); }
+
+  bool hasGroup( const FIX::Group& group ) const
+  { return FieldMap::hasGroup( group.field() ); }
+  bool hasGroup( unsigned num, const FIX::Group& group ) const
+  { return FieldMap::hasGroup( num, group.field() ); }
 };
 
 class Trailer : public FieldMap
@@ -74,14 +103,29 @@ public:
 
   Trailer(const FieldMap::allocator_type& a, const Trailer& other) : FieldMap(a, other)
   {}
-};
 
-static int const headerOrder[] =
-  {
-    FIELD::BeginString,
-    FIELD::BodyLength,
-    FIELD::MsgType
-  };
+  void addGroup( const FIX::Group& group )
+  { FieldMap::addGroup( group.field(), group ); }
+
+  void replaceGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::replaceGroup( num, group.field(), group ); }
+
+  Group& getGroup( unsigned num, FIX::Group& group ) const throw( FieldNotFound )
+  { group.clear();
+    return static_cast < Group& >
+      ( FieldMap::getGroup( num, group.field(), group ) );
+  }
+
+  void removeGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::removeGroup( num, group.field() ); }
+  void removeGroup( const FIX::Group& group )
+  { FieldMap::removeGroup( group.field() ); }
+
+  bool hasGroup( const FIX::Group& group ) const
+  { return FieldMap::hasGroup( group.field() ); }
+  bool hasGroup( unsigned num, const FIX::Group& group ) const
+  { return FieldMap::hasGroup( num, group.field() ); }
+};
 
 MsgType::Pack identifyType( const char* message, std::size_t length ) throw( MessageParseError );
 
