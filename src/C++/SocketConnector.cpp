@@ -83,7 +83,8 @@ SocketConnector::SocketConnector( int timeout )
 : m_monitor( timeout ) {}
 
 int SocketConnector::connect( const std::string& address, int port, bool noDelay,
-                              int sendBufSize, int rcvBufSize )
+                              int sendBufSize, int rcvBufSize,
+                              const std::string& sourceAddress, int sourcePort)
 {
   int socket = socket_createConnector();
 
@@ -95,16 +96,10 @@ int SocketConnector::connect( const std::string& address, int port, bool noDelay
       socket_setsockopt( socket, SO_SNDBUF, sendBufSize );
     if( rcvBufSize )
       socket_setsockopt( socket, SO_RCVBUF, rcvBufSize );
-
-    if( socket_connect( socket, address.c_str(), port ) < 0 )
-    {
-      socket_close( socket );
-      socket = -1;
-    }
-    else
-    {
-      m_monitor.addConnect( socket );
-    }
+    if ( !sourceAddress.empty() || sourcePort )
+          socket_bind( socket, sourceAddress.c_str(), sourcePort );
+    m_monitor.addConnect( socket );
+    socket_connect( socket, address.c_str(), port );
   }
   return socket;
 }
@@ -112,7 +107,7 @@ int SocketConnector::connect( const std::string& address, int port, bool noDelay
 int SocketConnector::connect( const std::string& address, int port, bool noDelay, 
                               int sendBufSize, int rcvBufSize, Strategy& strategy )
 {
-  int socket = connect( address, port, noDelay, sendBufSize, rcvBufSize );
+  int socket = connect( address, port, noDelay, sendBufSize, rcvBufSize, "", 0);
   return socket;
 }
 
