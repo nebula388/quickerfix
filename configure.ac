@@ -244,6 +244,15 @@ AC_TRY_COMPILE(
 	The system supports std::shared_ptr),
 	AC_MSG_RESULT(no))
 
+AC_MSG_CHECKING(for boost::shared_ptr)
+AC_TRY_COMPILE(
+        [#include <boost/shared_ptr.hpp>],
+        [boost::shared_ptr<int> ptr;],
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_BOOST_SHARED_PTR, 1,
+        The system supports boost::shared_ptr),
+        AC_MSG_RESULT(no))
+
 AC_MSG_CHECKING(for std::unique_ptr)
 AC_TRY_COMPILE(
         [#include<memory>],
