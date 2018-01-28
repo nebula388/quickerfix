@@ -28,9 +28,9 @@
 #include <iostream>
 
 #include "Application.h"
-#include "quickfix/Mutex.h"
-#include "quickfix/AtomicCount.h"
-#include "quickfix/Session.h"
+#include "Mutex.h"
+#include "AtomicCount.h"
+#include "Session.h"
 #ifndef _MSC_VER
 #include <sys/time.h>
 #else
