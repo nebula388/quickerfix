@@ -565,7 +565,7 @@ namespace FIX
         {
           ::mach_timebase_info_data_t tb;
           ::mach_timebase_info(&tb);
-          double v = (double)m_data * tb.numer / tb_denom;
+          double v = (double)m_data * tb.numer / tb.denom;
           return v * (1.0E-9);
         }
       };
