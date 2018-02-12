@@ -129,6 +129,7 @@ class DataDictionary
     return "NUMINGROUP" if type == "NUMINGRP"
     return "LOCALMKTDATE" if type == "LOCALMMKTDATE"
     return "QTY" if type == "QUANTITY"
+    return "STRING" if type == "STIRNG"
     return type
   end
   
@@ -136,6 +137,7 @@ class DataDictionary
     @fieldsDoc.elements["dataroot"].elements.each("Fields") { |fieldsElement|
       tag = fieldsElement.elements["Tag"].text.to_i
       type = fieldsElement.elements["Type"].text
+
       next if type == nil
       type.upcase!
       
