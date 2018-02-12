@@ -22,3 +22,5 @@ all-local: $(python_LTLIBRARIES)
 
 clean-local:
 	rm -rf $(local_python_lib)
+
+TESTS = test.sh
