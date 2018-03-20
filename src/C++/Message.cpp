@@ -163,7 +163,6 @@ Message::readString( Message::FieldReader& reader, bool doValidation,
                     DataDictionary::MsgInfo& msgInfo,
                     const DataDictionary& sessionDataDictionary,
                     DataDictionaryProvider& dictionaryProvider )
-throw( InvalidMessage )
 {
   const DataDictionary* pApplicationDictionary = msgInfo.applicationDictionary();
 
@@ -357,7 +356,6 @@ ndict:
 void HEAVYUSE
 Message::readString( Message::FieldReader& reader, bool doValidation,
                      DataDictionary::MsgInfo& msgInfo, const DataDictionary& dataDictionary )
-throw( InvalidMessage )
 {
   FieldMap* section[3] = { this, &m_header, &m_trailer };
   const DataDictionary::FieldToGroup* groupFields[3] = { NULL, &dataDictionary.headerGroups(),
@@ -489,7 +487,6 @@ rest:
 // generic case without a dictionary
 const MsgType* HEAVYUSE
 Message::readString( Message::FieldReader& reader, bool doValidation )
-throw( InvalidMessage )
 {
   int field;
   field_type type = header;
