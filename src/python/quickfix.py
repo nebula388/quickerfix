@@ -74,6 +74,12 @@ except:
     weakref_proxy = lambda x: x
 
 
+ENABLE_TBB_ALLOCATOR = _quickfix.ENABLE_TBB_ALLOCATOR
+HAVE_ALLOCATOR_CONFIG = _quickfix.HAVE_ALLOCATOR_CONFIG
+HAVE_BOOST = _quickfix.HAVE_BOOST
+HAVE_BOOST_SHARED_PTR = _quickfix.HAVE_BOOST_SHARED_PTR
+HAVE_TBB = _quickfix.HAVE_TBB
+ENABLE_SSO = _quickfix.ENABLE_SSO
 class IntArray(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, IntArray, name, value)

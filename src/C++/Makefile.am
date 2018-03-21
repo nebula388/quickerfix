@@ -148,6 +148,7 @@ Config.h: Makefile $(top_builddir)/config.h
 	grep "_ALLOCATOR" $(top_builddir)/config.h >$@
 	grep "HAVE_BOOST" $(top_builddir)/config.h >>$@
 	grep "HAVE_TBB" $(top_builddir)/config.h >>$@
+	grep "HAVE_STD_UNIQUE_PTR" $(top_builddir)/config.h >>$@
 	grep "ENABLE_SSO" $(top_builddir)/config.h >>$@
 	grep "ENABLE_FLAT_FIELDMAP" $(top_builddir)/config.h >>$@
 	grep "ENABLE_RELAXED_ORDERING" $(top_builddir)/config.h >>$@

@@ -8,11 +8,15 @@
 
 %exceptionclass FIX::Exception;
 
+%include "C++/Config.h"
+
 %include typemaps.i
 %include std_string.i
 %include exception.i
 %include carrays.i
+#ifdef HAVE_STD_UNIQUE_PTR
 %include std_unique_ptr.i
+#endif
 
 %feature("director") FIX::Application;
 %feature("classic") FIX::Exception;
