@@ -163,7 +163,7 @@ private:
   char m_eventBuf[BufSize];
   UtcTimeStamp m_lastMessage, m_lastEvent;
   Rollover m_rollover;
-  bool m_timestampPrecison;
+  int m_timestampPrecison;
 };
 }
 
