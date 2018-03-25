@@ -73,7 +73,7 @@ class FileLog : public Log
   void store( UtcTimeStamp& last, const std::string& filename, std::ofstream& s, Sg::sg_buf_ptr b, int n )
   {
     UtcTimeStamp utc;
-    UtcTimeStampConvertor::set(m_timeStamp, utc, m_timestampPrecison);
+    UtcTimeStampConvertor::set(m_timeStamp, utc, m_timeStampPrecision);
     if (UNLIKELY(m_rollover != NO_ROLLOVER))
       rollover(utc, last, filename, s);
 
@@ -137,15 +137,20 @@ public:
 					  LC_INCOMING | LC_OUTGOING | LC_EVENT; }
 
   bool getMillisecondsInTimeStamp() const
-  { return (m_timestampPrecison == 3); }
+  { return (m_timeStampPrecision == 3); }
 
   void setMillisecondsInTimeStamp ( bool value )
   {
     if (value)
-      m_timestampPrecison = 3;
+      m_timeStampPrecision = 3;
     else
-      m_timestampPrecison = 0;
+      m_timeStampPrecision = 0;
   }
+
+  int getTimeStampPrevision() const
+  { return m_timeStampPrecision; }
+  void setTimeStampPrecision ( int value )
+  { m_timeStampPrecision = value; }
 
 private:
   void rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const std::string& filename, std::ofstream& s);
@@ -163,7 +168,7 @@ private:
   char m_eventBuf[BufSize];
   UtcTimeStamp m_lastMessage, m_lastEvent;
   Rollover m_rollover;
-  int m_timestampPrecison;
+  int m_timeStampPrecision;
 };
 }
 
