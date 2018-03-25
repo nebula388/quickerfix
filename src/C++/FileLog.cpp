@@ -130,25 +130,25 @@ void FileLog::rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const st
 }
 
 FileLog::FileLog( const std::string& path, Rollover r )
-: m_rollover(r), m_timeStampPrecision( 3 )
+: m_rollover(r)
 {
   init( path, path, "GLOBAL" );
 }
 
 FileLog::FileLog( const std::string& path, const std::string& backupPath, Rollover r )
-: m_rollover(r), m_timeStampPrecision( 3 )
+: m_rollover(r)
 {
   init( path, backupPath, "GLOBAL" );
 }
 
 FileLog::FileLog( const std::string& path, const SessionID& s, Rollover r )
-: m_rollover(r), m_timeStampPrecision( 3 )
+: m_rollover(r)
 {
   init( path, path, generatePrefix(s) );
 }
 
 FileLog::FileLog( const std::string& path, const std::string& backupPath, const SessionID& s, Rollover r )
-: m_rollover(r), m_timeStampPrecision( 3 )
+: m_rollover(r)
 {
   init( path, backupPath, generatePrefix(s) );
 }
