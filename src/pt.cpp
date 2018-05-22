@@ -844,7 +844,11 @@ double testSendOnSocket( int count, short port, bool dictionary )
     << "SocketAcceptPort=" << (unsigned short)port << std::endl
     << "SocketReuseAddress=Y" << std::endl
     << "StartTime=00:00:00" << std::endl
-    << "EndTime=00:00:00" << std::endl;
+    << "EndTime=00:00:00" << std::endl
+    << "LogonDay=su" << std::endl
+    << "LogoutDay=sa" << std::endl
+    << "LogonTime=00:00:00" << std::endl
+    << "LogoutTime=00:00:00" << std::endl;
   if ( dictionary )
     stream << "UseDataDictionary=Y" << std::endl
            << "DataDictionary=../spec/FIX42.xml" << std::endl;
@@ -913,7 +917,11 @@ double testSendOnThreadedSocket( int count, short port, bool dictionary )
     << "SocketAcceptPort=" << (unsigned short)port << std::endl
     << "SocketReuseAddress=Y" << std::endl
     << "StartTime=00:00:00" << std::endl
-    << "EndTime=00:00:00" << std::endl;
+    << "EndTime=00:00:00" << std::endl
+    << "LogonDay=su" << std::endl
+    << "LogoutDay=sa" << std::endl
+    << "LogonTime=00:00:00" << std::endl
+    << "LogoutTime=00:00:00" << std::endl;
   if ( dictionary )
     stream << "UseDataDictionary=Y" << std::endl
            << "DataDictionary=../spec/FIX42.xml" << std::endl;

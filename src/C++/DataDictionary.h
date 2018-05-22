@@ -389,21 +389,21 @@ typedef std::map <
   string_type,
   FieldToGroup,
   std::less<string_type>,
-  pool_allocator<string_type>::type
+  pool_allocator< std::pair<const string_type, FieldToGroup> >::type
 > MsgTypeGroups;
 
 typedef std::map <
   string_type,
   FieldToProps,
   std::less<string_type>,
-  pool_allocator<string_type>::type
+  pool_allocator< std::pair<const string_type, FieldToProps> >::type
 > MsgTypeFieldProps;
 
 typedef std::map <
   string_type,
   MsgFields,
   std::less<string_type>,
-  pool_allocator<string_type>::type
+  pool_allocator< std::pair<const string_type, MsgFields> >::type
 > MsgTypeRequiredFields;
 
 struct MsgTypeData
