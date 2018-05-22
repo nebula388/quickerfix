@@ -2248,7 +2248,11 @@ namespace FIX
 
     static inline std::size_t NOTHROW send(int socket, sg_buf_ptr bufs, int n)
     {
-      struct msghdr m = { NULL, 0, bufs, (std::size_t)n, NULL, 0, 0 };
+#if defined(__MACH__)
+      struct msghdr m = { NULL, 0, bufs, n, NULL, 0, 0 };
+#else
+      struct msghdr m = { NULL, 0, bufs, (size_t)n, NULL, 0, 0 };
+#endif
       ssize_t sz = ::sendmsg(socket, &m, 0);
       return sz >= 0 ? (std::size_t)sz : 0;
     }
