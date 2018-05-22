@@ -303,6 +303,8 @@ public:
   { m_checkFieldsHaveValues = value; }
   void checkUserDefinedFields( bool value )
   { m_checkUserDefinedFields = value; }
+  void allowUnknownMsgFields( bool value )
+  { m_allowUnknownMessageFields = value; }
 
   /// Validate a message.
   static void validate( const Message& message,
@@ -330,7 +332,9 @@ private:
   /// If we need to check for the tag in the dictionary
   bool shouldCheckTag( const FieldBase& field ) const
   {
-    if( !m_checkUserDefinedFields && field.getTag() >= FIELD::UserMin )
+    if( m_allowUnknownMessageFields && field.getTag() < FIELD::UserMin )
+      return false;
+    else if( !m_checkUserDefinedFields && field.getTag() >= FIELD::UserMin )
       return false;
     else
       return true;
@@ -492,7 +496,7 @@ private:
         throw RequiredTagMissing( *iF );
     }
 
-    FieldMap::g_iterator groups;
+    FieldMap::g_const_iterator groups;
     for( groups = body.g_begin(); groups != body.g_end(); ++groups )
     {
       int delim;
@@ -517,6 +521,7 @@ private:
   bool m_checkFieldsOutOfOrder;
   bool m_checkFieldsHaveValues;
   bool m_checkUserDefinedFields;
+  bool m_allowUnknownMessageFields;
   BeginString m_beginString;
   MsgTypeToField m_messageFields;
   MsgTypeToField m_requiredFields;
