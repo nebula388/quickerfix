@@ -115,7 +115,7 @@ struct IntConvertor
 	      unsigned_value_type v = neg ? unsigned(~value) + 1 : value;
           std::size_t len = Util::UInt::numDigits(v);
           Util::UInt::generate(buf += neg, v, len);
-	      buf[len] = '\0';
+	  buf[len] = '\0';
           return len + neg;
         }
 
@@ -386,9 +386,20 @@ struct CheckSumConvertor
         {
           uint32_t b, n, v = (uint32_t)m_value;
           n = v / 10;
+#if defined(__x86_64__)
           b = (v -= n * 10) << 16;
           v = n / 10;
           *buffer = b | (0x303030 + v + ((n - v * 10) << 8));
+#else
+	  char* p = (char*)buffer;
+	  b = (v -= n * 10);
+	  v = n / 10;
+	  p[0] = 0x30 + v;
+	  p[1] = 0x30 + n - v * 10;
+	  p[2] = 0x30 + b;
+	  p[4] = '\0';
+	  
+#endif
           return 3;
         }
   };
@@ -703,7 +714,13 @@ struct CharConvertor
 
         unsigned operator()(uint16_t* buffer)
         {
-          *buffer = m_value;
+#if defined(__x86_64__)
+          *buffer = m_value; 
+#else
+	  char* p = (char*)buffer;
+	  p[0] = (char)m_value;
+	  p[1] = '\0';
+#endif
           return m_value != '\0';;
         }
   };
@@ -940,20 +957,48 @@ struct UtcConvertorBase {
       return valid && ( sec < 60 );
   }
 
-  static inline bool parse_msec(const unsigned char*& p, int& millis)
+  // precision here is in multiples of 3, valid values currently are 0, 3, 6 or 9
+  static inline bool parse_fraction(const unsigned char*& p, int& fraction, int precision)
   {
     unsigned char v;
     bool valid = ( *p++ == '.' );
 
-    v = *p++ - '0';
-    valid = valid && v < 10;
-    millis = v;
-    v = *p++ - '0';
-    valid = valid && v < 10;
-    millis = 10 * millis + v;
-    v = *p++ - '0';
-    valid = valid && v < 10;
-    millis = 10 * millis + v;
+    if (LIKELY(precision > 0))
+    {
+      v = *p++ - '0';
+      valid = valid && v < 10;
+      fraction = v;
+      v = *p++ - '0';
+      valid = valid && v < 10;
+      fraction = 10 * fraction + v;
+      v = *p++ - '0';
+      valid = valid && v < 10;
+      fraction = 10 * fraction + v;
+      if (precision > 3)
+      {
+        v = *p++ - '0';
+        valid = valid && v < 10;
+        fraction = 10 * fraction + v;
+        v = *p++ - '0';
+        valid = valid && v < 10;
+        fraction = 10 * fraction + v;
+        v = *p++ - '0';
+        valid = valid && v < 10;
+        fraction = 10 * fraction + v;
+        if (precision > 6)
+        {
+          v = *p++ - '0';
+          valid = valid && v < 10;
+          fraction = 10 * fraction + v;
+          v = *p++ - '0';
+          valid = valid && v < 10;
+          fraction = 10 * fraction + v;
+          v = *p++ - '0';
+          valid = valid && v < 10 && precision == 9;
+          fraction = 10 * fraction + v;
+        }
+      }
+    }
     return valid;
   }
 };
@@ -964,19 +1009,19 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 {
   typedef const UtcTimeStamp& value_type;
 
-  static const std::size_t MaxValueSize = 22;
+  static const std::size_t MaxValueSize = 28;
   static std::size_t RequiredSize(value_type) { return MaxValueSize; }
 
-  static inline unsigned write(char* buffer, const UtcTimeStamp& value, bool showMilliseconds = false)
+  static inline unsigned write(char* buffer, const UtcTimeStamp& value, int precision = 0 )
   {
     union {
       char*     pc;
       uint16_t* pu;
     } b = { buffer };
-    int year, month, day, hour, minute, second, millis;
+    int year, month, day, hour, minute, second, fraction;
 
     value.getYMD( year, month, day );
-    value.getHMS( hour, minute, second, millis );
+    value.getHMS( hour, minute, second, fraction, precision );
 
     if ( (unsigned)year < 10000 )
     {
@@ -991,57 +1036,57 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
       *b.pc++ = ':';
       *b.pu++ = Util::NumData::m_pairs[(unsigned)second].u;
 
-      if (showMilliseconds)
+      if (precision)
       {
-	    *b.pc++ = '.';
-	    *b.pc++ = '0' + (unsigned)millis / 100;
-        *b.pu   = Util::NumData::m_pairs[(unsigned)millis % 100 ].u;
+	*b.pc++ = '.';
+        Util::UInt::generate( b.pc, (unsigned)fraction, precision++ );
       }
-      return 17 + showMilliseconds * 4;
+      return 17 + precision;
     }
     return 0;
   }
 
   class Proxy {
 	value_type m_value;
-        bool m_millis;
+        int m_precision;
     public:
-        Proxy(value_type value, bool showMilliseconds = false)
-        : m_value(value), m_millis(showMilliseconds) {}
+        Proxy(value_type value, int precision = 0)
+        : m_value(value), m_precision(precision) {}
 
         unsigned operator()(char* buf)
         {
-          return write(buf, m_value, m_millis);
+          return write(buf, m_value, m_precision);
         }
   };
 
-  template <typename S> static void set(S& result, const UtcTimeStamp& value, bool showMilliseconds = false)
+  template <typename S> static void set(S& result, const UtcTimeStamp& value, int precision = 0)
   throw( FieldConvertError )
   {
-    result.resize(17 + showMilliseconds * 4);
-    if ( !write((char*)String::data(result), value, showMilliseconds) )
+    result.resize(17 + precision + (precision > 0));
+    if ( !write((char*)String::data(result), value, precision) )
       throw FieldConvertError();
   }
 
   static inline bool parse( const char* str, const char* end, UtcTimeStamp& utc )
   {
     std::size_t sz = end - str;
-    bool haveMilliseconds = (sz == 21);
-    if ( haveMilliseconds || sz == 17)
+    int precision = 0;
+    bool haveFraction = sz > 17;
+    if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
       const unsigned char* p = (const unsigned char*)str;
-      int year, mon, mday, hour = 0, min = 0, sec = 0, millis = 0;
+      int year, mon, mday, hour = 0, min = 0, sec = 0, fraction = 0;
       bool valid = parse_date(p, year, mon, mday);
 
       valid = valid && (*p++ == '-');
 
       valid = valid && parse_time(p, hour, min, sec);
 
-      if ( haveMilliseconds )
-        valid = valid && parse_msec(p, millis);
+      if ( haveFraction )
+        valid = valid && parse_fraction(p, fraction, precision);
 
-      utc = UtcTimeStamp (hour, min, sec, millis,
-                          mday, mon, year);
+      utc = UtcTimeStamp (hour, min, sec, fraction,
+                          mday, mon, year, precision );
       return valid;
     }
     return false;
@@ -1053,21 +1098,19 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
     return parse(str, str + String::size(value), utc);
   }
 
-  static std::string convert( const UtcTimeStamp& value,
-                              bool showMilliseconds = false )
+  static std::string convert( const UtcTimeStamp& value, int precision = 0 )
   throw( FieldConvertError )
   {
     std::string result;
-    set(result, value, showMilliseconds);
+    set(result, value, precision);
     return result;
   }
 
-  template <typename S> static S convert( const UtcTimeStamp& value,
-                                          bool showMilliseconds = false )
+  template <typename S> static S convert( const UtcTimeStamp& value, int precision = 0 )
   throw( FieldConvertError )
   {
     S result;
-    set(result, value, showMilliseconds);
+    set(result, value, precision);
     return result;
   }
 
@@ -1084,36 +1127,36 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   template <typename S> static bool NOTHROW validate( const S& value )
   {
     std::size_t sz = String::size(value);
-
-    bool haveMilliseconds = (sz == 21);
-    if ( haveMilliseconds || sz == 17)
+    bool haveFraction = sz > 17;
+    int precision = 0;
+    if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
       const unsigned char* p = (const unsigned char*)String::c_str(value);
-      int year, mon, mday, hour = 0, min = 0, sec = 0, millis = 0;
+      int year, mon, mday, hour, min, sec, fraction;
       bool valid = parse_date(p, year, mon, mday);
 
       valid = valid && (*p++ == '-');
 
       valid = valid && parse_time(p, hour, min, sec);
 
-      return valid && (!haveMilliseconds || parse_msec(p, millis));
+      return valid && (!haveFraction || parse_fraction(p, fraction, precision));
     }
     return false;
   }
 };
 
-#if defined(ENABLE_SSO) && (ENABLE_SSO > 1) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO) && (ENABLE_SSO > 2) && (defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
-UtcTimeStampConvertor::convert<String::short_string_type>( const UtcTimeStamp& value, bool showMilliseconds )
+UtcTimeStampConvertor::convert<String::short_string_type>( const UtcTimeStamp& value, int precision )
   throw( FieldConvertError )
 {
-  return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, showMilliseconds));
+  return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, precision));
 }
 template <> inline void HEAVYUSE
-UtcTimeStampConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeStamp& value, bool showMilliseconds)
+UtcTimeStampConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeStamp& value, int precision)
   throw( FieldConvertError )
 {
-  if ( LIKELY(0 != result.short_assign<char>(Proxy(value, showMilliseconds))) )
+  if ( LIKELY(0 != result.short_assign<char>(Proxy(value, precision))) )
     return;
   throw FieldConvertError();
 }
@@ -1125,18 +1168,18 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
 {
   typedef const UtcTimeOnly& value_type;
 
-  static const std::size_t MaxValueSize = 13;
+  static const std::size_t MaxValueSize = 19;
   static std::size_t RequiredSize(value_type) { return MaxValueSize; }
 
-  static inline unsigned write(char* buffer, const UtcTimeOnly& value, bool showMilliseconds = false)
+  static inline unsigned write(char* buffer, const UtcTimeOnly& value, int precision = 0)
   {
     union {
       char*     pc;
       uint16_t* pu;
     } b = { buffer };
-    int hour, minute, second, millis;
+    int hour, minute, second, fraction;
 
-    value.getHMS( hour, minute, second, millis );
+    value.getHMS( hour, minute, second, fraction, precision );
 
     *b.pu++ = Util::NumData::m_pairs[(unsigned)hour].u;
     *b.pc++ = ':';
@@ -1144,49 +1187,48 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
     *b.pc++ = ':';
     *b.pu++ = Util::NumData::m_pairs[(unsigned)second].u;
 
-    if (showMilliseconds)
+    if (precision)
     {
       *b.pc++ = '.';
-      *b.pc++ = '0' + (unsigned)millis / 100;
-      *b.pu   = Util::NumData::m_pairs[(unsigned)millis % 100 ].u;
-      return 12;
+      Util::UInt::generate( b.pc, (unsigned)fraction, precision++ );
     }
-    return 8;
+    return 8 + precision;
   }
 
   class Proxy {
 	value_type m_value;
-        bool m_millis;
+        int m_precision;
     public:
-        Proxy(value_type value, bool showMilliseconds = false)
-        : m_value(value), m_millis(showMilliseconds) {}
+        Proxy(value_type value, int precision = 0)
+        : m_value(value), m_precision(precision) {}
 
         unsigned operator()(char* buf)
         {
-          return write(buf, m_value, m_millis);
+          return write(buf, m_value, m_precision);
         }
   };
 
-  template <typename S> static void set(S& result, const UtcTimeOnly& value, bool showMilliseconds = false)
+  template <typename S> static void set(S& result, const UtcTimeOnly& value, int precision = 0)
   {
-    result.resize(8 + showMilliseconds * 4);
-    write((char*)String::data(result), value, showMilliseconds);
+    result.resize(8 + precision + (precision > 0));
+    write((char*)String::data(result), value, precision);
   }
 
   static bool parse( const char* str, const char* end, UtcTimeOnly& utc )
   {
     std::size_t sz = end - str;
-    bool haveMilliseconds = (sz == 12);
-    if ( haveMilliseconds || sz == 8)
+    bool haveFraction = sz > 8;
+    int precision = 0;
+    if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)str;
-      int hour, min, sec, millis = 0;
+      int hour, min, sec, fraction = 0;
       bool valid = parse_time(p, hour, min, sec);
 
-      if ( haveMilliseconds )
-        valid = valid && parse_msec(p, millis);
+      if ( haveFraction )
+        valid = valid && parse_fraction(p, fraction, precision);
 
-      utc = UtcTimeOnly( hour, min, sec, millis );
+      utc = UtcTimeOnly( hour, min, sec, fraction, precision );
       return valid;
     }
     return false;
@@ -1198,19 +1240,18 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
     return parse(str, str + String::size(value), utc);
   }
 
-  static std::string convert( const UtcTimeOnly& value,
-                              bool showMilliseconds = false)
+  static std::string convert( const UtcTimeOnly& value, int precision = 0 )
   {
     std::string result;
-    set(result, value, showMilliseconds);
+    set(result, value, precision);
     return result;
   }
 
   template <typename S> static S convert( const UtcTimeOnly& value,
-                                          bool showMilliseconds = false)
+                                          int precision = 0 )
   {
     S result;
-    set(result, value, showMilliseconds);
+    set(result, value, precision);
     return result;
   }
 
@@ -1226,14 +1267,15 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   template <typename S> static bool NOTHROW validate( const S& value )
   {
     std::size_t sz = String::size(value);
-    bool haveMilliseconds = (sz == 12);
-    if ( haveMilliseconds || sz == 8)
+    bool haveFraction = sz > 8;
+    int precision = 0;
+    if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)String::c_str(value);
-      int hour, min, sec, millis = 0;
+      int hour, min, sec, fraction;
       bool valid = parse_time(p, hour, min, sec);
 
-      return valid && (!haveMilliseconds || parse_msec(p, millis));
+      return valid && (!haveFraction || parse_fraction(p, fraction, precision));
     }
     return false;
   }
@@ -1241,14 +1283,14 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
 
 #if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
-UtcTimeOnlyConvertor::convert<String::short_string_type>( const UtcTimeOnly& value, bool showMilliseconds )
+UtcTimeOnlyConvertor::convert<String::short_string_type>( const UtcTimeOnly& value, int precision )
 {
-  return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, showMilliseconds));
+  return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, precision));
 }
 template <> inline void HEAVYUSE
-UtcTimeOnlyConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeOnly& value, bool showMilliseconds)
+UtcTimeOnlyConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeOnly& value, int precision)
 {
-  if ( LIKELY(0 != result.short_assign<char>(Proxy(value, showMilliseconds))) )
+  if ( LIKELY(0 != result.short_assign<char>(Proxy(value, precision))) )
     return;
   throw FieldConvertError();
 }
