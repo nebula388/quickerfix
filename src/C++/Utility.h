@@ -1526,7 +1526,7 @@ namespace FIX
       char data[31];
 
       inline bool set(const char* s, std::size_t len, std::size_t pos = 0, std::size_t narrow = 1) {
-        if (LIKELY(len + pos <= (23 - narrow))) {
+        if (LIKELY(len + pos <= (31 - narrow))) {
 	  if (len == 1) {
 	    data[pos] = s[0];
 	  } else if (LIKELY(len > 0)) {
