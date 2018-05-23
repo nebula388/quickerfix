@@ -1520,6 +1520,36 @@ namespace FIX
 	return false;
       }
     };
+
+    template <> union CharBuffer::Fixed<31>
+    {
+      char data[31];
+
+      inline bool set(const char* s, std::size_t len, std::size_t pos = 0, std::size_t narrow = 1) {
+        if (LIKELY(len + pos <= (23 - narrow))) {
+	  if (len == 1) {
+	    data[pos] = s[0];
+	  } else if (LIKELY(len > 0)) {
+	    char* p = data + pos;
+	    if (len <= 4) {
+		*(uint16_t*)p= *(uint16_t*)s; 
+		*(uint16_t*)(p + len - 2) = *(uint16_t*)(s + len - 2);
+	    } else if (len <= 8) {
+		*(uint32_t*)p= *(uint32_t*)s;
+		*(uint32_t*)(p + len - 4) = *(uint32_t*)(s + len - 4);
+	    } else if (len <= 16) {
+		*(uint64_t*)p= *(uint64_t*)s;
+		*(uint64_t*)(p + len - 8) = *(uint64_t*)(s + len - 8);
+	    } else {
+		_mm_storeu_si128((__m128i*)p, _mm_loadu_si128((__m128i*)s));
+		_mm_storeu_si128((__m128i*)(p + len - 8), _mm_loadu_si128((__m128i*)(s + len - 8)));
+	    }
+	  }
+          return true;
+        }
+	return false;
+      }
+    };
 #endif
   
     class Tag

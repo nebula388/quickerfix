@@ -403,8 +403,20 @@ fin:
 
            inline void swap( Data& d )
            {
+#if defined(__GNUC__) && defined(__x86_64__) && ENABLE_SSO == 3
+              __m128i a1, a2, b1, b2;
+              a1 = _mm_loadu_si128((__m128i*)m_q);
+              b1 = _mm_loadu_si128((__m128i*)d.m_q);
+              a2 = _mm_loadu_si128((__m128i*)m_q + 1);
+              b2 = _mm_loadu_si128((__m128i*)d.m_q + 1);
+              _mm_storeu_si128((__m128i*)m_q, b1);
+              _mm_storeu_si128((__m128i*)d.m_q, a1);
+              _mm_storeu_si128((__m128i*)m_q + 1, b2);
+              _mm_storeu_si128((__m128i*)d.m_q + 1, a2);
+#else
              for(std::size_t i = 0; i <= MaxQWord; i++)
                std::swap(m_q[i], d.m_q[i]);
+#endif
            }
 
            inline std::size_t HEAVYUSE size() const
@@ -477,8 +489,13 @@ fin:
            void HEAVYUSE set(const Data& d)
            {
              if (d.isLocal()) {
+#if defined(__GNUC__) && defined(__x86_64__) && ENABLE_SSO == 3
+               _mm_storeu_si128((__m128i*)m_q, _mm_loadu_si128((__m128i*)d.m_q));
+               _mm_storeu_si128((__m128i*)m_q + 1, _mm_loadu_si128((__m128i*)d.m_q + 1));
+#else
                for(std::size_t i = 0; i <= MaxQWord; i++)
                  m_q[i] = d.m_q[i];
+#endif
              } else {
                m_length = HaveString;
                new (reinterpret_cast<string_type*>(m_fixed.data))

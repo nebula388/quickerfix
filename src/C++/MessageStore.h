@@ -87,7 +87,7 @@ public:
   inline UtcTimeStamp NOTHROW getCreationTime() const
   { return m_creationTime; }
   inline UtcTimeStamp NOTHROW setCreationTime( const UtcTimeStamp& creationTime )
-  { m_creationTime.m_value = creationTime.m_value; return m_creationTime; }
+  { m_creationTime.set( creationTime ); return m_creationTime; }
 
   virtual void reset() throw ( IOException ) = 0;
   virtual void refresh() throw ( IOException ) = 0;
