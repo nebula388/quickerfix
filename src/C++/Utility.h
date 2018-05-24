@@ -1542,7 +1542,7 @@ namespace FIX
 		*(uint64_t*)(p + len - 8) = *(uint64_t*)(s + len - 8);
 	    } else {
 		_mm_storeu_si128((__m128i*)p, _mm_loadu_si128((__m128i*)s));
-		_mm_storeu_si128((__m128i*)(p + len - 8), _mm_loadu_si128((__m128i*)(s + len - 8)));
+		_mm_storeu_si128((__m128i*)(p + len - 16), _mm_loadu_si128((__m128i*)(s + len - 16)));
 	    }
 	  }
           return true;
