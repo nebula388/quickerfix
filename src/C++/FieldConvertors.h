@@ -632,7 +632,7 @@ struct DoubleConvertor
         do 
         {
           if (LIKELY(Util::Char::isdigit(*p))) continue;
-          if (*p != '.') return false;
+          if (*p != '.' || pdot != end) return false;
           pdot = p;
         }
         while( ++p < end);
