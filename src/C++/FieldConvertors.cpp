@@ -30,9 +30,12 @@ namespace FIX {
 ALIGN_DECL_DEFAULT const double DoubleConvertor::m_mul1[8] = { 1E1, 1E2, 1E3, 1E4, 1E5, 1E6, 1E7, 1E8 };
 ALIGN_DECL_DEFAULT const double DoubleConvertor::m_mul8[8] = { 1E8, 1E16, 1E24, 1E32, 1E40, 1E48, 1E56, 1E64 };
 
+ALIGN_DECL_DEFAULT const Util::CharBuffer::Fixed<16> IntConvertor::m_charset =
+      { { '0','1','2','3','4','5','6','7','8','9','9','9','9','9','9','9' } };
+
 #define NUMOF(a) (sizeof(a) / sizeof(a[0]))
 
-int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
+std::size_t HEAVYUSE DoubleConvertor::Proxy::generate(char* buf, double value, std::size_t padded, bool rounded) const
 {
  /* 
   * Fixed format encoding only. Based in part on modp_dtoa():
@@ -55,7 +58,6 @@ int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
   PREFETCH((const char*)pwr10, 0, 0);
 
   char* wstr = buf;
-  double value = m_value;
 
   /* Hacky test for NaN
    * under -fast-math this won't work, but then you also won't
@@ -68,7 +70,7 @@ int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
     uint64_t frac;
     double tmp, diff = 0.0;
     std::size_t count, not_negative = 1;
-    std::size_t precision = m_padded;
+    std::size_t precision = padded;
 
     /* we'll work in positive values and deal with the
        negative sign issue later */
@@ -84,7 +86,7 @@ int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
       count = Util::ULong::numDigits(whole) - (whole == 0);
 
       if (precision) {
-        if (!m_round && value != 0)
+        if (!rounded && value != 0)
         {
           frac = static_cast<uint64_t>((value - whole) * pwr10[MaxPrecision + 1 - count]);
           if (frac) {
@@ -125,18 +127,18 @@ int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
           ++whole;
         }
 
-        if (m_padded) {
-          precision = m_padded;
+        if (padded) {
+          precision = padded;
           do {
             *wstr++ = '0';
           } while (--precision);
           *wstr++ = '.';
         }
-      } else if (frac || m_padded) {
+      } else if (frac || padded) {
         count = precision;
         // now do fractional part, as an unsigned number
         // we know it is not 0 but we can have trailing zeros, these
-        if (!m_padded) {
+        if (!padded) {
           // should be removed
           while (!(frac % 10)) {
             --count;
@@ -144,7 +146,7 @@ int HEAVYUSE DoubleConvertor::Proxy::generate(char* buf) const
           }
         } else {
           // or added
-          for (precision = m_padded; precision > count; precision--)
+          for (precision = padded; precision > count; precision--)
             *wstr++ = '0';
         }
 

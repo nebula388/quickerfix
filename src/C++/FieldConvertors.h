@@ -100,6 +100,8 @@ struct IntConvertor
   static const std::size_t BufferSize = MaxValueSize >= 16 ? MaxValueSize : 16;
   static std::size_t RequiredSize(value_type v = 0) { return MaxValueSize; }
 
+  ALIGN_DECL_DEFAULT static const Util::CharBuffer::Fixed<16> m_charset;
+
   class Proxy {
 	value_type m_value;
 
@@ -177,12 +179,12 @@ struct IntConvertor
   template <typename S, typename T>
   static inline bool parse( const S& value, T& result )
   {
-    const char* str = String::c_str(value);
+    const char* str = String::data(value);
     unsigned_value_type c;
     T x = 0;
     int neg = *str == '-';
     str += neg;
-    switch( String::length(value) - neg )
+    switch( String::size(value) - neg )
     {
       case 10: c = *str++ - '0'; if ( LIKELY(c < 10) ) { x = c * 1000000000;
       case  9: c = *str++ - '0'; if ( LIKELY(c < 10) ) { x += c * 100000000;
@@ -212,9 +214,10 @@ struct IntConvertor
 
   template <typename S> static bool NOTHROW validate( const S& value )
   {
-    const char* s = String::c_str(value);
+    const char* s = String::data(value);
+    std::size_t l = String::size(value);
     int negative = s[0] == '-';
-    return ::strspn(s + negative, "0123456789") == (String::size(value) - negative);
+    return l > 0 && Util::CharBuffer::match(m_charset, s + negative, l - negative);
   }
 };
 
@@ -332,10 +335,10 @@ struct PositiveIntConvertor
   template <typename S, typename T>
   static bool parse( const S& value, T& result )
   {
-    const char* str = String::c_str(value);
+    const char* str = String::data(value);
     unsigned c;
     T x = 0;
-    switch( String::length(value) )
+    switch( String::size(value) )
     {
       case 10: c = *str++ - '0'; if ( LIKELY(c < 10) ) { x = c * 1000000000;
       case  9: c = *str++ - '0'; if ( LIKELY(c < 10) ) { x += c * 100000000;
@@ -386,7 +389,7 @@ struct CheckSumConvertor
         {
           uint32_t b, n, v = (uint32_t)m_value;
           n = v / 10;
-#if defined(__x86_64__)
+#if defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__)
           b = (v -= n * 10) << 16;
           v = n / 10;
           *buffer = b | (0x303030 + v + ((n - v * 10) << 8));
@@ -475,12 +478,13 @@ struct CheckSumConvertor
 
   template <typename S> static bool NOTHROW validate( const S& value )
   {
-    const char* s = String::c_str(value);
-    return ::strspn(s, "0123456789") == 3 && s[0] < '3';
+    const char* s = String::data(value);
+    std::size_t l = String::size(value);
+    return l == 3 && Util::CharBuffer::match(IntConvertor::m_charset, s, 3) && s[0] < '3';
   }
 };
 
-#if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO)
 template <> inline String::short_string_type HEAVYUSE
 CheckSumConvertor::convert<String::short_string_type>( int value )
 throw ( FieldConvertError )
@@ -571,30 +575,42 @@ struct DoubleConvertor
   static std::size_t RequiredSize(value_type v = 0) { return MaxValueSize; }
 
   class Proxy {
-	const value_type m_value;
-        const std::size_t m_padded;
-        const bool m_round;
+	char m_space[MaxValueSize + 8], *m_p;
+	const std::size_t m_length;
 
-	int generate(char* buffer) const;
+	std::size_t generate(char* buffer, double value, std::size_t padded, bool round) const;
 
     public:
 	Proxy(value_type value, std::size_t padded, bool rounded)
-        : m_value(value), m_padded( MaxPrecision > padded ? padded : MaxPrecision ),
-          m_round(rounded)
-        {}
+	: m_p(m_space + 8), m_length(generate(m_p, value, padded, rounded)) {}
+
+        std::size_t size() const { return m_length; }
+
+	Util::CharBuffer::reverse_iterator begin() const { return m_p + m_length; }
+	Util::CharBuffer::reverse_iterator end() const { return m_p; }
 
         template <typename S> S convert_to() const
-	{
-		char buf[MaxValueSize];
-		return S(Util::CharBuffer::reverse_iterator(buf + generate(buf)),
-			 Util::CharBuffer::reverse_iterator((char*)buf));
-	}
+	{ return S( begin(), end() ); }
 	template <typename S> void assign_to(S& s) const
+        { s.assign( begin(), end() ); }
+
+#if defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))
+	// buffer must accommodate m_length
+        std::size_t operator()(uint64_t* buf)
         {
-		char buf[MaxValueSize];
-		s.assign(Util::CharBuffer::reverse_iterator(buf + generate(buf)),
-			 Util::CharBuffer::reverse_iterator((char*)buf));
-	}
+	  uint64_t* b = buf;
+	  uint64_t* p = (uint64_t*)(m_space + m_length); 
+          do {
+#ifdef __GNUC__
+		*b++ =__builtin_bswap64(*p);
+#else
+		*b++ = _byteswap_uint64(*p);
+#endif 
+          } while (p-- > (uint64_t*)m_p);
+          ((char*)buf)[m_length] = '\0';
+          return m_length;
+        }
+#endif
   };
 
   template <typename S> static void set(S& result, double value, std::size_t padded = 0, bool rounded = false)
@@ -692,11 +708,36 @@ struct DoubleConvertor
 
   template <typename S> static bool NOTHROW validate( const S& value )
   {
-    const char* s = String::c_str(value);
+    static ALIGN_DECL_DEFAULT const Util::CharBuffer::Fixed<16> f =
+      { { '0','1','2','3','4','5','6','7','8','9','.','.','.','.','.','.' } };
+    const char* s = String::data(value);
+    std::size_t l = String::size(value);
     int negative = s[0] == '-';
-    return ::strspn(s + negative, "0123456789.") == (String::size(value) - negative);
+    return l > 0 && Util::CharBuffer::match(f, s + negative, l - negative);
   }
 };
+
+
+#if defined(ENABLE_SSO) && (defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))))
+template <> inline String::short_string_type HEAVYUSE
+DoubleConvertor::convert<String::short_string_type>( double value, std::size_t padded, bool rounded )
+{
+  Proxy v( value, padded, rounded );
+  return LIKELY(v.size() < String::short_string_type::MaxLocalCapacity)
+           ? String::short_string_type(String::short_string_type::RefHolder<uint64_t>(), v)
+           : v.convert_to<String::short_string_type>();
+}
+template <> inline void HEAVYUSE
+DoubleConvertor::set<String::short_string_type>( String::short_string_type& result,
+                                                 double value, std::size_t padded, bool rounded )
+{
+  Proxy v( value, padded, rounded );
+  if ( LIKELY(v.size() < String::short_string_type::MaxLocalCapacity))
+    result.short_assign_r<uint64_t>(v);
+  else
+    v.assign_to(result);
+}
+#endif
 
 
 /// Converts character to/from a string
@@ -714,7 +755,7 @@ struct CharConvertor
 
         unsigned operator()(uint16_t* buffer)
         {
-#if defined(__x86_64__)
+#if defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__)
           *buffer = m_value; 
 #else
 	  char* p = (char*)buffer;
@@ -773,12 +814,12 @@ struct CharConvertor
 
   template <typename S> static bool NOTHROW validate( const S& value )
   {
-    const char* s = String::c_str(value);
+    const char* s = String::data(value);
     return String::size(value) == 1 && s[0] > 32 && s[0] < 127; // ::isalnum(s[0]) || ::ispunct(s[0])
   }
 };
 
-#if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO)
 template <> inline String::short_string_type HEAVYUSE
 CharConvertor::convert<String::short_string_type>( char value )
 {
@@ -809,7 +850,13 @@ struct BoolConvertor
 
         unsigned operator()(uint16_t* buffer)
         {
+#if defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__)
           *buffer = m_value ? 'Y' : 'N';
+#else
+	  char* p = (char*)buffer;
+	  p[0] = m_value ? 'Y' : 'N';
+	  p[1] = '\0';
+#endif
           return 1;
         }
   };
@@ -866,12 +913,12 @@ struct BoolConvertor
 
   template <typename S> static bool NOTHROW validate( const S& value )
   {
-    const char* s = String::c_str(value);
+    const char* s = String::data(value);
     return String::size(value) == 1 && (s[0] == 'Y' || s[0] == 'N');
   }
 };
 
-#if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO)
 template <> inline String::short_string_type HEAVYUSE
 BoolConvertor::convert<String::short_string_type>( bool value )
 {
@@ -1055,7 +1102,9 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 
         unsigned operator()(char* buf)
         {
-          return write(buf, m_value, m_precision);
+          unsigned l = write(buf, m_value, m_precision);
+          buf[l] = '\0';
+          return l;
         }
   };
 
@@ -1094,7 +1143,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 
   template <typename S> static bool parse( const S& value, UtcTimeStamp& utc )
   {
-    const char* str = String::c_str(value);
+    const char* str = String::data(value);
     return parse(str, str + String::size(value), utc);
   }
 
@@ -1131,7 +1180,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
     int precision = 0;
     if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
-      const unsigned char* p = (const unsigned char*)String::c_str(value);
+      const unsigned char* p = (const unsigned char*)String::data(value);
       int year, mon, mday, hour, min, sec, fraction;
       bool valid = parse_date(p, year, mon, mday);
 
@@ -1145,7 +1194,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 };
 
-#if defined(ENABLE_SSO) && (ENABLE_SSO > 2) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO) && (ENABLE_SSO > 2) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcTimeStampConvertor::convert<String::short_string_type>( const UtcTimeStamp& value, int precision )
   throw( FieldConvertError )
@@ -1204,7 +1253,9 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
 
         unsigned operator()(char* buf)
         {
-          return write(buf, m_value, m_precision);
+          unsigned l = write(buf, m_value, m_precision);
+          buf[l] = '\0';
+          return l;
         }
   };
 
@@ -1236,7 +1287,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
 
   template <typename S> static bool parse( const S& value, UtcTimeOnly& utc )
   {
-    const char* str = String::c_str(value);
+    const char* str = String::data(value);
     return parse(str, str + String::size(value), utc);
   }
 
@@ -1271,7 +1322,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
     int precision = 0;
     if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
-      const unsigned char* p = (const unsigned char*)String::c_str(value);
+      const unsigned char* p = (const unsigned char*)String::data(value);
       int hour, min, sec, fraction;
       bool valid = parse_time(p, hour, min, sec);
 
@@ -1281,7 +1332,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 };
 
-#if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcTimeOnlyConvertor::convert<String::short_string_type>( const UtcTimeOnly& value, int precision )
 {
@@ -1335,7 +1386,9 @@ struct UtcDateConvertor : public UtcConvertorBase
 
         unsigned operator()(char* buf)
         {
-          return write(buf, m_value);
+          unsigned l = write(buf, m_value);
+          buf[l] = '\0';
+          return l;
         }
   };
 
@@ -1362,7 +1415,7 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
   template <typename S> static bool parse( const S& value, UtcDate& utc )
   {
-    const char* str = String::c_str(value);
+    const char* str = String::data(value);
     return parse(str, str + String::size(value), utc);
   }
 
@@ -1395,14 +1448,14 @@ struct UtcDateConvertor : public UtcConvertorBase
   {
     int year, mon, mday;
     std::size_t sz = String::size(value);
-    const unsigned char* p = (const unsigned char*)String::c_str(value);
+    const unsigned char* p = (const unsigned char*)String::data(value);
     return (sz == 8) && parse_date(p, year, mon, mday );
   }
 };
 
 typedef UtcDateConvertor UtcDateOnlyConvertor;
 
-#if defined(ENABLE_SSO) && (defined(__x86_64__) || defined(__i386__))
+#if defined(ENABLE_SSO) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcDateConvertor::convert<String::short_string_type>( const UtcDate& value)
   throw( FieldConvertError )

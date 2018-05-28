@@ -156,6 +156,7 @@ namespace FIX
          static const unsigned char HaveString = 255;
 
          template <typename T> struct TypeHolder { typedef T type; };
+         template <typename T> struct RefHolder { typedef T type; };
 
          union Data
          {
@@ -245,7 +246,7 @@ namespace FIX
              }
            }
 
-           template <typename T, typename F> Data(TypeHolder<T>, F f)
+           template <typename T, typename F> Data(TypeHolder<T>, F& f)
            {
                std::size_t l = f(storage_type<T>());
                m_length = l;
@@ -292,7 +293,7 @@ fin:
              set(p, sz);
            }
 
-           template <typename T, typename F> std::size_t HEAVYUSE short_assign(F f)
+           template <typename T, typename F> std::size_t HEAVYUSE short_assign(F& f)
            {
              if ( isLocal() )
              {
@@ -697,8 +698,15 @@ fin:
          template <typename T, typename F> explicit short_string_type(TypeHolder<T>, F f)
          : s_( TypeHolder<T>(), f )
          {}
+         template <typename T, typename F> explicit short_string_type(RefHolder<T>, F& f)
+         : s_( TypeHolder<T>(), f )
+         {}
 
          template <typename T, typename F> std::size_t HEAVYUSE short_assign(F f)
+         {
+           return s_.short_assign<T>(f);
+         }
+         template <typename T, typename F> std::size_t HEAVYUSE short_assign_r(F& f)
          {
            return s_.short_assign<T>(f);
          }
@@ -714,6 +722,7 @@ fin:
          friend class CheckSumConvertor;
          friend class CharConvertor;
          friend class BoolConvertor;
+         friend class DoubleConvertor;
          friend class UtcTimeStampConvertor;
          friend class UtcTimeOnlyConvertor;
          friend class UtcDateConvertor;
