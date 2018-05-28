@@ -56,6 +56,36 @@ static int const headerOrder[] =
  */
 class Message : public FieldMap
 {
+public:
+
+  struct AdminSet {
+    Util::BitSet<256> _value;
+    AdminSet();
+    bool test(char v) { return _value[(unsigned char)v]; }
+  };
+
+  struct Admin
+  {
+    enum AdminType
+    {
+      None = 0,
+      Heartbeat = '0',
+      TestRequest = '1',
+      ResendRequest = '2',
+      Reject = '3',
+      SequenceReset = '4',
+      Logout = '5',
+      Logon = 'A'   
+    };
+  };
+
+  enum SerializationHint
+  {
+    KeepFieldChecksum,
+    SerializedOnce
+  };
+
+private:
   friend class DataDictionary;
   friend class Session;
 
@@ -436,6 +466,38 @@ class Message : public FieldMap
 
   void HEAVYUSE setGroup( Message::FieldReader& reader, FieldMap& section,
                  const DataDictionary& messageDD, int group, int delim, const DataDictionary& groupDD);
+
+  struct TestAdminType
+  {
+    typedef Admin::AdminType result_type;
+    template <typename S> result_type operator()( const S& v ) const {
+      const char* value;
+      return String::size(v) == 1 && s_adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::AdminType)value[0] : Admin::None;
+    }
+  };
+
+  struct TestAdminMsgType {
+    typedef bool result_type;
+    template <typename S> result_type operator()( const S& v ) const {
+      return String::size(v) == 1 && s_adminTypeSet.test( String::data(v)[0] );
+    }
+  };
+
+  struct TestAdminTrait
+  {
+    typedef admin_trait result_type;
+    template <typename S> result_type operator()( const S& v ) const {
+      if ( LIKELY(String::size(v) == 1) ) {
+        admin_trait traits[8] = { admin_none, admin_session, admin_session, admin_session,
+                                  admin_status, admin_status, admin_status, admin_logon };
+        Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
+        std::size_t pos = Util::CharBuffer::find( String::data(v)[0], b );
+        return traits[pos & 7];
+      }
+      return admin_none;
+    }
+  };
+
 protected:
   /// Constructor for derived classes
   template <typename Packed>
@@ -450,33 +512,6 @@ protected:
   }
 
 public:
-
-  struct AdminSet {
-    Util::BitSet<256> _value;
-    AdminSet();
-    bool test(char v) { return _value[(unsigned char)v]; }
-  };
-
-  struct Admin
-  {
-    enum AdminType
-    {
-      None = 0,
-      Heartbeat = '0',
-      TestRequest = '1',
-      ResendRequest = '2',
-      Reject = '3',
-      SequenceReset = '4',
-      Logout = '5',
-      Logon = 'A'   
-    };
-  };
-
-  enum SerializationHint
-  {
-    KeepFieldChecksum,
-    SerializedOnce
-  };
 
   HEAVYUSE Message()
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
@@ -784,16 +819,10 @@ public:
   }
 
   static inline Admin::AdminType msgAdminType( const MsgType& msgType )
-  {
-    const char* value = msgType.forString( String::Cstr() );
-    return value[1] == '\0' && s_adminTypeSet.test( value[0] ) ? (Admin::AdminType)value[0] : Admin::None;
-  }
+  { return msgType.forString( TestAdminType() ); }
 
   static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
-  {
-    const char* value = msgType.forString( String::Cstr() );
-    return value[1] == '\0' && s_adminTypeSet.test( value[0] );
-  }
+  { return msgType.forString( TestAdminMsgType() ); }
 
   static ApplVerID toApplVerID(const BeginString& value)
   {
@@ -937,18 +966,7 @@ private:
   }
 
   static inline admin_trait msgAdminTrait( const FieldBase& msgType ) 
-  {
-    const char* value = msgType.forString( String::Cstr() );
-    if ( value[1] == '\0' )
-    {
-      admin_trait traits[8] = { admin_none, admin_session, admin_session, admin_session,
-                                admin_status, admin_status, admin_status, admin_logon };
-      Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
-      std::size_t pos = Util::CharBuffer::find( value[0], b );
-      return traits[pos & 7];
-    }
-    return admin_none;
-  }
+  { return msgType.forString( TestAdminTrait() ); }
 
 protected:
   mutable FieldMap m_header;

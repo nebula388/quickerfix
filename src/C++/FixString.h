@@ -788,13 +788,6 @@ fin:
 #endif
      };
 
-     struct Cstr
-     {
-       typedef const char* result_type;
-       result_type operator()( const value_type& v ) const
-       { return c_str(v); }
-     };
-
      struct Rval
      {
        typedef const value_type& result_type;
