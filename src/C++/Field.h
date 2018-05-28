@@ -154,8 +154,8 @@ public:
   /// Get iovec for the fields value
   Sg::sg_buf_t getSgBuf() const
   {
-    Sg::sg_buf_t v = IOV_BUF_INITIALIZER( String::c_str(m_string),
-                                          String::length(m_string) );
+    Sg::sg_buf_t v = IOV_BUF_INITIALIZER( String::data(m_string),
+                                          String::size(m_string) );
     return v;
   }
 
@@ -202,7 +202,7 @@ public:
   template <typename S> S& HEAVYUSE pushValue(S& sink) const
   {
     return sink.append(m_tag, m_tagLength - 1,
-                         String::c_str(m_string), String::length(m_string));
+                         String::data(m_string), String::size(m_string));
   }
 
   /// Push the string representation of the Field into a string buffer
@@ -266,7 +266,7 @@ private:
   {
     if (!m_calculated)
     {
-      m_length = String::length(m_string) ;
+      m_length = String::size(m_string) ;
       m_total = m_tagChecksum +
         Util::CharBuffer::checkSum(String::data(m_string), m_length) +
         (int)'\001';
@@ -398,7 +398,7 @@ class StringField : public FieldBase
     std::size_t m_length;
 
     explicit Data(const std::string& data)
-    : m_data(String::c_str(data)), m_length(String::size(data))
+    : m_data(String::data(data)), m_length(String::size(data))
     {}
 
     explicit Data(const char* data, std::size_t size)

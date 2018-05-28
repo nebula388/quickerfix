@@ -62,7 +62,7 @@ ThreadedSocketConnection::~ThreadedSocketConnection()
 
 bool ThreadedSocketConnection::send( const std::string& msg )
 {
-  return socket_send( m_socket, String::c_str(msg), String::length(msg) ) > 0;
+  return socket_send( m_socket, String::data(msg), String::size(msg) ) > 0;
 }
 
 bool ThreadedSocketConnection::send( Sg::sg_buf_ptr bufs, int n )

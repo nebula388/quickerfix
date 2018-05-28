@@ -90,7 +90,7 @@ public:
   }
   void addToStream( const std::string& s )
   {
-    addToStream( String::c_str(s), String::length(s) );
+    addToStream( String::data(s), String::size(s) );
   }
   std::size_t extractLength( const char* msg, std::size_t size )
   throw ( MessageParseError );

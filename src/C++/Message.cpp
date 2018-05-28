@@ -58,7 +58,7 @@ namespace detail {
 
 		public:
 			ProxyBuffer(std::string& s) {
-				IOV_BUF(buf_) = const_cast<char*>( String::c_str(s) );
+				IOV_BUF(buf_) = const_cast<char*>( String::data(s) );
 				IOV_LEN(buf_) = 0;
 			}
 			ProxyBuffer& append(const char* src, std::size_t len) {
@@ -584,7 +584,7 @@ void LIGHTUSE Message::setGroup( const std::string& msg,
     const DataDictionary* groupDD = dataDictionary.getGroup( *groups, field.getTag(), delim );     
     if ( groupDD ) setGroup( reader, fields, dataDictionary, field.getTag(), delim, *groupDD );
   }
-  pos = reader.pos() - String::c_str(str);
+  pos = reader.pos() - String::data(str);
 }
 
 void HEAVYUSE Message::setGroup( Message::FieldReader& reader,

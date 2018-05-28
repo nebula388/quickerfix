@@ -598,13 +598,13 @@ struct DoubleConvertor
 	// buffer must accommodate m_length
         std::size_t operator()(uint64_t* buf)
         {
-	  uint64_t* b = buf;
+	  std::size_t i = 0;
 	  uint64_t* p = (uint64_t*)(m_space + m_length); 
           do {
 #ifdef __GNUC__
-		*b++ =__builtin_bswap64(*p);
+		buf[i++] =__builtin_bswap64(*p);
 #else
-		*b++ = _byteswap_uint64(*p);
+		buf[i++] = _byteswap_uint64(*p);
 #endif 
           } while (p-- > (uint64_t*)m_p);
           ((char*)buf)[m_length] = '\0';

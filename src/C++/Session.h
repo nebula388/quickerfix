@@ -128,7 +128,7 @@ public:
     { return m_senderDefaultApplVerID; }
   void setSenderDefaultApplVerID( const std::string& senderDefaultApplVerID )
   {
-    DataDictionaryProvider::key_type key( senderDefaultApplVerID.c_str(), senderDefaultApplVerID.size() );
+    DataDictionaryProvider::key_type key( senderDefaultApplVerID.data(), senderDefaultApplVerID.size() );
     m_senderDefaultApplVerID = senderDefaultApplVerID;
     m_defaultApplicationDD = m_dataDictionaryProvider.getApplicationDataDictionary( key );
   }
@@ -137,7 +137,7 @@ public:
     { return m_targetDefaultApplVerID; }
   void setTargetDefaultApplVerID( const std::string& targetDefaultApplVerID )
   {
-    DataDictionaryProvider::key_type key( targetDefaultApplVerID.c_str(), targetDefaultApplVerID.size() );
+    DataDictionaryProvider::key_type key( targetDefaultApplVerID.data(), targetDefaultApplVerID.size() );
     m_targetDefaultApplVerID = targetDefaultApplVerID;
     m_defaultApplicationDD = m_dataDictionaryProvider.getApplicationDataDictionary( key );
   }
@@ -240,8 +240,8 @@ public:
   void next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bool queued = false );
   void next( const std::string& message, const UtcTimeStamp& timeStamp, bool queued = false )
   {
-    Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( String::c_str(message),
-                                            String::length(message) ); 
+    Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( String::data(message),
+                                            String::size(message) ); 
     next( buf, timeStamp, queued );
   }
 

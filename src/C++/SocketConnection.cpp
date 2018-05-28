@@ -114,14 +114,14 @@ bool SocketConnection::processQueue()
   const std::string& msg = m_sendQueue.front();
 
   size_t result = socket_send
-    ( m_socket, String::c_str(msg) + m_sendLength, String::length(msg) - m_sendLength );
+    ( m_socket, String::data(msg) + m_sendLength, String::size(msg) - m_sendLength );
 
   if( result > 0 )
   {
     m_sendLength += result;
   }
 
-  if( m_sendLength == String::length(msg) )
+  if( m_sendLength == String::size(msg) )
   {
     m_sendLength = 0;
     m_sendQueue.pop_front();

@@ -128,7 +128,7 @@ namespace FIX
      template <typename S>
      static Sg::sg_buf_t NOTHROW toBuffer( const S& s )
      {
-       Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( c_str(s), length(s) );
+       Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( data(s), size(s) );
        return buf;
      }
 
@@ -276,7 +276,7 @@ fin:
                }
                string_type& s = asString();
                std::size_t l = String::size(s);
-               m_fixed.set(String::c_str(s), l >= MaxLocalCapacity ? MaxLocalCapacity - 1 : l);
+               m_fixed.set(String::data(s), l >= MaxLocalCapacity ? MaxLocalCapacity - 1 : l);
                s.~string_type();
                goto fin;
              }
@@ -426,16 +426,16 @@ fin:
                                   : String::size(asString());
            }
 
-           inline const char* HEAVYUSE c_str() const
+           inline const char* HEAVYUSE data() const
            {
              return ( isLocal() ) ? m_fixed.data
-                                  : String::c_str(asString());
+                                  : String::data(asString());
            }
 
            inline bool PURE_DECL HEAVYUSE equal(const Data& d) const
            {
 	     std::size_t s;
-             return ( (s = size()) == d.size() && !::memcmp(c_str(), d.c_str(), s) );
+             return ( (s = size()) == d.size() && !::memcmp(data(), d.data(), s) );
            }
 
            inline int PURE_DECL HEAVYUSE compare( const char* p, std::size_t sz ) const
@@ -637,12 +637,12 @@ fin:
 
          inline const char* c_str() const
          {
-           return s_.c_str();
+           return s_.data();
          }
 
          inline const char* data() const
          {
-           return s_.c_str();
+           return s_.data();
          }
 
          inline void swap( short_string_type& ss )
@@ -816,9 +816,9 @@ fin:
 #ifndef ENABLE_SSO
        { return std::string( v ); }
 #else
-       { return std::string( c_str(v), length(v) ); }
+       { return std::string( data(v), size(v) ); }
        value_type operator()( const result_type& r ) const
-       { return value_type( c_str(r), length(r) ); }
+       { return value_type( data(r), size(r) ); }
 #endif
      };
 

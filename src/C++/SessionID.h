@@ -70,9 +70,9 @@ public:
              const std::string& senderCompID,
              const std::string& targetCompID,
              const std::string& sessionQualifier = "" )
-  : m_beginString( String::c_str(beginString), String::length(beginString) ),
-    m_senderCompID( String::c_str(senderCompID), String::length(senderCompID) ),
-    m_targetCompID( String::c_str(targetCompID), String::length(targetCompID) ),
+  : m_beginString( String::data(beginString), String::size(beginString) ),
+    m_senderCompID( String::data(senderCompID), String::size(senderCompID) ),
+    m_targetCompID( String::data(targetCompID), String::size(targetCompID) ),
     m_sessionQualifier( sessionQualifier ),
     m_isFIXT(false)
   {

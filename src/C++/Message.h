@@ -137,14 +137,14 @@ class Message : public FieldMap
     FieldReader ( const std::string& s )
     : m_field(0), m_pos(0), m_length(0), m_csum(0),
       m_hdr(0), m_body(0), m_trl(0), m_grp(0),
-      m_start(String::c_str(s)),
+      m_start(String::data(s)),
       m_end(m_start + String::size(s)) {}
 
     FieldReader ( const std::string& s, std::string::size_type pos )
     : m_field(0), m_pos(0), m_length(0), m_csum(0),
       m_hdr(0), m_body(0), m_trl(0), m_grp(0),
-      m_start(String::c_str(s) + pos),
-      m_end(String::c_str(s) + String::size(s)) {}
+      m_start(String::data(s) + pos),
+      m_end(String::data(s) + String::size(s)) {}
 
     char getTagLength() const
     { return static_cast<char>(m_length + 1); }
@@ -300,7 +300,7 @@ class Message : public FieldMap
   }
 
   static inline bool isAdminMsg( const std::string& msg )
-  { return isAdminMsg( String::c_str(msg), String::size(msg) ); }
+  { return isAdminMsg( String::data(msg), String::size(msg) ); }
 
   // parses header up to MsgType and returns pointer to the BodyLength field
   const BodyLength* readSpecHeader( FieldReader& reader, const MsgType*& msgType )
@@ -404,7 +404,7 @@ class Message : public FieldMap
     m_trailer( a, message_order( message_order::trailer ) ),
     m_status( 0 )
   {
-    FieldReader reader(String::c_str(s), String::length(s));
+    FieldReader reader(String::data(s), String::size(s));
     if (dictionaryProvider)
       readString( reader, validate, msgInfo,
                   sessionDataDictionary ? *sessionDataDictionary
@@ -500,7 +500,7 @@ public:
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
     m_status( 0 )
   {
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate );
   }
 
@@ -514,7 +514,7 @@ public:
     m_status( 0 )
   {
     DataDictionary::MsgInfo msgInfo( dataDictionary );
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate, msgInfo, dataDictionary );
   }
 
@@ -528,7 +528,7 @@ public:
     m_status( 0 )
   {
     DataDictionary::MsgInfo msgInfo( applicationDataDictionary );
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
@@ -541,7 +541,7 @@ public:
     m_status( 0 )
   {
     DataDictionary::MsgInfo msgInfo( applicationDataDictionary );
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
 
@@ -642,7 +642,7 @@ public:
   throw( InvalidMessage )
   {
     clear();
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate );
   }
   void setString( const std::string& string )
@@ -656,7 +656,7 @@ public:
   throw( InvalidMessage )
   {
     clear();
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     if ( LIKELY(pSessionDataDictionary != pApplicationDataDictionary) )
     {
       DataDictionary::MsgInfo msgInfo(pApplicationDataDictionary, pApplicationDataDictionary );
@@ -679,7 +679,7 @@ public:
   throw( InvalidMessage )
   {
     clear();
-    FieldReader reader( String::c_str(string), String::length(string) );
+    FieldReader reader( String::data(string), String::size(string) );
     if ( pDataDictionary )
     {
       DataDictionary::MsgInfo msgInfo( *pDataDictionary );
@@ -1126,7 +1126,7 @@ throw( MessageParseError )
 inline MsgType identifyType( const std::string& message )
 throw( MessageParseError )
 {
-  return identifyType( String::c_str(message), String::length(message) );
+  return identifyType( String::data(message), String::size(message) );
 }
 }
 
