@@ -37,14 +37,17 @@ Log* FileLogFactory::create()
     if ( m_path.size() ) return new FileLog( m_path );
     std::string path;
     std::string backupPath;
+    std::string rollover;
 
     Dictionary settings = m_settings.get();
     path = settings.getString( FILE_LOG_PATH );
     backupPath = path;
     if( settings.has( FILE_LOG_BACKUP_PATH ) )
       backupPath = settings.getString( FILE_LOG_BACKUP_PATH );
+    if( settings.has( FILE_LOG_ROLLOVER ) )
+      rollover = settings.getString( FILE_LOG_ROLLOVER );
 
-    return m_globalLog = new FileLog( path, backupPath );
+    return m_globalLog = new FileLog( path, backupPath, FileLog::getRollover(rollover) );
   }
   catch( ConfigError& )
   {
@@ -62,13 +65,16 @@ Log* FileLogFactory::create( const SessionID& s )
 
   std::string path;
   std::string backupPath;
+  std::string rollover;
   Dictionary settings = m_settings.get( s );
   path = settings.getString( FILE_LOG_PATH );
   backupPath = path;
   if( settings.has( FILE_LOG_BACKUP_PATH ) )
     backupPath = settings.getString( FILE_LOG_BACKUP_PATH );
+  if( settings.has( FILE_LOG_ROLLOVER ) )
+    rollover = settings.getString( FILE_LOG_ROLLOVER );
 
-  return new FileLog( path, backupPath, s );
+  return new FileLog( path, backupPath, s, FileLog::getRollover(rollover) );
 }
 
 void FileLogFactory::destroy( Log* pLog )
@@ -88,26 +94,61 @@ void FileLogFactory::destroy( Log* pLog )
   }
 }
 
-FileLog::FileLog( const std::string& path )
-: m_millisecondsInTimeStamp( true )
+static bool cncasecmp(char a, char b) { return Util::Char::toupper(a) == Util::Char::toupper(b); }
+static bool sncasecmp(const std::string& a, const std::string& b) {
+	return (a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), cncasecmp));
+}
+
+FileLog::Rollover FileLog::getRollover(const std::string& value) {
+  if (sncasecmp(value, "HOURLY")) return HOURLY_ROLLOVER;
+  if (sncasecmp(value, "DAILY")) return DAILY_ROLLOVER;
+  if (sncasecmp(value, "WEEKLY")) return WEEKLY_ROLLOVER;
+  return NO_ROLLOVER;
+}
+
+void FileLog::rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const std::string& filename, std::ofstream& s) {
+  switch(m_rollover) {
+    case HOURLY_ROLLOVER:
+	if (LIKELY(current .getHour() == last.getHour())) return;
+	last.setHMS(last.getHour(), 0, 0, 0);
+	break;
+    case DAILY_ROLLOVER:
+	if (LIKELY(current.getDay() == last.getDay())) return;
+	last.setHMS(0, 0, 0, 0);
+	break;
+    case WEEKLY_ROLLOVER:
+	if (LIKELY(current.getDay() == last.getDay()) || current.getWeekDay() != last.getWeekDay()) return;
+	last.setHMS(0, 0, 0, 0);
+	break;
+    case NO_ROLLOVER: return;
+  }
+  std::string newfilename = filename + "." + UtcTimeStampConvertor::convert(last, false);
+  s.close(); 
+  file_rename( filename.c_str(), newfilename.c_str() );
+  s.open( filename.c_str(), std::ios::out | std::ios::trunc );
+  last = current;
+}
+
+FileLog::FileLog( const std::string& path, Rollover r )
+: m_millisecondsInTimeStamp( true ), m_rollover(r)
 {
   init( path, path, "GLOBAL" );
 }
 
-FileLog::FileLog( const std::string& path, const std::string& backupPath )
-: m_millisecondsInTimeStamp( true )
+FileLog::FileLog( const std::string& path, const std::string& backupPath, Rollover r )
+: m_millisecondsInTimeStamp( true ), m_rollover(r)
 {
   init( path, backupPath, "GLOBAL" );
 }
 
-FileLog::FileLog( const std::string& path, const SessionID& s )
-: m_millisecondsInTimeStamp( true )
+FileLog::FileLog( const std::string& path, const SessionID& s, Rollover r )
+: m_millisecondsInTimeStamp( true ), m_rollover(r)
 {
   init( path, path, generatePrefix(s) );
 }
 
-FileLog::FileLog( const std::string& path, const std::string& backupPath, const SessionID& s )
-: m_millisecondsInTimeStamp( true )
+FileLog::FileLog( const std::string& path, const std::string& backupPath, const SessionID& s, Rollover r )
+: m_millisecondsInTimeStamp( true ), m_rollover(r)
 {
   init( path, backupPath, generatePrefix(s) );
 }

@@ -70,10 +70,14 @@ private:
 class FileLog : public Log
 {
   static const std::size_t BufSize = 1024;
-  void store( std::ofstream& s, Sg::sg_buf_ptr b, int n )
+  void store( UtcTimeStamp& last, const std::string& filename, std::ofstream& s, Sg::sg_buf_ptr b, int n )
   {
+    UtcTimeStamp utc;
+    UtcTimeStampConvertor::set(m_timeStamp, utc, m_millisecondsInTimeStamp);
+    if (UNLIKELY(m_rollover != NO_ROLLOVER))
+      rollover(utc, last, filename, s);
+
     std::filebuf* p = s.rdbuf();
-    UtcTimeStampConvertor::set(m_timeStamp, UtcTimeStamp(), m_millisecondsInTimeStamp);
     p->sputn(m_timeStamp.c_str(), m_timeStamp.size());
     p->sputn(" : ", 3);
     for (int i = 0; i < n; i++) p->sputn((char*)IOV_BUF(b[i]), IOV_LEN(b[i]));
@@ -82,42 +86,51 @@ class FileLog : public Log
   }
 
 public:
-  FileLog( const std::string& path );
-  FileLog( const std::string& path, const std::string& backupPath );
-  FileLog( const std::string& path, const SessionID& sessionID );
-  FileLog( const std::string& path, const std::string& backupPath, const SessionID& sessionID );
+  enum Rollover {
+    NO_ROLLOVER,
+    WEEKLY_ROLLOVER,
+    DAILY_ROLLOVER,
+    HOURLY_ROLLOVER
+  };
+
+  FileLog( const std::string& path, Rollover r = NO_ROLLOVER );
+  FileLog( const std::string& path, const std::string& backupPath, Rollover r = NO_ROLLOVER );
+  FileLog( const std::string& path, const SessionID& sessionID, Rollover r = NO_ROLLOVER );
+  FileLog( const std::string& path, const std::string& backupPath, const SessionID& sessionID, Rollover r = NO_ROLLOVER );
   virtual ~FileLog();
+
+  static Rollover getRollover(const std::string&);
 
   void clear();
   void backup();
 
   void onIncoming( const std::string& value )
   {
-    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::data(value), 
-                                          String::size(value) );
-    store( m_messages, &b, 1 );
+    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::c_str(value), 
+                                          String::length(value) );
+    store( m_lastMessage, m_messagesFileName, m_messages, &b, 1 );
   }
   void onIncoming( Sg::sg_buf_ptr b, int n )
   {
-    store( m_messages, b, n );
+    store( m_lastMessage, m_messagesFileName, m_messages, b, n );
   }
 
   void onOutgoing( const std::string& value )
   {
-    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::data(value),
-                                          String::size(value) );
-    store( m_messages, &b, 1 );
+    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::c_str(value),
+                                          String::length(value) );
+    store( m_lastMessage, m_messagesFileName, m_messages, &b, 1 );
   }
   void onOutgoing( Sg::sg_buf_ptr b, int n )
   {
-    store( m_messages, b, n );
+    store( m_lastMessage, m_messagesFileName, m_messages, b, n );
   }
 
   void onEvent( const std::string& value )
   {
-    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::data(value), 
-                                          String::size(value) );
-    store( m_event, &b, 1 );
+    Sg::sg_buf_t b = IOV_BUF_INITIALIZER( String::c_str(value), 
+                                          String::length(value) );
+    store( m_lastEvent, m_eventFileName, m_event, &b, 1 );
   }
 
   unsigned queryLogCapabilities() const { return LC_CLEAR | LC_BACKUP |
@@ -129,6 +142,7 @@ public:
   { m_millisecondsInTimeStamp = value; }
 
 private:
+  void rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const std::string& filename, std::ofstream& s);
   std::string generatePrefix( const SessionID& sessionID );
   void init( std::string path, std::string backupPath, const std::string& prefix );
 
@@ -142,6 +156,8 @@ private:
   bool m_millisecondsInTimeStamp;
   char m_messageBuf[BufSize];
   char m_eventBuf[BufSize];
+  UtcTimeStamp m_lastMessage, m_lastEvent;
+  Rollover m_rollover;
 };
 }
 
