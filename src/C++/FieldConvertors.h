@@ -621,27 +621,23 @@ struct DoubleConvertor
   static bool NOTHROW parse( const char* str, const char* end, double& result)
   {
     const char* p = str;
-    if( *p )
+    if( LIKELY(p < end) )
     {
       bool positive;
-      if( (positive = (*p != '-')) || *++p)
+      if( (positive = (*p != '-')) || ++p < end)
       {
         const char* pdot = end;
         const char* pv = p;
 
-        while( p < end && Util::Char::isdigit(*p++) );
-
-        if( p < end )
+        do 
         {
-          if( *p == '.' )
-          {
-            pdot = p++;
-
-            while( p < end && Util::Char::isdigit(*p++) );
-          }
+          if (LIKELY(Util::Char::isdigit(*p))) continue;
+          if (*p != '.') return false;
+          pdot = p;
         }
+        while( ++p < end);
 
-        if( LIKELY(p == end && (p - pv) > (int)(pdot != end)) )
+        if( LIKELY((p - pv) > (int)(pdot != end)) )
         {
           double value = parse_verified( pv, end, pdot );
           result = positive ? value : -value;
@@ -654,37 +650,8 @@ struct DoubleConvertor
 
   template <typename S> static bool NOTHROW parse( const S& value, double& result )
   {
-    const char * p = String::c_str(value);
-  
-    // Catch null strings
-    if( *p )
-    {
-      // Eat leading '-' and recheck for null string
-      bool positive = *p != '-';
-      if( positive || *++p )
-      {
-	const char* pv = p;
-      
-        if( Util::Char::isdigit(*p) )
-        {
-          while( Util::Char::isdigit(*++p) );
-        }
-      
-        const char* pdot = (*p == '.') ? p : NULL;
-        if( pdot && Util::Char::isdigit(*++p) )
-        {
-          while( Util::Char::isdigit(*++p) );
-        }
-      
-        if( LIKELY(!*p && (p - pv) > (pdot ? 1 : 0)) )
-        {
-	  double value = parse_verified( pv, p, pdot ? pdot : p );
-          result = positive ? value : -value;
-          return true;
-        }
-      }
-    }
-    return false;
+    const char* p = String::data(value);
+    return parse(p, p + String::size(value), result);
   }
 
   static std::string convert( double value, std::size_t padded = 0, bool rounded = false )

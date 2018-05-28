@@ -443,14 +443,19 @@ fin:
              if( isLocal() )
              {
                int r = ::memcmp( m_fixed.data, p, std::min((std::size_t)m_length, sz) );
-               return (r != 0) ? r : ((int)m_length - sz);
+               return r ? r : ((int)m_length - sz);
              }
              return asString().compare(0, std::string::npos, p, sz);
            }
 
            inline int PURE_DECL HEAVYUSE compare( const char* p ) const
            {
-             return isLocal() ? ::strcmp( m_fixed.data, p ) : asString().compare(p);
+             if( isLocal() )
+             {
+               int r = ::strncmp( m_fixed.data, p, m_length );
+               return r ? r : (unsigned char)p[m_length];
+             }
+             return asString().compare(p);
            }
 
            size_type find_first_of( char c, size_type pos ) const
