@@ -640,11 +640,6 @@ fin:
            return s_.size();
          }
 
-         inline const char* c_str() const
-         {
-           return s_.data();
-         }
-
          inline const char* data() const
          {
            return s_.data();
@@ -757,12 +752,6 @@ fin:
      data(const value_type& r)
      {
        return r.data();
-     }
-
-     static inline const char NOTHROW_PRE * NOTHROW_POST
-     c_str(const value_type& r)
-     {
-       return r.c_str();
      }
 
      static inline std::string NOTHROW_PRE & NOTHROW_POST
