@@ -36,7 +36,7 @@ ThreadedSocketConnection::ThreadedSocketConnection
 ( int s, Sessions sessions, Log* pLog )
 : m_socket( s ), m_pLog( pLog ),
   m_sessions( sessions ), m_pSession( 0 ),
-  m_disconnect( false )
+  m_disconnect( false ), m_pollspin( 0 )
 {}
 
 ThreadedSocketConnection::ThreadedSocketConnection
@@ -46,7 +46,7 @@ ThreadedSocketConnection::ThreadedSocketConnection
   : m_socket( s ), m_address( address ), m_port( port ),
     m_pLog( pLog ),
     m_pSession( Session::lookupSession( sessionID ) ),
-    m_disconnect( false )
+    m_disconnect( false ), m_pollspin( 0 )
 {
   if ( m_pSession ) m_pSession->setResponder( this );
 }
@@ -136,14 +136,18 @@ bool HEAVYUSE ThreadedSocketConnection::read()
 {
   try
   {
+    int result, timeout, busy = m_pollspin;
     // Wait for input (1 second timeout)
+    do {
+      timeout = (busy-- > 0) ? 0 : 1000;
 #ifndef _MSC_VER
-	struct pollfd pfd = { m_socket, POLLIN | POLLPRI, 0 };
-    int result = poll(&pfd, 1, 1000);
+      struct pollfd pfd = { m_socket, POLLIN | POLLPRI, 0 };
+      result = poll(&pfd, 1, timeout);
 #else
-	struct pollfd pfd = { m_socket, POLLIN, 0 };
-    int result = WSAPoll(&pfd, 1, 1000);
+      struct pollfd pfd = { m_socket, POLLIN, 0 };
+      result = WSAPoll(&pfd, 1, timeout);
 #endif
+    } while( result == 0 && timeout == 0 );
 
     if( result > 0 ) // Something to read
     {
@@ -218,6 +222,7 @@ bool ThreadedSocketConnection::setSession( Sg::sg_buf_t& msg )
     return false;
 
   m_pSession->setResponder( this );
+  m_pollspin = m_pSession->getPollSpin();
   return true;
 }
 

@@ -34,7 +34,7 @@ namespace FIX
 {
 SocketConnection::SocketConnection( int s, Sessions sessions,
                                     SocketMonitor* pMonitor )
-: m_socket( s ), m_sendLength( 0 ),
+: m_socket( s ), m_pollspin( 0 ), m_sendLength( 0 ),
   m_sessions(sessions), m_pSession( 0 ), m_pMonitor( pMonitor )
 {
   FD_ZERO( &m_fds );
@@ -44,7 +44,7 @@ SocketConnection::SocketConnection( int s, Sessions sessions,
 SocketConnection::SocketConnection( SocketInitiator& i,
                                     const SessionID& sessionID, int s,
                                     SocketMonitor* pMonitor )
-: m_socket( s ), m_sendLength( 0 ),
+: m_socket( s ), m_pollspin( 0 ), m_sendLength( 0 ),
   m_pSession( i.getSession( sessionID, *this ) ),
   m_pMonitor( pMonitor ) 
 {
@@ -121,7 +121,7 @@ bool SocketConnection::processQueue()
     m_sendLength += result;
   }
 
-  if( m_sendLength == String::size(msg) )
+  if( m_sendLength == String::length(msg) )
   {
     m_sendLength = 0;
     m_sendQueue.pop_front();
@@ -185,6 +185,7 @@ bool SocketConnection::read( SocketAcceptor& a, SocketServer& s )
       }
 
       Session::registerSession( m_pSession->getSessionID() );
+      m_pollspin = m_pSession->getPollSpin();
     }
 
     readMessages( s.getMonitor() );
@@ -216,10 +217,28 @@ bool SocketConnection::isValidSession()
 void SocketConnection::readFromSocket()
 throw( SocketRecvFailed )
 {
+  ssize_t size;
+  int busy = m_pollspin;
   Sg::sg_buf_t buf = m_parser.buffer();
-  ssize_t size = recv( m_socket, IOV_BUF(buf), IOV_LEN(buf), 0 );
-  if( size <= 0 ) throw SocketRecvFailed( size );
-  m_parser.advance( size );
+#ifndef _MSC_VER
+  do {
+    int flags = (busy-- > 0) ? MSG_DONTWAIT : 0;
+    size = recv( m_socket, IOV_BUF(buf), IOV_LEN(buf), flags );
+  } while (size < 0 && errno == EWOULDBLOCK);
+#else
+  if ( busy ) {
+    struct timeval timeout = { 0, 0 };
+    fd_set readset;
+    FD_CLR( &readset );
+    do {
+      FD_SET( m_socket, &readset );
+    } while( busy-- > 0 && select( 1 + m_socket, &readset, 0, 0, &timeout ) == 0 );
+  }
+  size = recv( m_socket, IOV_BUF(buf), IOV_LEN(buf), 0);
+#endif
+  if( size > 0 )
+    m_parser.advance( size );
+  else throw SocketRecvFailed( size );
 }
 
 bool SocketConnection::readMessage( Sg::sg_buf_t& msg )

@@ -89,6 +89,7 @@ private:
   void disconnect();
 
   int m_socket;
+  int m_pollspin;
   char m_buffer[4 * BUFSIZ];
 
   Parser m_parser;

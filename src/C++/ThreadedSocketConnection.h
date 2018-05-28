@@ -79,6 +79,7 @@ private:
   Sessions m_sessions;
   Session* m_pSession;
   bool m_disconnect;
+  int m_pollspin;
 };
 }
 

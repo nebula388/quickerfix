@@ -176,6 +176,8 @@ Session* SessionFactory::create( const SessionID& sessionID,
     pSession->setCheckLatency( settings.getBool( CHECK_LATENCY ) );
   if ( settings.has( MAX_LATENCY ) )
     pSession->setMaxLatency( settings.getInt( MAX_LATENCY ) );
+  if ( settings.has( SOCKET_POLL_SPIN ) )
+    pSession->setPollSpin( settings.getInt( SOCKET_POLL_SPIN ) );
   if ( settings.has( LOGON_TIMEOUT ) )
     pSession->setLogonTimeout( settings.getInt( LOGON_TIMEOUT ) );
   if ( settings.has( LOGOUT_TIMEOUT ) )
@@ -194,7 +196,7 @@ Session* SessionFactory::create( const SessionID& sessionID,
     pSession->setPersistMessages( settings.getBool( PERSIST_MESSAGES ) );
   if ( settings.has( VALIDATE_LENGTH_AND_CHECKSUM ) )
     pSession->setValidateLengthAndChecksum( settings.getBool( VALIDATE_LENGTH_AND_CHECKSUM ) );
-   
+
   return pSession.release();
 }
 
