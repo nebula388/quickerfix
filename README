@@ -92,9 +92,6 @@ PLATFORM-SPECIFIC NOTES
 		 "-O3 -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16"
 	if AVX support is available.
 
-        Using g++ 4.7.x is not recommenced as there is a sizable performance regression
-	compared to versions 4.4.x or 4.8.x.
-
         Visual Studio builds need to use /Ox optimization level for best performance.
 
 BENCHMARKS
@@ -125,11 +122,10 @@ CODEC:	Measures encoding and decoding performance for a NewOrderSingle message.
 	Results (usec per message, lower is better):
 
 		FIX8		Quickfix 	Quickfix 	quickerfix
-		1.3.2		1.13.3		1.14.3		20170801
+		1.3.2		1.13.3		1.15.1		20180528
 
-to string	2.25516		8.17674		4.38878		0.803967
-from string	7.6158		25.7686		9.422		1.9427
-
+to string	2.25516		8.17674		4.16642		0.775209
+from string	7.6158		25.7686		7.21911		1.90974
 
 
 PT:	Measures performance of various QuickFix subsystems
@@ -141,94 +137,98 @@ PT:	Measures performance of various QuickFix subsystems
 	Results (operations per second, higher is better):
 
 				Quickfix 	Quickfix 	quickerfix 
-				1.13.3		1.14.3		20170801
+				1.13.3		1.15.1		20180528
 
-Converting integers to strings:	2.17391e+07	2.5e+07		2.28571e+07
+Converting integers to strings:	2.17391e+07	2.32558e+07	2.48091e+07
 
-Converting strings to integers:	1.66667e+08	2.5e+08		3.0986e+08
+Converting strings to integers:	1.66667e+08	2.5e+08		3.01001e+08
 
-Converting doubles to strings:	1.10375e+06	1.04712e+06	9.37129e+06
+Converting doubles to strings:	1.10375e+06	2.26757e+06	9.27561e+06
 
-Converting strings to doubles:	4.6729e+06	5.26316e+07	1.04153e+08
+Converting strings to doubles:	4.6729e+06	1.28205e+07	8.03551e+07
 
-Creating Heartbeat messages:	1.00604e+06	1.54083e+06	5.6597e+06
+Creating Heartbeat messages:	1.00604e+06	1.66113e+06	5.62208e+06
 
-Identifying message types:	6.99301e+06	6.99301e+06	1.20404e+07
-
-Serializing Heartbeat messages
-to strings:			847458		1.20627e+06	3.44907e+06
+Identifying message types:	6.99301e+06	8.33333e+06	1.20229e+07
 
 Serializing Heartbeat messages
-from strings:			392003		625391		3.32179e+06
+to strings:			847458		1.69492e+06	3.39677e+06
 
 Serializing Heartbeat messages
-from strings and validation:	-		541419		2.58592e+06
+from strings:			392003		840336		3.12246e+06
+
+Serializing Heartbeat messages
+from strings and validation:	-		789266		2.52467e+06
 
 Creating NewOrderSingle
-messages:			331785		406669		1.80556e+06
- (packed):			-		-		1.98053e+06
+messages:			331785		534474		1.70487e+06
+ (packed):			-		-		2.05787e+06
 
 Serializing NewOrderSingle
-messages to strings:		652316		925069		2.6223e+06
+messages to strings:		652316		1.3369e+06	2.60218e+06
 
 Serializing NewOrderSingle
-messages from strings:		152346		290698		1.52303e+06
+messages from strings:		152346		382117		1.5022e+06
 
 Serializing NewOrderSingle
 messages from strings
-and validation:			-		261438		1.30501e+06
+and validation:			-		364697		1.30045e+06
 
 Creating QuoteRequest
-messages:			13621.9		20406.5		58347.2
- (packed):			-		-		91869.1
- (packed, in place):		-		-		150536
+messages:			13621.9		19260		61789.9
+ (packed):			-		-		93949
+ (packed, in place):		-		-		153371
 
 Serializing QuoteRequest
-messages to strings:		174490		239292		590509
+messages to strings:		174490		368460		599807
 
 Serializing QuoteRequest
-messages from strings:		16942.8		32526.7		149703
+messages from strings:		16942.8		60997.9		147767
 
 Serializing QuoteRequest
 messages from strings
-and validation:			-		30869		129908
+and validation:			-		58657.9		128075
 
 Reading fields
-from QuoteRequest message:	28681.2		72695.6		129876
+from QuoteRequest message:	28681.2		127567		128467
 
 Storing NewOrderSingle
-messages:			299670		281057		330621
+messages:			299670		275255		324767
 
 Validating NewOrderSingle
 messages without
-data dictionary:		5.64972e+06	5.74713e+06	1.18313e+07
+data dictionary:		5.64972e+06	1.14943e+07	1.30351e+07
 
 Validating NewOrderSingle
-messages with data dictionary:	345901		457247		1.73791e+06
+messages with data dictionary:	345901		507614		1.60626e+06
 
 Validating QuoteRequest
 messages without
-data dictionary:		9.80392e+06	9.34579e+06	1.56412e+07
+data dictionary:		9.80392e+06	1.78571e+07	1.85668e+07
 
 Validating QuoteRequest
-messages with data dictionary:	478240		548847		1.55463e+06
+messages with data dictionary:	478240		689180		1.57783e+06
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket			59883.8		92489.8		354106
+on Socket			59883.8		105352		348340
+(low latency profile)		-		108731		348965
 
 Sending/Receiving
 NewOrderSingle/ExecutionReport
-on ThreadedSocket		59862.3		92850.5		403000
+on ThreadedSocket		59862.3		109625		406811
+(low latency profile)		-		114168		424531
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket with data dictionary	-		70681.4		279351
+on Socket with data dictionary	-		83878.5		275328
+(low latency profile)		-		85910.7		354082
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
 on ThreadedSocket
-with data dictionary		-		73367.6		283215
+with data dictionary		-		84774.5		278692
+(low latency profile)		-		87100.4		418606
 
 
 
