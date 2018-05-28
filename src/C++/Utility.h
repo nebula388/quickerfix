@@ -1178,11 +1178,72 @@ namespace FIX
 
     struct CharBuffer
     {
+      class const_iterator : public std::iterator<std::random_access_iterator_tag, char>
+      {
+          const char* m_p;
+        public:
+          const_iterator(const char* p) : m_p(p) {}
+          const_iterator operator++() { return ++m_p; }
+          const_iterator operator++(int) { return m_p++; }
+          char operator*() const { return *m_p; }
+          bool operator==( const_iterator it) const
+          { return m_p == it.m_p; }
+          bool operator!=( const_iterator it) const
+          { return m_p != it.m_p; }
+          bool operator <( const_iterator it) const
+          { return m_p < it.m_p; }
+          bool operator >( const_iterator it) const
+          { return m_p > it.m_p; }
+          difference_type operator-( const_iterator it) const
+          { return it.m_p - m_p; }
+      };
+
+      class iterator : public std::iterator<std::random_access_iterator_tag, char>
+      {
+          char* m_p;
+        public:
+          iterator(char* p) : m_p(p) {}
+          iterator operator++() { return ++m_p; }
+          iterator operator++(int) { return m_p++; }
+          char operator*() const { return *m_p; }
+          bool operator==( iterator it) const
+          { return m_p == it.m_p; }
+          bool operator!=( iterator it) const
+          { return m_p != it.m_p; }
+          bool operator <( iterator it) const
+          { return m_p < it.m_p; }
+          bool operator >( iterator it) const
+          { return m_p > it.m_p; }
+          operator const_iterator() const { return m_p; }
+          difference_type operator-( iterator it) const
+          { return it.m_p - m_p; }
+      };
+
+      class const_reverse_iterator : public std::iterator<std::random_access_iterator_tag, char>
+      {
+          const char* m_p;
+        public:
+          const_reverse_iterator(const char* p) : m_p(--p) {}
+          const_reverse_iterator operator++() { return --m_p; }
+          const_reverse_iterator operator++(int) { return m_p--; }
+          char operator*() const { return *m_p; }
+          bool operator==( const_reverse_iterator it) const
+          { return m_p == it.m_p; }
+          bool operator!=( const_reverse_iterator it) const
+          { return m_p != it.m_p; }
+          bool operator <( const_reverse_iterator it) const
+          { return m_p > it.m_p; }
+          bool operator >( const_reverse_iterator it) const
+          { return m_p < it.m_p; }
+          difference_type operator-( const_reverse_iterator it) const
+          { return it.m_p - m_p; }
+      };
+
       class reverse_iterator : public std::iterator<std::random_access_iterator_tag, char>
       {
           char* m_p;
         public:
-          reverse_iterator(char* p) : m_p(p - 1) {}
+          reverse_iterator(char* p) : m_p(--p) {}
           reverse_iterator operator++() { return --m_p; }
           reverse_iterator operator++(int) { return m_p--; }
           char operator*() const { return *m_p; }
@@ -1194,6 +1255,7 @@ namespace FIX
           { return m_p > it.m_p; }
           bool operator >( reverse_iterator it) const
           { return m_p < it.m_p; }
+          operator const_reverse_iterator() const { return m_p; }
           difference_type operator-( reverse_iterator it) const
           { return it.m_p - m_p; }
       };
@@ -1360,7 +1422,7 @@ namespace FIX
       /// Scans f for character v, returns array index less than S on success
       /// or a value >= S on failure.
       template <std::size_t S>
-      static inline std::size_t find(int v, const Fixed<S>& f)
+      static inline std::size_t find(char v, const Fixed<S>& f)
       {
         const char* p = (const char*)::memchr(f.data, v, S);
         return p ? p - f.data : S;
@@ -1372,6 +1434,18 @@ namespace FIX
       {
         return CharBuffer::memmem( p, size, f.data, S );
       }
+
+      /// Implements strspn for strings with an explicit length,
+      /// optional checking for uniqueness of one of the characters from the set
+      template <std::size_t S> 
+      static inline bool match(const Fixed<S>& charset, const char* p, std::size_t size, std::size_t indexonce = S)
+      {
+        std::size_t i, index;
+        bool r, matched = false;
+        for (i = 0; i < size && (index = find(p[i], charset)) < S
+                    && !((r = (index == indexonce)) && matched); i++) matched |= r;
+        return i == size;
+      };
     }; // CharBuffer
 
     template <> union CharBuffer::Fixed<2>
@@ -1422,43 +1496,104 @@ namespace FIX
       value_type value;
     };
 
-#if defined(__GNUC__) && defined(__x86_64__)
+#if defined(_MSC_VER) || (defined(__GNUC__) && defined(__x86_64__))
 
     template<>
-    inline std::size_t PURE_DECL CharBuffer::find<8>(int v, const CharBuffer::Fixed<8>& f)
+    inline std::size_t PURE_DECL CharBuffer::find<8>(char v, const CharBuffer::Fixed<8>& f)
     {
-      unsigned at = 0;
-      __asm__ __volatile (
-#if defined(__AVX__)
-        "vmovd %1, %%xmm1                  \n\t"
-        "vpunpcklbw %%xmm1, %%xmm1, %%xmm1 \n\t"
-        "vmovq %2, %%xmm0                  \n\t"
-        "vpshuflw $0, %%xmm1, %%xmm1       \n\t"
-        "movl $8, %1                       \n\t"
-        "vpcmpeqb %%xmm1, %%xmm0, %%xmm0   \n\t"
-        "vpmovmskb %%xmm0, %0              \n\t"
-        "bsf %0, %0                        \n\t"
-        "cmovz %1, %0                      \n\t"
-        : "=a" (at), "+r" (v)
-        : "r" (f.value)
-        : "xmm0", "xmm1"
+      // bits 8-15 will be set
+      unsigned long at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL ), _mm_cvtsi64_si128(f.value) ) );
+#ifdef _MSC_VER
+      _BitScanForward(&at, at);
 #else
-        "movd %1, %%xmm1            \n\t"
-        "punpcklbw %%xmm1, %%xmm1   \n\t"
-        "movq %2, %%xmm0            \n\t"
-        "pshuflw $0, %%xmm1, %%xmm1 \n\t"
-        "movl $8, %1                \n\t"
-        "pcmpeqb %%xmm1, %%xmm0     \n\t"
-        "pmovmskb %%xmm0, %0        \n\t"
-        "bsf %0, %0                 \n\t"
-        "cmovz %1, %0               \n\t"
-        : "=a" (at), "+r" (v)
-        : "r" (f.value)
-        : "xmm0", "xmm1"
+     __asm__ ( "bsf %0, %0" : "+r"(at) : : "cc" ); // returns 8 if no match
 #endif
-      );
       return at;
     }
+
+    template <> union CharBuffer::Fixed<16>
+    {
+      typedef __m128i value_type;
+
+      char data[16];
+      value_type value;
+    };
+
+    template<>
+    inline std::size_t PURE_DECL CharBuffer::find<16>(char v, const CharBuffer::Fixed<16>& f)
+    {
+      __m128i xv = _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL );
+      unsigned long at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_unpacklo_epi64( xv, xv), _mm_loadu_si128(&f.value) ) ) | (1 << 16);
+#ifdef _MSC_VER
+      _BitScanForward(&at, at);
+#else
+     __asm__ ( "bsf %0, %0" : "+r"(at) : : "cc" ); // returns 16 if no match
+#endif
+      return at;
+    }
+
+#ifdef __SSE4_2__
+    template<>
+    inline bool PURE_DECL CharBuffer::match<16>(const CharBuffer::Fixed<16>& f, const char* p, std::size_t size, std::size_t indexonce)
+    {
+      unsigned matched = 0;
+      std::size_t i, rem = size & 15;
+      size >>= 4;
+
+      __m128i charset = _mm_loadu_si128(&f.value);
+      __m128i v, mask = _mm_cvtsi64_si128( (uint64_t)((indexonce < 16) ? f.data[indexonce] : 0) * 0x101010101010101UL );
+      mask = _mm_unpacklo_epi64( mask, mask );
+
+      for (i = 0; i < size
+                  && LIKELY(16 == _mm_cmpistri( charset, (v = _mm_loadu_si128( (__m128i*)p )),
+                                      _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_NEGATIVE_POLARITY))
+                  && LIKELY(indexonce == 16 || (matched += _mm_popcnt_u32( _mm_movemask_epi8( _mm_cmpeq_epi8( v, mask ) ) )) <= 1); i++) p += 16;
+      if (LIKELY(i == size && rem))
+      {
+        std::size_t gap = 16 - rem;
+        std::size_t shift = ((i = (uintptr_t)p & 15) <= gap) ? i : 0; // make sure we touch only those 16 byte blocks that contain our data
+        p -= shift;
+#if 0
+        static ALIGN_DECL_DEFAULT Fixed<32>
+               vmask = { { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+                           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0    } };
+        static ALIGN_DECL_DEFAULT Fixed<32>
+               vshift = { { 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   15,
+                            0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 } };
+        v = _mm_loadu_si128( (__m128i*)p );
+        v = _mm_shuffle_epi8( v, _mm_loadu_si128( (__m128i*)(vshift.data + shift) ) );
+	v = _mm_and_si128( v, _mm_loadu_si128( (__m128i*)(vmask.data + gap) ) );
+#else
+        uint64_t lo, hi;
+	lo = *(uint64_t*)p;
+	hi = *((uint64_t*)p + 1);
+        bool swap = shift >= 8;
+        shift <<= 3; // no need to mask, x86 takes only lower 6 bits when shifting
+#ifdef _MSC_VER
+        lo >>= shift;
+        _rotr64(hi, shift);
+        lo |= hi & ~((uint64_t)-1 >> shift);
+        hi &= (uint64_t)-1 >> shift;
+#else
+        __asm__ ( "shrdq %1, %0	\n\tshrq %%cl, %1" : "+r"(lo), "+r"(hi) : "c"(shift) : "cc");
+#endif
+        uint64_t losel = (uint64_t)swap - 1;
+        gap <<= 3;
+        bool half = gap >= 64;
+        uint64_t sel = losel >> gap;
+        uint64_t hisel = half ? 0 : sel;
+        lo &= half ? sel : losel;
+        lo |= hi & (~losel >> gap);
+        hi &= hisel;
+        v = _mm_insert_epi64( _mm_cvtsi64_si128( lo ), hi, 1);
+#endif
+        return 16 == _mm_cmpistri( charset, v, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_MASKED_NEGATIVE_POLARITY) &&
+               (indexonce == 16 || (matched += _mm_popcnt_u32( _mm_movemask_epi8( _mm_cmpeq_epi8( v, mask ) ) )) <= 1);
+      }
+      return false;
+    }
+#endif // __SSE4_2__
+
 #endif 
 
 #if defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))
