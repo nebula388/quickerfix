@@ -239,31 +239,52 @@ public:
 
   void clear() {
     if ( LIKELY(!(m_LogCaps & Log::LC_CLEAR)) ) return ;
-    Locker l( m_mutex ); m_pLog->clear();
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->clear();
+    else {
+      Locker l( m_mutex ); m_pLog->clear();
+    }
   }
   void backup() {
     if ( LIKELY(!(m_LogCaps & Log::LC_BACKUP)) ) return ;
-    Locker l( m_mutex ); m_pLog->backup();
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->backup();
+    else {
+      Locker l( m_mutex ); m_pLog->backup();
+    }
   }
   void onIncoming( const std::string& string ) {
     if ( LIKELY(!(m_LogCaps & Log::LC_INCOMING)) ) return ;
-    Locker l( m_mutex ); m_pLog->onIncoming( string );
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->onIncoming( string );
+    else {
+      Locker l( m_mutex ); m_pLog->onIncoming( string );
+    }
   }
   void onIncoming( Sg::sg_buf_ptr b, int n ) {
     if ( LIKELY(!(m_LogCaps & Log::LC_INCOMING)) ) return ;
-    Locker l( m_mutex ); m_pLog->onIncoming( b, n );
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->onIncoming( b, n );
+    else {
+      Locker l( m_mutex ); m_pLog->onIncoming( b, n );
+    }
   }
   void onOutgoing( const std::string& string ) {
     if ( LIKELY(!(m_LogCaps & Log::LC_OUTGOING)) ) return ;
-    Locker l( m_mutex ); m_pLog->onOutgoing( string );
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->onOutgoing( string );
+    else {
+      Locker l( m_mutex ); m_pLog->onOutgoing( string );
+    }
   }
   void onOutgoing( Sg::sg_buf_ptr b, int n ) {
     if ( LIKELY(!(m_LogCaps & Log::LC_OUTGOING)) ) return ;
-    Locker l( m_mutex ); m_pLog->onOutgoing( b, n );
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->onOutgoing( b, n );
+    else {
+      Locker l( m_mutex ); m_pLog->onOutgoing( b, n );
+    }
   }
   void onEvent( const std::string& string ) {
     if ( LIKELY(!(m_LogCaps & Log::LC_EVENT)) ) return ;
-    Locker l( m_mutex ); m_pLog->onEvent( string );
+    if ( m_LogCaps & Log::LC_THREADSAFE ) m_pLog->onEvent( string );
+    else {
+      Locker l( m_mutex ); m_pLog->onEvent( string );
+    }
   }
 
 private:

@@ -87,7 +87,8 @@ public:
 	LC_BACKUP	= 0x02,
 	LC_INCOMING	= 0x04,
 	LC_OUTGOING	= 0x08,
-	LC_EVENT	= 0x10
+	LC_EVENT	= 0x10,
+	LC_THREADSAFE	= 0x20
   };
 
   virtual ~Log() {}
