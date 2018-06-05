@@ -159,26 +159,20 @@ ThreadedSSLSocketConnection::~ThreadedSSLSocketConnection()
   }
 }
 
-bool ThreadedSSLSocketConnection::send(const std::string &msg)
+bool ThreadedSSLSocketConnection::send_buffer(const char* buffer, std::size_t length)
 {
-  int totalSent = 0;
+  std::size_t totalSent = 0;
 
-  while (totalSent < (int)msg.length())
+  while (totalSent < length)
   {
     errno = 0;
     int errCodeSSL = 0;
     int sent = 0;
     ERR_clear_error();
 
-    // Cannot do concurrent SSL write and read as ssl context has to be
-    // protected.
-    {
-      Locker locker(m_mutex);
-
-      sent = SSL_write(m_ssl, msg.c_str() + totalSent, msg.length() - totalSent);
-      if (sent <= 0)
-        errCodeSSL = SSL_get_error(m_ssl, sent);
-    }
+    sent = SSL_write(m_ssl, buffer + totalSent, length - totalSent);
+    if (sent <= 0)
+      errCodeSSL = SSL_get_error(m_ssl, sent);
 
     if (sent <= 0)
     {
@@ -206,6 +200,24 @@ bool ThreadedSSLSocketConnection::send(const std::string &msg)
   }
 
   return true;
+}
+
+bool ThreadedSSLSocketConnection::send(const std::string &msg)
+{
+  // Cannot do concurrent SSL write and read as ssl context has to be
+  // protected.
+  Locker locker(m_mutex);
+  return send_buffer(String::data(msg), String::size(msg));
+}
+
+bool ThreadedSSLSocketConnection::send( Sg::sg_buf_ptr bufs, int n )
+{
+  if (n == 1)
+  {
+    Locker locker(m_mutex);
+    return send_buffer((const char*)IOV_BUF(bufs[0]), IOV_LEN(bufs[0]));
+  }
+  return send(Sg::toString(bufs, n));
 }
 
 bool ThreadedSSLSocketConnection::connect()

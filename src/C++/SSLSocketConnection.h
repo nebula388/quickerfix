@@ -184,6 +184,7 @@ private:
   bool readMessage( std::string& msg );
   void readMessages( SocketMonitor& s );
   bool send( const std::string& );
+  bool send( Sg::sg_buf_ptr bufs, int n );
   void disconnect();
 
   int m_socket;

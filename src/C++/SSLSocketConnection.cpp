@@ -170,6 +170,11 @@ bool SSLSocketConnection::send( const std::string& msg )
   return true;
 }
 
+bool SSLSocketConnection::send( Sg::sg_buf_ptr bufs, int n )
+{
+  return send(Sg::toString(bufs, n));
+}
+
 bool SSLSocketConnection::processQueue()
 {
   Locker l( m_mutex );

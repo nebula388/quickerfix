@@ -929,16 +929,20 @@ long protocolOptions(const char *opt)
         thisopt = SSL_PROTOCOL_SSLV3;
         w += 5 /*strlen("SSLv3") */;
       }
+#ifdef SSL_OP_NO_TLSv1_1
       else if (!strncasecmp(w, "TLSv1_1", 7 /* strlen("TLSv1_1") */))
       {
         thisopt = SSL_PROTOCOL_TLSV1_1;
         w += 7 /* strlen("TLSv1_1") */;
       }
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
       else if (!strncasecmp(w, "TLSv1_2", 7 /* strlen("TLSv1_2") */))
       {
         thisopt = SSL_PROTOCOL_TLSV1_2;
         w += 7 /* strlen("TLSv1_2") */;
       }
+#endif
       else if (!strncasecmp(w, "TLSv1", 5 /* strlen("TLSv1") */))
       {
         thisopt = SSL_PROTOCOL_TLSV1;
@@ -981,10 +985,14 @@ void setCtxOptions(SSL_CTX *ctx, const char *opt)
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv3);
   if (!(options & SSL_PROTOCOL_TLSV1))
     SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
+#ifdef SSL_OP_NO_TLSv1_1
   if (!(options & SSL_PROTOCOL_TLSV1_1))
     SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_1);
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
   if (!(options & SSL_PROTOCOL_TLSV1_2))
     SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_2);
+#endif
 }
 
 int enable_DH_ECDH(SSL_CTX *ctx, const char *certFile)

@@ -142,6 +142,7 @@ class Log;
 /// Encapsulates a socket file descriptor (multi-threaded).
 class ThreadedSSLSocketConnection : Responder
 {
+  bool send_buffer(const char*, std::size_t);
 public:
   typedef std::set< SessionID > Sessions;
 
@@ -164,6 +165,7 @@ private:
   bool readMessage(std::string &msg) throw(SocketRecvFailed);
   void processStream();
   bool send(const std::string &);
+  bool send( Sg::sg_buf_ptr bufs, int n );
   bool setSession(const std::string &msg);
 
   int m_socket;
