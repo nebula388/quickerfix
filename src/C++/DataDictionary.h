@@ -763,7 +763,7 @@ private:
 
   /// Retrieve body fields from the group dictionary nested within FieldToGroup
   const MsgFields& getNestedBodyFields() const
-  { return m_requiredFields.begin()->second; }
+  { return m_requiredFields.size() > 0 ? m_requiredFields.begin()->second : m_noFields; }
 
   /// Iterate through field map doing basic checks.
   void iterate( const FieldMap& map ) const;
