@@ -630,7 +630,7 @@ public:
   : m_order( order ), m_fields( m_order ) {}
 
   FieldMap( const FieldMap& src )
-  : m_order( src.m_order ), m_fields( src.m_fields.value_comp() )
+  : m_order( src.m_order ), m_fields( m_order )
   {
 #if !defined(ENABLE_FLAT_FIELDMAP) && defined(ENABLE_RELAXED_ORDERING)
     if (src.m_fields.list()) m_fields.attach(m_allocator.header());
@@ -643,7 +643,7 @@ public:
   : m_allocator( a ), m_order( order ), m_fields( order ) {}
 
   FieldMap( const allocator_type& a, const FieldMap& src )
-  : m_allocator( a ), m_order( src.m_order ), m_fields( src.m_fields.value_comp() )
+  : m_allocator( a ), m_order( src.m_order ), m_fields( m_order )
   {
 #if !defined(ENABLE_FLAT_FIELDMAP) && defined(ENABLE_RELAXED_ORDERING)
     if (src.m_fields.list()) m_fields.attach(m_allocator.header());
