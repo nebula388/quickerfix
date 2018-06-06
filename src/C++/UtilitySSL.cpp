@@ -192,6 +192,17 @@ err:
 }
 #endif
 
+static int string_error_cb(const char* e, size_t len, void* u)
+{
+  if ( u )
+  {
+    std::string* ps = (std::string*)u;
+    ps->append(e, len);
+    ps->append(1, '\n');
+  }
+  return 0;
+}
+
 /* Mutex to protect ssl init and terminate */
 static Mutex ssl_mutex;
 /* Reference count of ssl users. Should always call ssl_init/ssl_term */
@@ -1181,6 +1192,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     if (SSL_CTX_use_certificate(ctx, X509Cert) <= 0)
     {
       errStr.assign("Unable to configure RSA client certificate");
+      ERR_print_errors_cb(string_error_cb, (void*)&errStr);
       return false;
     }
     break;
@@ -1190,6 +1202,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     if (SSL_CTX_use_certificate(ctx, X509Cert) <= 0)
     {
       errStr.assign("Unable to configure DSA client certificate");
+      ERR_print_errors_cb(string_error_cb, (void*)&errStr);
       return false;
     }
     break;
@@ -1225,7 +1238,8 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     log->onEvent("Configuring RSA client private key");
     if (SSL_CTX_use_PrivateKey(ctx, privateKey) <= 0)
     {
-      errStr.assign("Unable to configure RSA server private key");
+      errStr.assign("Unable to configure RSA server private key\n");
+      ERR_print_errors_cb(string_error_cb, (void*)&errStr);
       return false;
     }
     break;
@@ -1235,6 +1249,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     if (SSL_CTX_use_PrivateKey(ctx, privateKey) <= 0)
     {
       errStr.assign("Unable to configure DSA server private key");
+      ERR_print_errors_cb(string_error_cb, (void*)&errStr);
       return false;
     }
     break;
@@ -1251,6 +1266,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
   if (!SSL_CTX_check_private_key(ctx))
   {
     errStr.assign("Private key does not match the certificate public key");
+    ERR_print_errors_cb(string_error_cb, (void*)&errStr);
     return false;
   }
 

@@ -525,13 +525,38 @@ struct DoubleConvertor
 
     PREFETCH((const char*)m_mul1, 0, 0);
 
+    //significand
+/*
+    uint64_t c, x = 0;
+    switch( (std::size_t)(pdot - b) )
+    {
+      default:
+      case 15: c = *b++ - '0';  x = c * 100000000000000ULL;
+      case 14: c = *b++ - '0';  x += c * 10000000000000ULL;
+      case 13: c = *b++ - '0';  x += c * 1000000000000ULL;
+      case 12: c = *b++ - '0';  x += c * 100000000000ULL;
+      case 11: c = *b++ - '0';  x += c * 10000000000ULL;
+      case 10: c = *b++ - '0';  x += c * 1000000000;
+      case  9: c = *b++ - '0';  x += c * 100000000;
+      case  8: c = *b++ - '0';  x += c * 10000000;
+      case  7: c = *b++ - '0';  x += c * 1000000;
+      case  6: c = *b++ - '0';  x += c * 100000;
+      case  5: c = *b++ - '0';  x += c * 10000;
+      case  4: c = *b++ - '0';  x += c * 1000;
+      case  3: c = *b++ - '0';  x += c * 100;
+      case  2: c = *b++ - '0';  x += c * 10;
+      case  1: c = *b++ - '0';  x += c;
+      case  0: value = x;
+    }
+*/
     while ( b < pdot ) value = value * 10. + (*b++ - '0');
 
+    //mantissa
     if( ++b < e )
     {
       double scale = 1.0;
       unsigned exp = e - b;
-      if( exp > 308 )
+      if( UNLIKELY(exp > 308) )
       {
         exp = 308;
         e = b + 308;
@@ -541,7 +566,7 @@ struct DoubleConvertor
         value = value * 10. + (*b - '0');
       } while (++b < e);
 
-      if( exp <= 8 )
+      if( LIKELY(exp <= 8) )
       {
         scale *= m_mul1[exp - 1];
       }
