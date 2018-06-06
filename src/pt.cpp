@@ -42,6 +42,8 @@
 #include "SocketInitiator.h"
 #include "ThreadedSocketAcceptor.h"
 #include "ThreadedSocketInitiator.h"
+#include "ThreadedSSLSocketAcceptor.h"
+#include "ThreadedSSLSocketInitiator.h"
 #include "fix42/Heartbeat.h"
 #include "fix42/NewOrderSingle.h"
 #include "fix42/QuoteRequest.h"
@@ -74,6 +76,7 @@ double testValidateQuoteRequest( int );
 double testValidateDictQuoteRequest( int );
 double testSendOnSocket( int, short, bool, bool );
 double testSendOnThreadedSocket( int, short, bool, bool );
+double testSendOnThreadedSSLSocket( int, short, bool );
 void report( double, int );
 
 std::auto_ptr<FIX::DataDictionary> s_dataDictionary;
@@ -197,6 +200,9 @@ int main( int argc, char** argv )
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket (low latency profile)";
   report( testSendOnThreadedSocket( count, port, false, true ), count );
 
+  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket";
+  report( testSendOnThreadedSSLSocket( count, port, false ), count );
+
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary";
   report( testSendOnSocket( count, port, true, false ), count );
 
@@ -208,6 +214,9 @@ int main( int argc, char** argv )
 
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary (low latency profile)";
   report( testSendOnThreadedSocket( count, port, true, true ), count );
+
+  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket with dictionary";
+  report( testSendOnThreadedSSLSocket( count, port, true ), count );
 
   return 0;
 }
@@ -1000,6 +1009,84 @@ double testSendOnThreadedSocket( int count, short port, bool dictionary, bool lo
   acceptor.start();
 
   FIX::ThreadedSocketInitiator initiator( application, factory, settings );
+  initiator.start();
+
+  FIX::process_sleep( 1 );
+
+  FIX::Session* pSession = FIX::Session::lookupSession(sessionID);
+  FIX::Util::Sys::TickCount start = FIX::Util::Sys::TickCount::now();
+  for ( int i = 0; i <= count; ++i )
+    pSession->send( message );
+
+  while( application.getCount() < count )
+    FIX::process_sleep( 0.1 );
+
+  double ticks = (FIX::Util::Sys::TickCount::now() - start).seconds();
+
+  initiator.stop();
+  acceptor.stop();
+
+  return ticks;
+}
+
+double testSendOnThreadedSSLSocket( int count, short port, bool dictionary )
+{
+  std::stringstream stream;
+  stream
+    << "[DEFAULT]" << std::endl
+    << "SocketConnectHost=localhost" << std::endl
+    << "SocketConnectPort=" << (unsigned short)port << std::endl
+    << "SocketAcceptPort=" << (unsigned short)port << std::endl
+    << "SocketReuseAddress=Y" << std::endl
+    << "StartTime=00:00:00" << std::endl
+    << "EndTime=00:00:00" << std::endl
+    << "ServerCertificateFile=../bin/cfg/certs/127_0_0_1_server.crt" << std::endl
+    << "ServerCertificateKeyFile=../bin/cfg/certs/127_0_0_1_server.key" << std::endl
+    << "ClientCertificateFile=../bin/cfg/certs/127_0_0_1_client.crt" << std::endl
+    << "ClientCertificateKeyFile=../bin/cfg/certs/127_0_0_1_client.key" << std::endl
+    << "SSLProtocol=+SSLv3 +TLSv1 -SSLv2" << std::endl;
+
+  if ( dictionary )
+    stream << "UseDataDictionary=Y" << std::endl
+           << "DataDictionary=../spec/FIX42.xml" << std::endl;
+  else
+    stream << "UseDataDictionary=N" << std::endl;
+
+  stream
+    << "BeginString=FIX.4.2" << std::endl
+    << "PersistMessages=N" << std::endl
+    << "[SESSION]" << std::endl
+    << "ConnectionType=acceptor" << std::endl
+    << "SenderCompID=SERVER" << std::endl
+    << "TargetCompID=CLIENT" << std::endl;
+
+  stream
+    << "[SESSION]" << std::endl
+    << "ConnectionType=initiator" << std::endl
+    << "SenderCompID=CLIENT" << std::endl
+    << "TargetCompID=SERVER" << std::endl
+    << "HeartBtInt=30" << std::endl;
+
+  FIX::ClOrdID clOrdID( "ORDERID" );
+  FIX::HandlInst handlInst( '1' );
+  FIX::Symbol symbol( "LNUX" );
+  FIX::Side side( FIX::Side_BUY );
+  FIX::TransactTime transactTime;
+  FIX::OrdType ordType( FIX::OrdType_MARKET );
+  FIX42::NewOrderSingle message( clOrdID, handlInst, symbol, side, transactTime, ordType );
+
+  FIX::SessionID sessionID( "FIX.4.2", "CLIENT", "SERVER" );
+
+  TestApplication application;
+  FIX::MemoryStoreFactory factory;
+  FIX::SessionSettings settings( stream );
+
+  FIX::ThreadedSSLSocketAcceptor acceptor( application, factory, settings );
+  acceptor.setPassword("standard");
+  acceptor.start();
+
+  FIX::ThreadedSSLSocketInitiator initiator( application, factory, settings );
+  initiator.setPassword("standard");
   initiator.start();
 
   FIX::process_sleep( 1 );
