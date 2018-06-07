@@ -47,6 +47,10 @@ Message::Message()
   
 }
 
+Message::Message(const message_order &hdrOrder, const message_order &trlOrder, const message_order& order)
+: FieldMap(order), m_header(hdrOrder),
+  m_trailer(trlOrder), m_validStructure( true ) {}
+
 Message::Message( const std::string& string, bool validate )
 throw( InvalidMessage )
 : m_validStructure( true )
@@ -76,6 +80,37 @@ throw( InvalidMessage )
     setString( string, validate, &sessionDataDictionary, &applicationDataDictionary );
 }
 
+Message::Message( const message_order &hdrOrder,
+                  const message_order &trlOrder,
+                  const message_order& order,
+                  const std::string& string,
+                  const DataDictionary& dataDictionary,
+                  bool validate )
+throw( InvalidMessage )
+: FieldMap(order), m_header(hdrOrder),
+  m_trailer(trlOrder), m_validStructure( true )
+{
+  setString( string, validate, &dataDictionary, &dataDictionary );
+}
+
+Message::Message( const message_order &hdrOrder,
+                  const message_order &trlOrder,
+                  const message_order& order,
+                  const std::string& string,
+                  const DataDictionary& sessionDataDictionary,
+                  const DataDictionary& applicationDataDictionary,
+                  bool validate )
+throw( InvalidMessage )
+: FieldMap(order), m_header(hdrOrder),
+  m_trailer(trlOrder), m_validStructure( true )
+{
+  setStringHeader( string );
+  if( isAdmin() )
+    setString( string, validate, &sessionDataDictionary, &sessionDataDictionary );
+  else
+    setString( string, validate, &sessionDataDictionary, &applicationDataDictionary );
+}
+
 Message::Message( const BeginString& beginString, const MsgType& msgType )
 : m_validStructure(true)
 , m_tag( 0 )
@@ -90,13 +125,15 @@ Message::Message(const Message& copy)
 , m_trailer(copy.m_trailer)
 , m_validStructure(copy.m_validStructure)
 , m_tag(copy.m_tag)
+#ifdef HAVE_EMX
+, m_subMsgType(copy.m_subMsgType)
+#endif
 {
 
 }
 
 Message::~Message()
 {
-  
 }
 
 bool Message::InitializeXML( const std::string& url )
@@ -308,6 +345,7 @@ throw( InvalidMessage )
 
   std::string::size_type pos = 0;
   int count = 0;
+
   FIX::MsgType msg;
 
   field_type type = header;
@@ -330,7 +368,24 @@ throw( InvalidMessage )
       {
         msg.setString( field.getString() );
         if ( isAdminMsgType( msg ) )
+        {
           pApplicationDataDictionary = pSessionDataDictionary;
+#ifdef HAVE_EMX
+          m_subMsgType.assign(msg);
+        }
+        else
+        {
+          std::string::size_type equalSign = string.find("\0019426=", pos);
+          if (equalSign == std::string::npos)
+            throw InvalidMessage("EMX message type (9426) not found");
+
+          equalSign += 6;
+          std::string::size_type soh = string.find_first_of('\001', equalSign);
+          if (soh == std::string::npos)
+            throw InvalidMessage("EMX message type (9426) soh char not found");
+          m_subMsgType.assign(string.substr(equalSign, soh - equalSign ));
+#endif
+        }
       }
 
       m_header.appendField( field );
@@ -358,7 +413,11 @@ throw( InvalidMessage )
       appendField( field );
 
       if ( pApplicationDataDictionary )
+#ifdef HAVE_EMX
+        setGroup(m_subMsgType, field, string, pos, *this, *pApplicationDataDictionary);
+#else
         setGroup( msg, field, string, pos, *this, *pApplicationDataDictionary );
+#endif
     }
   }
 
@@ -479,8 +538,14 @@ bool Message::isHeaderField( int field )
 bool Message::isHeaderField( const FieldBase& field,
                              const DataDictionary* pD )
 {
-  if ( isHeaderField( field.getTag() ) ) return true;
-  if ( pD ) return pD->isHeaderField( field.getTag() );
+  return isHeaderField( field.getTag(), pD );
+}
+
+bool Message::isHeaderField( int field, 
+                             const DataDictionary * pD )
+{
+  if ( isHeaderField( field ) ) return true;
+  if ( pD ) return pD->isHeaderField( field );
   return false;
 }
 
@@ -500,8 +565,13 @@ bool Message::isTrailerField( int field )
 bool Message::isTrailerField( const FieldBase& field,
                               const DataDictionary* pD )
 {
-  if ( isTrailerField( field.getTag() ) ) return true;
-  if ( pD ) return pD->isTrailerField( field.getTag() );
+  return isTrailerField( field.getTag(), pD );
+}
+
+bool Message::isTrailerField( int field, const DataDictionary * pD )
+{
+  if ( isTrailerField( field ) ) return true;
+  if ( pD ) return pD->isTrailerField( field );
   return false;
 }
 
@@ -600,9 +670,9 @@ FIX::FieldBase Message::extractField( const std::string& string, std::string::si
     const FieldMap * location = pGroup;
     if ( !location )
     {
-      if ( isHeaderField( lenField ) )
+      if ( isHeaderField( lenField, pSessionDD ) )
         location = &m_header;
-      else if ( isTrailerField( lenField ) )
+      else if ( isTrailerField( lenField, pSessionDD ) )
         location = &m_trailer;
       else
         location = this;
@@ -610,8 +680,8 @@ FIX::FieldBase Message::extractField( const std::string& string, std::string::si
 
     try
     {
-      const std::string& fieldLength = location->getField( lenField );
-      soh = valueStart + IntConvertor::convert( fieldLength );
+      const FieldBase& fieldLength = location->reverse_find( lenField );
+      soh = valueStart + IntConvertor::convert( fieldLength.getString() );
     }
     catch( FieldNotFound& )
     {
@@ -624,7 +694,11 @@ FIX::FieldBase Message::extractField( const std::string& string, std::string::si
   }
 
   std::string::const_iterator const tagEnd = soh + 1;
+#if defined(__SUNPRO_CC)
+  std::distance( string.begin(), tagEnd, pos );
+#else
   pos = std::distance( string.begin(), tagEnd );
+#endif
 
   return FieldBase (
     field,
