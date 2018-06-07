@@ -286,7 +286,7 @@ AC_CHECK_LIB(iberty, cplus_demangle,
   LIBS="$LIBS -liberty")
 
 AC_CHECK_LIB(rt, clock_gettime, RT_LIBS="-lrt")
-AC_SUBST(RT_LIBS)
+AC_SUBST([RT_LIBS])
 
 # Checks for runtime behavior
 AC_MSG_CHECKING(if select modifies timeval parameter)
