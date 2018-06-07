@@ -42,8 +42,10 @@
 #include "SocketInitiator.h"
 #include "ThreadedSocketAcceptor.h"
 #include "ThreadedSocketInitiator.h"
+#if (HAVE_SSL > 0)
 #include "ThreadedSSLSocketAcceptor.h"
 #include "ThreadedSSLSocketInitiator.h"
+#endif
 #include "fix42/Heartbeat.h"
 #include "fix42/NewOrderSingle.h"
 #include "fix42/QuoteRequest.h"
@@ -76,7 +78,9 @@ double testValidateQuoteRequest( int );
 double testValidateDictQuoteRequest( int );
 double testSendOnSocket( int, short, bool, bool );
 double testSendOnThreadedSocket( int, short, bool, bool );
+#if (HAVE_SSL > 0)
 double testSendOnThreadedSSLSocket( int, short, bool );
+#endif
 void report( double, int );
 
 std::auto_ptr<FIX::DataDictionary> s_dataDictionary;
@@ -200,8 +204,10 @@ int main( int argc, char** argv )
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket (low latency profile)";
   report( testSendOnThreadedSocket( count, port, false, true ), count );
 
+#if (HAVE_SSL > 0)
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket";
   report( testSendOnThreadedSSLSocket( count, port, false ), count );
+#endif
 
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary";
   report( testSendOnSocket( count, port, true, false ), count );
@@ -215,8 +221,10 @@ int main( int argc, char** argv )
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary (low latency profile)";
   report( testSendOnThreadedSocket( count, port, true, true ), count );
 
+#if (HAVE_SSL > 0)
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket with dictionary";
   report( testSendOnThreadedSSLSocket( count, port, true ), count );
+#endif
 
   return 0;
 }
@@ -1029,6 +1037,7 @@ double testSendOnThreadedSocket( int count, short port, bool dictionary, bool lo
   return ticks;
 }
 
+#if (HAVE_SSL > 0)
 double testSendOnThreadedSSLSocket( int count, short port, bool dictionary )
 {
   std::stringstream stream;
@@ -1106,4 +1115,6 @@ double testSendOnThreadedSSLSocket( int count, short port, bool dictionary )
 
   return ticks;
 }
+#endif // HAVE_SSL
+
 
