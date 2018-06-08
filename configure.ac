@@ -50,7 +50,7 @@ AX_JAVA()
 
 AC_CANONICAL_HOST
 
-build_no_unit_test = no
+build_no_unit_test=no
 
 # Detect the target system
 case "${host_os}" in
@@ -81,13 +81,13 @@ else
   if test `uname` == AIX; then
    	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
   else
-    SHAREDFLAGS="-Wall -ansi -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
+    SHAREDFLAGS="-Wall -ansi -Wno-unused-command-line-argument -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual -Wno-deprecated-declarations -Wno-deprecated $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
   fi
 fi
 
-CFLAGS="$CFLAGS $SHAREDFLAGS"
+CFLAGS="$SHAREDFLAGS $CFLAGS"
 AC_SUBST(CFLAGS)
-CXXFLAGS="$CXXFLAGS $SHAREDFLAGS"
+CXXFLAGS="$SHAREDFLAGS $CXXFLAGS"
 AC_SUBST(CXXFLAGS)
 
 
@@ -190,6 +190,42 @@ else AC_MSG_RESULT(no)
     AC_MSG_ERROR(unable to find set_terminate in std or global namespace))
 fi
 
+AC_MSG_CHECKING(for std::tr1::shared_ptr)
+AC_TRY_COMPILE(
+	[#include <tr1/memory>],
+	[std::tr1::shared_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_TR1_SHARED_PTR, 1,
+	The system supports std::tr1::shared_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for std::unique_ptr)
+AC_TRY_COMPILE(
+	[#include <memory>],
+	[std::unique_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_UNIQUE_PTR, 1,
+	The system supports std::unique_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for std::shared_ptr)
+AC_TRY_COMPILE(
+	[#include <memory>],
+	[std::shared_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_SHARED_PTR, 1,
+	The system supports std::shared_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for boost::shared_ptr)
+AC_TRY_COMPILE(
+        [#include <boost/shared_ptr.hpp>],
+        [boost::shared_ptr<int> ptr;],
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_BOOST_SHARED_PTR, 1,
+        The system supports boost::shared_ptr),
+        AC_MSG_RESULT(no))
+
 AC_MSG_CHECKING(for typeinfo in the global namespace)
 AC_TRY_COMPILE(
 	[#include <typeinfo>],
@@ -225,42 +261,6 @@ AC_TRY_COMPILE(
 	 AC_DEFINE(GETHOSTBYNAME_R_INPUTS_RESULT, 1,
 	 The system has gethostbyname_r which takes a result as a pass-in param),
 	 AC_MSG_RESULT(no))
-
-AC_MSG_CHECKING(for std::tr1::shared_ptr)
-AC_TRY_COMPILE(
-	[#include <tr1/memory>],
-	[std::tr1::shared_ptr<int> ptr;],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_STD_TR1_SHARED_PTR, 1,
-	The system supports std::tr1::shared_ptr),
-	AC_MSG_RESULT(no))
-
-AC_MSG_CHECKING(for std::shared_ptr)
-AC_TRY_COMPILE(
-	[#include <memory>],
-	[std::shared_ptr<int> ptr;],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_STD_SHARED_PTR, 1,
-	The system supports std::shared_ptr),
-	AC_MSG_RESULT(no))
-
-AC_MSG_CHECKING(for boost::shared_ptr)
-AC_TRY_COMPILE(
-        [#include <boost/shared_ptr.hpp>],
-        [boost::shared_ptr<int> ptr;],
-        AC_MSG_RESULT(yes)
-        AC_DEFINE(HAVE_BOOST_SHARED_PTR, 1,
-        The system supports boost::shared_ptr),
-        AC_MSG_RESULT(no))
-
-AC_MSG_CHECKING(for std::unique_ptr)
-AC_TRY_COMPILE(
-        [#include<memory>],
-        [std::unique_ptr<int> ptr;],
-        AC_MSG_RESULT(yes)
-        AC_DEFINE(HAVE_STD_UNIQUE_PTR, 1,
-        The system supports std::unique_ptr),
-        AC_MSG_RESULT(no))
 
 # check for SSO
 AX_SSO_CHECK()

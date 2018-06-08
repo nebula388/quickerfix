@@ -73,7 +73,7 @@ class FileLog : public Log
   void store( UtcTimeStamp& last, const std::string& filename, std::ofstream& s, Sg::sg_buf_ptr b, int n )
   {
     UtcTimeStamp utc;
-    UtcTimeStampConvertor::set(m_timeStamp, utc, m_millisecondsInTimeStamp);
+    UtcTimeStampConvertor::set(m_timeStamp, utc, 9);
     if (UNLIKELY(m_rollover != NO_ROLLOVER))
       rollover(utc, last, filename, s);
 
@@ -136,11 +136,6 @@ public:
   unsigned queryLogCapabilities() const { return LC_CLEAR | LC_BACKUP |
 					  LC_INCOMING | LC_OUTGOING | LC_EVENT; }
 
-  bool getMillisecondsInTimeStamp() const
-  { return m_millisecondsInTimeStamp; }
-  void setMillisecondsInTimeStamp ( bool value )
-  { m_millisecondsInTimeStamp = value; }
-
 private:
   void rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const std::string& filename, std::ofstream& s);
   std::string generatePrefix( const SessionID& sessionID );
@@ -153,7 +148,6 @@ private:
   std::string m_fullPrefix;
   std::string m_fullBackupPrefix;
   std::string m_timeStamp;
-  bool m_millisecondsInTimeStamp;
   char m_messageBuf[BufSize];
   char m_eventBuf[BufSize];
   UtcTimeStamp m_lastMessage, m_lastEvent;
