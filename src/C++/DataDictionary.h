@@ -508,7 +508,7 @@ typedef std::map < std::pair < int, std::string > ,
   virtual ~DataDictionary();
 
   void LIGHTUSE readFromURL( const std::string& url );
-  void LIGHTUSE readFromDocument( DOMDocumentPtr pDoc );
+  void LIGHTUSE readFromDocument( const DOMDocumentPtr& pDoc );
   void LIGHTUSE readFromStream( std::istream& stream );
 
   message_order const& getOrderedFields() const;

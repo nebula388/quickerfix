@@ -462,7 +462,7 @@ void LIGHTUSE DataDictionary::readFromStream( std::istream& stream )
   readFromDocument( pDoc );
 }
 
-void LIGHTUSE DataDictionary::readFromDocument( DOMDocumentPtr pDoc )
+void LIGHTUSE DataDictionary::readFromDocument( const DOMDocumentPtr& pDoc )
 {
   // VERSION
   DOMNodePtr pFixNode = pDoc->getNode("/fix");

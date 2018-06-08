@@ -848,9 +848,7 @@ bool Message::InitializeXML( const std::string& url )
 {
   try
   {
-    SmartPtr<DataDictionary> p =
-      SmartPtr<DataDictionary>(new DataDictionary(url));
-    s_dataDictionary = p;
+    s_dataDictionary.reset( new DataDictionary(url) );
     return true;
   }
   catch( ConfigError& )
