@@ -1093,17 +1093,18 @@ private:
     // length field is 1 less except for Signature
     int lenField = (field != FIELD::Signature) ? (field - 1) : FIELD::SignatureLength;
     const FieldBase* fieldPtr = section.getFieldPtrIfSet( lenField );
-    if ( fieldPtr )
+    if ( LIKELY(NULL != fieldPtr) )
     {
       const FieldBase::string_type& fieldLength = fieldPtr->getRawString();
-      if ( IntConvertor::parse( fieldLength, lenField ) )
+      if ( LIKELY(IntConvertor::parse( fieldLength, lenField )) )
         reader.pos( lenField );
       else
       {
         setErrorStatusBit( incorrect_data_format, lenField );
-        return false;
+        throw InvalidMessage("format error for data length field " + IntConvertor::convert(lenField));
       }
-    }
+    } else
+      throw InvalidMessage("missing data length field " + IntConvertor::convert(lenField));
     return true;
   }
 
