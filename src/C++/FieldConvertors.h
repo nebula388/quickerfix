@@ -206,7 +206,6 @@ struct IntConvertor
   }
 
   static inline int convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     int result = 0;
     if( parse( value, result ) )
@@ -447,13 +446,11 @@ struct CheckSumConvertor
   }
 
   static std::string convert( int value )
-  throw( FieldConvertError )
   {
     return convert<std::string>(value);
   }
 
   template <typename S> static S convert( int value )
-  throw( FieldConvertError )
   {
     unsigned char n, v = (unsigned char)value;
     if ( (value - v) == 0 )
@@ -472,7 +469,6 @@ struct CheckSumConvertor
   }
 
   static inline int convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     int result = 0;
     if( PositiveIntConvertor::parse( value, result ) )
@@ -491,7 +487,6 @@ struct CheckSumConvertor
 #if defined(ENABLE_SSO)
 template <> inline String::short_string_type HEAVYUSE
 CheckSumConvertor::convert<String::short_string_type>( int value )
-throw ( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<uint32_t>(), Proxy(value));
 }
@@ -693,7 +688,6 @@ struct DoubleConvertor
   }
 
   static double convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     double result = 0.0;
     if( parse( value, result ) )
@@ -799,7 +793,6 @@ struct CharConvertor
   }
 
   static char convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     char result;
     if( parse( value, result ) )
@@ -898,7 +891,6 @@ struct BoolConvertor
   }
 
   static bool convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     bool result = false;
     if( parse( value, result ) )
@@ -1106,7 +1098,6 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   };
 
   template <typename S> static void set(S& result, const UtcTimeStamp& value, int precision = 0)
-  throw( FieldConvertError )
   {
     result.resize(17 + precision + (precision > 0));
     if ( !write((char*)String::data(result), value, precision) )
@@ -1145,7 +1136,6 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcTimeStamp& value, int precision = 0 )
-  throw( FieldConvertError )
   {
     std::string result;
     set(result, value, precision);
@@ -1153,7 +1143,6 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 
   template <typename S> static S convert( const UtcTimeStamp& value, int precision = 0 )
-  throw( FieldConvertError )
   {
     S result;
     set(result, value, precision);
@@ -1162,7 +1151,6 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 
   static UtcTimeStamp convert( const String::value_type& value,
                                bool calculateDays = false )
-  throw( FieldConvertError )
   {
     UtcTimeStamp utc( DateTime(0, 0) );
     if (parse(value, utc))
@@ -1194,13 +1182,11 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 #if defined(ENABLE_SSO) && (ENABLE_SSO > 2) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcTimeStampConvertor::convert<String::short_string_type>( const UtcTimeStamp& value, int precision )
-  throw( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, precision));
 }
 template <> inline void HEAVYUSE
 UtcTimeStampConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeStamp& value, int precision)
-  throw( FieldConvertError )
 {
   if ( LIKELY(0 != result.short_assign<char>(Proxy(value, precision))) )
     return;
@@ -1306,7 +1292,6 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 
   static UtcTimeOnly convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     UtcTimeOnly utc;
     if (parse(value, utc))
@@ -1356,7 +1341,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   static std::size_t RequiredSize(value_type) { return MaxValueSize; }
 
   static inline unsigned write(char* buffer, const UtcDate& value)
-  throw( FieldConvertError )
   {
     union {
 	char*     pc;
@@ -1394,7 +1378,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   };
 
   template <typename S> static void set(S& result, const UtcDate& value)
-  throw( FieldConvertError )
   {
     result.resize(8);
     if ( !write((char*)String::data(result), value) )
@@ -1421,7 +1404,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcDate& value )
-  throw( FieldConvertError )
   {
     std::string result;
     set(result, value);
@@ -1429,7 +1411,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   template <typename S> static S convert( const UtcDate& value )
-  throw( FieldConvertError )
   {
     S result;
     set(result, value);
@@ -1437,7 +1418,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static UtcDate convert( const String::value_type& value )
-  throw( FieldConvertError )
   {
     UtcDate utc;
     if (parse(value, utc))
@@ -1459,13 +1439,11 @@ typedef UtcDateConvertor UtcDateOnlyConvertor;
 #if defined(ENABLE_SSO) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcDateConvertor::convert<String::short_string_type>( const UtcDate& value)
-  throw( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value));
 }
 template <> inline void HEAVYUSE
 UtcDateConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcDate& value)
-  throw( FieldConvertError )
 {
   if ( LIKELY(0 != result.short_assign<char>(Proxy(value))) )
     return;

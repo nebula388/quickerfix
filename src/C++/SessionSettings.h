@@ -67,8 +67,8 @@ const char SOCKET_CONNECT_SOURCE_HOST[] = "SocketConnectSourceHost";
 const char SOCKET_CONNECT_SOURCE_PORT[] = "SocketConnectSourcePort";
 const char SOCKET_NODELAY[] = "SocketNodelay";
 const char SOCKET_POLL_SPIN[] = "SocketPollSpin";
-const char SOCKET_SEND_BUFFER_SIZE[] = "SendBufferSize";
-const char SOCKET_RECEIVE_BUFFER_SIZE[] = "ReceiveBufferSize";
+const char SOCKET_SEND_BUFFER_SIZE[] = "SocketSendBufferSize";
+const char SOCKET_RECEIVE_BUFFER_SIZE[] = "SocketReceiveBufferSize";
 const char RECONNECT_INTERVAL[] = "ReconnectInterval";
 const char VALIDATE_LENGTH_AND_CHECKSUM[] = "ValidateLengthAndChecksum";
 const char VALIDATE_FIELDS_OUT_OF_ORDER[] = "ValidateFieldsOutOfOrder";
@@ -142,7 +142,7 @@ const char CERT_AUTH_FILE[] = "CertificationAuthoritiesFile";
 const char CERT_AUTH_DIR[] = "CertificationAuthoritiesDirectory";
 const char CRL_FILE[] = "CertificateRevocationListFile";
 const char CRL_DIR[] = "CertificateRevocationListDirectory";
-const char VERIFY_LEVEL[] = "VerifyLevel";
+const char VERIFY_LEVEL[] = "CertificateVerifyLevel";
 /*
 # This directive can be used to control the SSL protocol flavors the application
 # should use when establishing its environment.
@@ -225,21 +225,21 @@ class SessionSettings
 {
 public:
   SessionSettings() { m_resolveEnvVars = false; }
-  SessionSettings( std::istream& stream, bool resolveEnvVars = false ) throw( ConfigError );
-  SessionSettings( const std::string& file, bool resolveEnvVars = false ) throw( ConfigError );
+  SessionSettings( std::istream& stream, bool resolveEnvVars = false );
+  SessionSettings( const std::string& file, bool resolveEnvVars = false );
 
   /// Check if session setings are present
   bool has( const SessionID& ) const;
 
   /// Get a dictionary for a session.
-  const Dictionary& get( const SessionID& ) const throw( ConfigError );
+  const Dictionary& get( const SessionID& ) const;
   /// Set a dictionary for a session
-  void set( const SessionID&, Dictionary ) throw( ConfigError );
+  void set( const SessionID&, Dictionary );
 
   /// Get global default settings
   const Dictionary& get() const { return m_defaults; }
   /// Set global default settings
-  void set( const Dictionary& defaults ) throw( ConfigError );
+  void set( const Dictionary& defaults );
 
   /// Number of session settings
   size_t size() const { return m_settings.size(); }
@@ -248,19 +248,18 @@ public:
   std::set < SessionID > getSessions() const;
 
 private:
-  void validate( const Dictionary& ) const throw( ConfigError );
+  void validate( const Dictionary& ) const;
 
   Dictionaries m_settings;
   Dictionary m_defaults;
   bool m_resolveEnvVars;  // while reading, replace $var, $(var) and ${var} by environment variable var
 
-  friend std::istream& operator>>( std::istream&, SessionSettings& ) throw( ConfigError );
+  friend std::istream& operator>>( std::istream&, SessionSettings& );
   friend std::ostream& operator<<( std::ostream&, const SessionSettings& );
 };
 /*! @} */
 
-std::istream& operator>>( std::istream&, SessionSettings& )
-throw( ConfigError );
+std::istream& operator>>( std::istream&, SessionSettings& );
 std::ostream& operator<<( std::ostream&, const SessionSettings& );
 }
 
