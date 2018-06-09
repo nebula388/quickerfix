@@ -1241,7 +1241,7 @@ void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bo
 
     try
     {
-      if( Message::identifyType( msg, Sg::size(buf) ) == MsgType_Logon )
+      if( Message::identifyType( msg, Sg::size(buf) ).compare<1>(MsgType_Logon) )
       {
         m_state.onEvent( "Logon message is not valid" );
         disconnect();

@@ -414,6 +414,9 @@ class StringField : public FieldBase
       s.assign(m_data, m_length);
     }
 
+    template <std::size_t S> bool compare(const char* p)
+    { return m_length == S && ::strncmp(m_data, p, S) == 0; }
+
     operator string_type () const
     { return string_type(m_data, m_length); }
 
@@ -535,6 +538,9 @@ public:
   friend bool operator>=( const StringField&, const std::string& );
   friend bool operator>=( const std::string&, const StringField& );
 };
+
+template <> inline bool StringField::Data::compare<1>(const char* p)
+{ return m_length == 1 && *p == m_data[0]; }
 
 inline bool operator<( const StringField& lhs, const char* rhs )
   { return lhs.getRawString() < rhs; }
