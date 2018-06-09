@@ -113,10 +113,7 @@ typedef int ssize_t;
 #include <time.h>
 #include <stdlib.h>
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-#include <xmmintrin.h>
-#ifdef __AVX__
 #include <immintrin.h>
-#endif
 #endif
 #if defined(__MACH__)
 #include <sys/types.h>
@@ -1468,6 +1465,11 @@ namespace FIX
                     && !((r = (index == indexonce)) && matched); i++) matched |= r;
         return i == size;
       };
+
+#ifdef __SSSE3__
+      static ALIGN_DECL_DEFAULT unsigned char s_vmask[32];
+      static ALIGN_DECL_DEFAULT unsigned char s_vshift[32];
+#endif
     }; // CharBuffer
 
     template <> union CharBuffer::Fixed<2>
@@ -1486,30 +1488,6 @@ namespace FIX
       value_type value;
     };
 
-#if defined(__x86_64__) || defined(__i386__) || defined(_M_X64) || defined(_M_IX86)
-
-    template <>
-    inline const char* CharBuffer::find<2>(const CharBuffer::Fixed<2>& f,
-                                           const char* p, std::size_t size)
-    {
-      for (; size >= 2; size--, p++)
-        if (*(const uint16_t*)p == f.value )
-          return p;
-      return NULL;
-    }
-
-    template <>
-    inline const char* CharBuffer::find<4>(const CharBuffer::Fixed<4>& f,
-                                           const char* p, std::size_t size)
-    {
-      for (; size >= 4; size--, p++)
-        if (*(const uint32_t*)p == f.value )
-          return p;
-      return NULL;
-    }
-
-#endif
-
     template <> union CharBuffer::Fixed<8>
     {
       typedef uint64_t value_type;
@@ -1518,7 +1496,135 @@ namespace FIX
       value_type value;
     };
 
-#if defined(_MSC_VER) || (defined(__GNUC__) && defined(__x86_64__))
+#if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+    // x86 specializations
+    template <> union CharBuffer::Fixed<16>
+    {
+      typedef __m128i value_type;
+
+      char data[16];
+      value_type value;
+
+      static inline __m128i loadu_si128_partial(const char* p, std::size_t lessthan16)
+      {
+        uintptr_t shift = (uintptr_t)p & 15;
+        std::size_t gap = 16 - lessthan16;
+        shift = (shift <= gap) ? shift : 0; // if data spans two 16-bit blocks, load from p, otherwise load from (p & ~15)
+#ifdef __SSSE3__
+	return _mm_and_si128( _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
+                                                _mm_loadu_si128( (__m128i*)(s_vshift + shift) ) ),
+                              _mm_loadu_si128( (__m128i*)(s_vmask + gap) ) );
+#else
+        uint64_t lo, hi;
+	lo = *(uint64_t*)(p -= shift);
+	hi = *((uint64_t*)p + 1);
+        bool swap = shift >= 8;
+        shift <<= 3; // no need to mask, x86 takes only lower 6 bits when shifting
+#ifdef _MSC_VER
+        lo >>= shift;
+        _rotr64(hi, shift);
+        lo |= hi & ~((uint64_t)-1 >> shift);
+        hi &= (uint64_t)-1 >> shift;
+#else
+        __asm__ ( "shrdq %1, %0	\n\tshrq %%cl, %1" : "+r"(lo), "+r"(hi) : "c"(shift) : "cc");
+#endif
+        uint64_t losel = (uint64_t)swap - 1;
+        gap <<= 3;
+        bool half = gap >= 64;
+        uint64_t sel = losel >> gap;
+        uint64_t hisel = half ? 0 : sel;
+        lo &= half ? sel : losel;
+        lo |= hi & (~losel >> gap);
+        hi &= hisel;
+        return _mm_unpacklo_epi64( _mm_cvtsi64_si128( lo ), _mm_cvtsi64_si128(hi));
+#endif
+      }
+    };
+
+    template <> union CharBuffer::Fixed<32>
+    {
+      char data[32];
+#ifdef __AVX__
+      typedef __m256i value_type;
+      value_type value;
+#endif
+    };
+
+    template <>
+    inline const char* CharBuffer::find<2>(const CharBuffer::Fixed<2>& f,
+                                           const char* p, std::size_t size)
+    {
+#ifdef __SSE4_2__
+      std::size_t r;
+      __m128i v = _mm_cvtsi32_si128( f.value );
+      for (; size >= 16; size -= r, p += r)
+      {
+        r = _mm_cmpistri( v, _mm_loadu_si128( (__m128i*)p ), _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED );
+        if (r < 15) return p + r; 
+      }
+      if (size > 2)
+        return ((r = _mm_cmpistri( v, Fixed<16>::loadu_si128_partial( p, size ),
+                                  _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED )) <= (size - 2)) ? p + r : NULL;
+      return (size == 2 && *(Fixed<2>::value_type*)p == f.value) ? p : NULL;
+#else
+      for (; size >= 2; size--, p++)
+        if (*(const uint16_t*)p == f.value )
+          return p;
+      return NULL;
+#endif
+    }
+
+#ifdef __SSE4_2__
+    template <> union CharBuffer::Fixed<3>
+    {
+      typedef uint32_t value_type;
+
+      char data[3];
+      value_type value;
+    };
+
+    template <>
+    inline const char* CharBuffer::find<3>(const CharBuffer::Fixed<3>& f,
+                                           const char* p, std::size_t size)
+    {
+      std::size_t r;
+      __m128i v = _mm_cvtsi32_si128( f.value && ((uint32_t)-1 >> 8));
+      for (; size >= 16; size -= r, p += r)
+      {
+        r = _mm_cmpistri( v, _mm_loadu_si128( (__m128i*)p ), _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED );
+        if (r < 14) return p + r;
+      }
+      if (size > 3)
+        return ((r = _mm_cmpistri( v, Fixed<16>::loadu_si128_partial( p, size ),
+                                  _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED )) <= (size - 3)) ? p + r : NULL;
+      return (size == 3 && p[0] == f.data[0] && p[1] == f.data[1] && p[2] == f.data[2]) ? p : NULL;
+    }
+#endif
+
+    template <>
+    inline const char* CharBuffer::find<4>(const CharBuffer::Fixed<4>& f,
+                                           const char* p, std::size_t size)
+    {
+#ifdef __SSE4_2__
+      std::size_t r;
+      __m128i v = _mm_cvtsi32_si128( f.value );
+      for (; size >= 16; size -= r, p += r)
+      {
+        r = _mm_cmpistri( v, _mm_loadu_si128( (__m128i*)p ), _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED );
+        if (r < 13) return p + r;
+      }
+      if (size > 4)
+        return ((r = _mm_cmpistri( v, Fixed<16>::loadu_si128_partial( p, size ),
+                                  _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED )) <= (size - 4)) ? p + r : NULL;
+      return (size == 4 && *(Fixed<4>::value_type*)p == f.value) ? p : NULL;
+
+#else
+      for (; size >= 4; size--, p++)
+        if (*(const uint32_t*)p == f.value )
+          return p;
+      return NULL;
+#endif
+    }
 
     template<>
     inline std::size_t PURE_DECL CharBuffer::find<8>(char v, const CharBuffer::Fixed<8>& f)
@@ -1532,14 +1638,6 @@ namespace FIX
 #endif
       return at;
     }
-
-    template <> union CharBuffer::Fixed<16>
-    {
-      typedef __m128i value_type;
-
-      char data[16];
-      value_type value;
-    };
 
     template<>
     inline std::size_t PURE_DECL CharBuffer::find<16>(char v, const CharBuffer::Fixed<16>& f)
@@ -1572,53 +1670,13 @@ namespace FIX
                   && LIKELY(indexonce == 16 || (matched += _mm_popcnt_u32( _mm_movemask_epi8( _mm_cmpeq_epi8( v, mask ) ) )) <= 1); i++) p += 16;
       if (LIKELY(i == size && rem))
       {
-        std::size_t gap = 16 - rem;
-        std::size_t shift = ((i = (uintptr_t)p & 15) <= gap) ? i : 0; // make sure we touch only those 16 byte blocks that contain our data
-        p -= shift;
-#if 0
-        static ALIGN_DECL_DEFAULT Fixed<32>
-               vmask = { { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-                           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0    } };
-        static ALIGN_DECL_DEFAULT Fixed<32>
-               vshift = { { 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   15,
-                            0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 } };
-        v = _mm_loadu_si128( (__m128i*)p );
-        v = _mm_shuffle_epi8( v, _mm_loadu_si128( (__m128i*)(vshift.data + shift) ) );
-	v = _mm_and_si128( v, _mm_loadu_si128( (__m128i*)(vmask.data + gap) ) );
-#else
-        uint64_t lo, hi;
-	lo = *(uint64_t*)p;
-	hi = *((uint64_t*)p + 1);
-        bool swap = shift >= 8;
-        shift <<= 3; // no need to mask, x86 takes only lower 6 bits when shifting
-#ifdef _MSC_VER
-        lo >>= shift;
-        _rotr64(hi, shift);
-        lo |= hi & ~((uint64_t)-1 >> shift);
-        hi &= (uint64_t)-1 >> shift;
-#else
-        __asm__ ( "shrdq %1, %0	\n\tshrq %%cl, %1" : "+r"(lo), "+r"(hi) : "c"(shift) : "cc");
-#endif
-        uint64_t losel = (uint64_t)swap - 1;
-        gap <<= 3;
-        bool half = gap >= 64;
-        uint64_t sel = losel >> gap;
-        uint64_t hisel = half ? 0 : sel;
-        lo &= half ? sel : losel;
-        lo |= hi & (~losel >> gap);
-        hi &= hisel;
-        v = _mm_insert_epi64( _mm_cvtsi64_si128( lo ), hi, 1);
-#endif
+        v = CharBuffer::Fixed<16>::loadu_si128_partial( p, rem );
         return 16 == _mm_cmpistri( charset, v, _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ANY | _SIDD_MASKED_NEGATIVE_POLARITY) &&
                (indexonce == 16 || (matched += _mm_popcnt_u32( _mm_movemask_epi8( _mm_cmpeq_epi8( v, mask ) ) )) <= 1);
       }
       return false;
     }
 #endif // __SSE4_2__
-
-#endif 
-
-#if defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))
 
     // specializations for use with short strings
     template <> union CharBuffer::Fixed<15>
@@ -1707,7 +1765,7 @@ namespace FIX
 	return false;
       }
     };
-#endif
+#endif // if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
   
     class Tag
 #if defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))

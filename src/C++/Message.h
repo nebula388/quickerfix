@@ -166,7 +166,8 @@ public:
 
   static inline MsgType::Pack identifyType( const char* message, std::size_t length )
   {
-    const char* p = Util::CharBuffer::memmem( message, length, "\00135=", 4 );
+    Util::CharBuffer::Fixed<4> msgTypeTag = { { '\001', '3', '5', '=' } };
+    const char* p = Util::CharBuffer::find( msgTypeTag, message, length );
     if ( p != NULL )
     {
       p += 4;

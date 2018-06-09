@@ -144,8 +144,9 @@ public:
       case HAVE_BEGIN_STRING:
         if( LIKELY(m_pos - cursor > 3) )
         {
-          p = Util::CharBuffer::memmem(m_buffer + cursor,
-                                       m_pos - cursor, "\0019=", 3);
+          Util::CharBuffer::Fixed<3> bodyLengthTag = { { '\001', '9', '=' } };
+          p = Util::CharBuffer::find( bodyLengthTag,
+                                      m_buffer + cursor, m_pos - cursor );
           if( LIKELY(NULL != p ) )
           {
             cursor = p - m_buffer + 3;
