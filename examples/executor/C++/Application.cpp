@@ -39,13 +39,16 @@ void Application::onLogout( const FIX::SessionID& sessionID ) {}
 void Application::toAdmin( FIX::Message& message,
                            const FIX::SessionID& sessionID ) {}
 void Application::toApp( FIX::Message& message,
-                         const FIX::SessionID& sessionID ) {}
+                         const FIX::SessionID& sessionID )
+THROW_DECL( FIX::DoNotSend ) {}
 
 void Application::fromAdmin( const FIX::Message& message,
-                             const FIX::SessionID& sessionID ) {}
+                             const FIX::SessionID& sessionID )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
 
 void Application::fromApp( const FIX::Message& message,
                            const FIX::SessionID& sessionID )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
 { crack( message, sessionID ); }
 
 void Application::onMessage( const FIX40::NewOrderSingle& message,

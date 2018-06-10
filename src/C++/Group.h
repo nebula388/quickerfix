@@ -58,7 +58,7 @@ public:
 
   FieldMap& addGroup( const Group& group );
   bool replaceGroup( unsigned num, const Group& group );
-  Group& getGroup( unsigned num, Group& group ) const;
+  Group& getGroup( unsigned num, Group& group ) const THROW_DECL( FieldNotFound );
   void removeGroup( unsigned num, const Group& group );
   void removeGroup( const Group& group );
   bool hasGroup( const Group& group );

@@ -92,8 +92,8 @@ public:
   {
     addToStream( String::data(s), String::size(s) );
   }
-  std::size_t extractLength( const char* msg, std::size_t size );
-  bool readFixMessage( std::string& str )
+  std::size_t extractLength( const char* msg, std::size_t size ) THROW_DECL( MessageParseError );
+  bool readFixMessage( std::string& str ) THROW_DECL( MessageParseError )
   {
     if( parse() )
     {

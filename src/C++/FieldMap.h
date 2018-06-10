@@ -695,6 +695,7 @@ public:
 
   /// Set a field without type checking
   void setField( const FieldBase& field, bool overwrite = true )
+  THROW_DECL( RepeatedTag )
   {
     if ( overwrite )
       assign( field.getTag(), field );
@@ -704,6 +705,7 @@ public:
 
   /// Set a field without a field class
   void setField( int tag, const std::string& value )
+  THROW_DECL( RepeatedTag, NoTagValue )
   { assign( tag, value ); }
 
   /// Get a field if set
@@ -718,6 +720,7 @@ public:
 
   /// Get a field without type checking
   FieldBase& getField( FieldBase& field ) const
+  THROW_DECL( FieldNotFound )
   {
     field = getFieldRef( field.getTag() );
     return field;
@@ -725,10 +728,12 @@ public:
 
   /// Get a field without a field class
   const std::string& getField( int tag ) const
+  THROW_DECL( FieldNotFound )
   { return getFieldRef( tag ).getString(); }
 
   /// Get direct access to a field through a reference
   const FieldBase& getFieldRef( int tag ) const
+  THROW_DECL( FieldNotFound )
   {
     Fields::const_iterator iter = find( tag );
     if ( iter == m_fields.end() )
@@ -738,6 +743,7 @@ public:
 
   /// Get direct access to a field through a pointer
   const FieldBase* getFieldPtr( int tag ) const
+  THROW_DECL( FieldNotFound )
   { return &getFieldRef( tag ); }
 
   /// Get direct access to a field through a pointer
@@ -799,10 +805,12 @@ public:
 
   /// Get a specific instance of a group.
   FieldMap& getGroup( int num, int tag, FieldMap& group ) const
+  THROW_DECL( FieldNotFound )
   { return group = getGroupRef( num, tag ); }
 
   /// Get direct access to a field through a reference
   FieldMap& getGroupRef( int num, int tag ) const
+  THROW_DECL( FieldNotFound )
   {
     Groups::const_iterator i = m_groups.find( tag );
     if( i == m_groups.end() ) throw FieldNotFound( tag );
@@ -813,6 +821,7 @@ public:
 
   /// Get direct access to a field through a pointer
   FieldMap* getGroupPtr( int num, int tag ) const
+  THROW_DECL( FieldNotFound )
   { return &getGroupRef( num, tag ); }
 
   /// Remove a specific instance of a group.

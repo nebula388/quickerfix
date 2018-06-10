@@ -3,9 +3,10 @@
 
 AC_PREREQ([2.59])
 
-AC_INIT([QuickFIX], [1.14.3], [ask@quickfixengine.org])
+AC_INIT([QuickFIX], [1.15.1], [ask@quickfixengine.org])
 AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_sso.m4])
+m4_include([m4/ax_throw_decl.m4])
 m4_include([m4/ax_fieldorder.m4])
 m4_include([m4/ax_lib_mysql.m4])
 m4_include([m4/ax_lib_postgresql.m4])
@@ -34,6 +35,7 @@ AM_PROG_LEX
 AX_ORDERING()
 AX_FIELDMAP()
 AX_SSO()
+AX_THROW_DECL()
 AX_FIELD_ORDER()
 AX_LIB_MYSQL()
 AX_LIB_POSTGRESQL()
@@ -50,7 +52,7 @@ AX_JAVA()
 
 AC_CANONICAL_HOST
 
-build_no_unit_test=no
+AC_CHECK_PROG([build_no_unit_test],[g++],[no],[yes])
 
 # Detect the target system
 case "${host_os}" in
@@ -264,6 +266,9 @@ AC_TRY_COMPILE(
 
 # check for SSO
 AX_SSO_CHECK()
+
+# check dynamic exception specifications
+AX_THROW_DECL_CHECK()
 
 # check for dictionary field order
 AX_FIELD_ORDER_CHECK()

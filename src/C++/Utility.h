@@ -148,6 +148,12 @@ typedef int ssize_t;
 #define SmartPtr std::unique_ptr
 #endif
 
+#ifdef ENABLE_THROW_DECL
+#define THROW_DECL(...) throw(__VA_ARGS__)
+#else
+#define THROW_DECL(...)
+#endif
+
 #ifdef HAVE_BOOST
   namespace ptr = boost;
 #elif defined(HAVE_STD_SHARED_PTR)
@@ -176,7 +182,7 @@ typedef int ssize_t;
 #include <tbb/atomic.h>
 #endif
 
- #ifdef _MSC_VER
+#ifdef _MSC_VER
 #pragma warning( disable : 4706 ) // DISABLE warning C4706: assignment within conditional expression
 #endif
 

@@ -135,10 +135,10 @@ class ThreadedSSLSocketAcceptor : public Acceptor
 
 public:
   ThreadedSSLSocketAcceptor(Application &, MessageStoreFactory &,
-                            const SessionSettings &);
+                            const SessionSettings &) THROW_DECL( ConfigError );
   ThreadedSSLSocketAcceptor(Application &, MessageStoreFactory &,
                             const SessionSettings &,
-                            LogFactory &);
+                            LogFactory &) THROW_DECL( ConfigError );
 
   virtual ~ThreadedSSLSocketAcceptor();
 
@@ -183,8 +183,8 @@ private:
   typedef std::pair< int, SSL * > SocketKey;
   typedef std::map< SocketKey, thread_id > SocketToThread;
 
-  void onConfigure(const SessionSettings &);
-  void onInitialize(const SessionSettings &);
+  void onConfigure(const SessionSettings &) THROW_DECL( ConfigError );
+  void onInitialize(const SessionSettings &) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll(double timeout);

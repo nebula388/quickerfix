@@ -206,6 +206,7 @@ struct IntConvertor
   }
 
   static inline int convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     int result = 0;
     if( parse( value, result ) )
@@ -446,6 +447,7 @@ struct CheckSumConvertor
   }
 
   static std::string convert( int value )
+  THROW_DECL( FieldConvertError )
   {
     return convert<std::string>(value);
   }
@@ -469,6 +471,7 @@ struct CheckSumConvertor
   }
 
   static inline int convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     int result = 0;
     if( PositiveIntConvertor::parse( value, result ) )
@@ -688,6 +691,7 @@ struct DoubleConvertor
   }
 
   static double convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     double result = 0.0;
     if( parse( value, result ) )
@@ -793,6 +797,7 @@ struct CharConvertor
   }
 
   static char convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     char result;
     if( parse( value, result ) )
@@ -891,6 +896,7 @@ struct BoolConvertor
   }
 
   static bool convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     bool result = false;
     if( parse( value, result ) )
@@ -1136,6 +1142,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcTimeStamp& value, int precision = 0 )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value, precision);
@@ -1151,6 +1158,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 
   static UtcTimeStamp convert( const String::value_type& value,
                                bool calculateDays = false )
+  THROW_DECL( FieldConvertError )
   {
     UtcTimeStamp utc( DateTime(0, 0) );
     if (parse(value, utc))
@@ -1277,6 +1285,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcTimeOnly& value, int precision = 0 )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value, precision);
@@ -1292,6 +1301,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 
   static UtcTimeOnly convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     UtcTimeOnly utc;
     if (parse(value, utc))
@@ -1404,6 +1414,7 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcDate& value )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value);
@@ -1418,6 +1429,7 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static UtcDate convert( const String::value_type& value )
+  THROW_DECL( FieldConvertError )
   {
     UtcDate utc;
     if (parse(value, utc))

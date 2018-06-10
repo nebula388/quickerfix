@@ -32,6 +32,7 @@ namespace FIX
 SocketInitiator::SocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings )
+THROW_DECL( ConfigError )
 : Initiator( application, factory, settings ),
   m_connector( 1 ), m_lastConnect( 0 ),
   m_reconnectInterval( 30 ), m_noDelay( false ), m_sendBufSize( 0 ),
@@ -43,6 +44,7 @@ SocketInitiator::SocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings,
                                   LogFactory& logFactory )
+THROW_DECL( ConfigError )
 : Initiator( application, factory, settings, logFactory ),
   m_connector( 1 ), m_lastConnect( 0 ),
   m_reconnectInterval( 30 ), m_noDelay( false ), m_sendBufSize( 0 ),
@@ -63,6 +65,7 @@ SocketInitiator::~SocketInitiator()
 }
 
 void SocketInitiator::onConfigure( const SessionSettings& s )
+THROW_DECL( ConfigError )
 {
   const Dictionary& dict = s.get();
 
@@ -77,6 +80,7 @@ void SocketInitiator::onConfigure( const SessionSettings& s )
 }
 
 void SocketInitiator::onInitialize( const SessionSettings& s )
+THROW_DECL( RuntimeError )
 {
 }
 

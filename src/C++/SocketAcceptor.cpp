@@ -34,6 +34,7 @@ namespace FIX
 SocketAcceptor::SocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings )
+THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings ),
   m_pServer( 0 ) {}
 
@@ -41,6 +42,7 @@ SocketAcceptor::SocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings,
                                 LogFactory& logFactory )
+THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings, logFactory ),
   m_pServer( 0 ) 
 {
@@ -54,6 +56,7 @@ SocketAcceptor::~SocketAcceptor()
 }
 
 void SocketAcceptor::onConfigure( const SessionSettings& s )
+THROW_DECL( ConfigError )
 {
   std::set<SessionID> sessions = s.getSessions();
   std::set<SessionID>::iterator i;
@@ -69,6 +72,7 @@ void SocketAcceptor::onConfigure( const SessionSettings& s )
 }
 
 void SocketAcceptor::onInitialize( const SessionSettings& s )
+THROW_DECL( RuntimeError )
 {
   short port = 0;
 

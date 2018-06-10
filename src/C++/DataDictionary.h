@@ -503,19 +503,20 @@ typedef std::map < std::pair < int, std::string > ,
   DataDictionary();
   DataDictionary( const DataDictionary& copy );
 
-  DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder = false );
-  DataDictionary( const std::string& url, bool preserveMsgFieldsOrder = false );
+  DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder = false ) THROW_DECL( ConfigError );
+  DataDictionary( const std::string& url, bool preserveMsgFieldsOrder = false ) THROW_DECL( ConfigError );
   virtual ~DataDictionary();
 
-  void LIGHTUSE readFromURL( const std::string& url );
-  void LIGHTUSE readFromDocument( const DOMDocumentPtr& pDoc );
-  void LIGHTUSE readFromStream( std::istream& stream );
+  void LIGHTUSE readFromURL( const std::string& url ) THROW_DECL( ConfigError );
+  void LIGHTUSE readFromDocument( const DOMDocumentPtr& pDoc ) THROW_DECL( ConfigError );
+  void LIGHTUSE readFromStream( std::istream& stream ) THROW_DECL( ConfigError );
 
   message_order const& getOrderedFields() const;
 #ifdef ENABLE_DICTIONARY_FIELD_ORDER
-  message_order const& LIGHTUSE getHeaderOrderedFields() const;
-  message_order const& LIGHTUSE getTrailerOrderedFields() const;
+  message_order const& LIGHTUSE getHeaderOrderedFields() const THROW_DECL( ConfigError );
+  message_order const& LIGHTUSE getTrailerOrderedFields() const THROW_DECL( ConfigError );
   message_order const& LIGHTUSE getMessageOrderedFields(const string_type& msgType) const
+    THROW_DECL( ConfigError )
   {
     MsgTypeToData::const_iterator i = m_messageData.find( msgType );
     if ( LIKELY(i != m_messageData.end()) ) return i->second.m_ordered.getMessageOrder();
@@ -745,11 +746,11 @@ typedef std::map < std::pair < int, std::string > ,
   static void HEAVYUSE  validate( const Message& message,
                         const BeginString& beginString,
                         const MsgInfo& msgInfo,
-                        const DataDictionary* const pSessionDD);
+                        const DataDictionary* const pSessionDD) THROW_DECL( FIX::Exception );
 
-  void validate( const Message& message, bool bodyOnly ) const;
+  void validate( const Message& message, bool bodyOnly ) const THROW_DECL( FIX::Exception );
 
-  void validate( const Message& message ) const
+  void validate( const Message& message ) const THROW_DECL( FIX::Exception )
   { validate( message, false ); }
 
   DataDictionary& operator=( const DataDictionary& rhs );
@@ -792,12 +793,14 @@ private:
 
   /// Check if field tag number is defined in spec.
   void checkValidTagNumber( const FieldBase& field ) const
+    THROW_DECL( InvalidTagNumber )
   {
     if( LIKELY(isField( field.getTag()) ) ) return;
     throw InvalidTagNumber( field.getTag() );
   }
 
   void checkValidFormat( const FieldBase& field ) const
+    THROW_DECL( IncorrectDataFormat )
   {
     TYPE::Type type = TYPE::Unknown;
     getFieldType( field.getTag(), type );
@@ -828,6 +831,7 @@ private:
   }
 
   void checkValue( const FieldBase& field ) const
+    THROW_DECL( IncorrectTagValue )
   {
     int f = field.getTag();
     FieldToValue::const_iterator i = m_fieldValues.find( f );
@@ -841,6 +845,7 @@ private:
 
   /// Check if a field has a value.
   void checkHasValue( const FieldBase& field ) const
+    THROW_DECL( NoTagValue )
   {
     if ( LIKELY(!isChecked(FieldsHaveValues) ||
 		         field.forString( String::Size() )) )
@@ -851,6 +856,7 @@ private:
   /// Check if a field is in this message type.
   void checkIsInMessage
   ( const FieldBase& field, const MsgType& msgType ) const
+    THROW_DECL( TagNotDefinedForMessage )
   {
     if ( LIKELY(isMsgField( msgType.forString( String::Rval() ), field.getTag() )) )
       return;
@@ -859,6 +865,7 @@ private:
 
   void checkIsInMessage
   ( const FieldBase& field, const MsgTypeData& msgData ) const
+    THROW_DECL( TagNotDefinedForMessage )
   {
     if ( LIKELY(msgData.m_defined.find( field.getTag() ) != msgData.m_defined.end()) )
       return;
@@ -868,6 +875,7 @@ private:
   /// Check if group count matches number of groups in
   void checkGroupCount
   ( const FieldBase& field, const FieldMap& fieldMap, const MsgType& msgType ) const
+    THROW_DECL( RepeatingGroupCountMismatch )
   {
     int fieldNum = field.getTag();
     if( isGroup(msgType.forString( String::Rval() ), fieldNum) )
@@ -897,6 +905,7 @@ private:
   void checkHasRequired
   ( const FieldMap& header, const FieldMap& body, const FieldMap& trailer,
     const MsgType& msgType ) const
+    THROW_DECL( RequiredTagMissing )
   {
     MsgTypeToData::const_iterator iM
       = m_messageData.find( msgType.forString( String::Rval() ) );
@@ -906,6 +915,7 @@ private:
   void checkHasRequired
   ( const MsgTypeData* messageData,
     const FieldMap& header, const FieldMap& body, const FieldMap& trailer ) const
+    THROW_DECL( RequiredTagMissing )
   {
     HeaderFields::const_iterator h = includes(header.begin(), header.end(),
                  m_requiredHeaderFields.begin(), m_requiredHeaderFields.end(), HeaderCompare() );

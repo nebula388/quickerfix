@@ -174,12 +174,14 @@ void Application::onLogout( const FIX::SessionID& sessionID )
 }
 
 void Application::fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
 {
   crack( message, sessionID );
   q_on_receive( message );
 }
 
 void Application::toApp( FIX::Message& message, const FIX::SessionID& sessionID )
+THROW_DECL( FIX::DoNotSend )
 {
   try
   {

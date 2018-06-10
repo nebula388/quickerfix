@@ -215,6 +215,7 @@ bool SocketConnection::isValidSession()
 }
 
 void SocketConnection::readFromSocket()
+THROW_DECL( SocketRecvFailed )
 {
   ssize_t size;
   int busy = m_pollspin;

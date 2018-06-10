@@ -162,7 +162,7 @@ public:
 private:
   typedef std::pair< int, SSL * > SocketKey;
 
-  bool readMessage(std::string &msg);
+  bool readMessage(std::string &msg) THROW_DECL( SocketRecvFailed );
   void processStream();
   bool send(const std::string &);
   bool send( Sg::sg_buf_ptr bufs, int n );

@@ -225,21 +225,21 @@ class SessionSettings
 {
 public:
   SessionSettings() { m_resolveEnvVars = false; }
-  SessionSettings( std::istream& stream, bool resolveEnvVars = false );
-  SessionSettings( const std::string& file, bool resolveEnvVars = false );
+  SessionSettings( std::istream& stream, bool resolveEnvVars = false ) THROW_DECL( ConfigError );
+  SessionSettings( const std::string& file, bool resolveEnvVars = false ) THROW_DECL( ConfigError );
 
   /// Check if session setings are present
   bool has( const SessionID& ) const;
 
   /// Get a dictionary for a session.
-  const Dictionary& get( const SessionID& ) const;
+  const Dictionary& get( const SessionID& ) const THROW_DECL( ConfigError );
   /// Set a dictionary for a session
-  void set( const SessionID&, Dictionary );
+  void set( const SessionID&, Dictionary ) THROW_DECL( ConfigError );
 
   /// Get global default settings
   const Dictionary& get() const { return m_defaults; }
   /// Set global default settings
-  void set( const Dictionary& defaults );
+  void set( const Dictionary& defaults ) THROW_DECL( ConfigError );
 
   /// Number of session settings
   size_t size() const { return m_settings.size(); }
@@ -248,18 +248,18 @@ public:
   std::set < SessionID > getSessions() const;
 
 private:
-  void validate( const Dictionary& ) const;
+  void validate( const Dictionary& ) const THROW_DECL( ConfigError );
 
   Dictionaries m_settings;
   Dictionary m_defaults;
   bool m_resolveEnvVars;  // while reading, replace $var, $(var) and ${var} by environment variable var
 
-  friend std::istream& operator>>( std::istream&, SessionSettings& );
+  friend std::istream& operator>>( std::istream&, SessionSettings& ) THROW_DECL( ConfigError );
   friend std::ostream& operator<<( std::ostream&, const SessionSettings& );
 };
 /*! @} */
 
-std::istream& operator>>( std::istream&, SessionSettings& );
+std::istream& operator>>( std::istream&, SessionSettings& ) THROW_DECL( ConfigError );
 std::ostream& operator<<( std::ostream&, const SessionSettings& );
 }
 

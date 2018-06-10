@@ -484,6 +484,7 @@ private:
            const DataDictionary* dataDictionary,
            FieldMap::allocator_type& a,
            bool validate )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
@@ -516,6 +517,7 @@ private:
            DataDictionaryProvider& dictionaryProvider,
            FieldMap::allocator_type& a,
            bool validate )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
@@ -535,6 +537,7 @@ private:
            DataDictionaryProvider* dictionaryProvider,
            FieldMap::allocator_type& a,
            bool validate )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
@@ -688,6 +691,7 @@ public:
 
   /// Construct a message from a string
   HEAVYUSE Message( const std::string& string, bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -700,6 +704,7 @@ public:
   /// Construct a message from a string using a data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& dataDictionary,
            bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -713,6 +718,7 @@ public:
   /// Construct a message from a string using a session and application data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -726,6 +732,7 @@ public:
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary,
            FieldMap::allocator_type& allocator, bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( allocator, message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( allocator, message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( allocator, message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -745,6 +752,7 @@ public:
 
   Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
            const std::string& string, bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
@@ -757,6 +765,7 @@ public:
   Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
            const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
@@ -786,7 +795,7 @@ public:
   void replaceGroup( unsigned num, const FIX::Group& group )
   { FieldMap::replaceGroup( num, group.field(), group ); }
 
-  Group& getGroup( unsigned num, FIX::Group& group ) const
+  Group& getGroup( unsigned num, FIX::Group& group ) const THROW_DECL( FieldNotFound )
   { group.clear();
     return static_cast < Group& >
       ( FieldMap::getGroup( num, group.field(), group ) );
@@ -859,19 +868,19 @@ public:
    * that is passed in.  It will return true on success and false
    * on failure.
    */
-  void setString( const std::string& string, bool validate )
+  void setString( const std::string& string, bool validate ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate );
   }
-  void setString( const std::string& string )
+  void setString( const std::string& string ) THROW_DECL( InvalidMessage )
   { setString( string, true ); }
 
   void setString( const std::string& string,
                   bool validate,
                   const FIX::DataDictionary* pSessionDataDictionary,
-                  const FIX::DataDictionary* pApplicationDataDictionary )
+                  const FIX::DataDictionary* pApplicationDataDictionary ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
@@ -893,7 +902,7 @@ public:
   }
   void setString( const std::string& string,
                   bool validate,
-                  const FIX::DataDictionary* pDataDictionary )
+                  const FIX::DataDictionary* pDataDictionary ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
@@ -1083,7 +1092,7 @@ public:
   }
 
   /// Returns the session ID of the intended recipient
-  SessionID getSessionID( const std::string& qualifier = "" ) const;
+  SessionID getSessionID( const std::string& qualifier = "" ) const THROW_DECL( FieldNotFound );
   /// Sets the session ID of the intended recipient
   void setSessionID( const SessionID& sessionID );
 
@@ -1292,6 +1301,7 @@ inline std::ostream& operator <<
 }
 
 inline SessionID Message::getSessionID( const std::string& qualifier ) const
+THROW_DECL( FieldNotFound )
 {
   BeginString beginString;
   SenderCompID senderCompID;
@@ -1312,7 +1322,7 @@ inline void Message::setSessionID( const SessionID& sessionID )
 }
 
 /// Parse the type of a message from a string.
-inline MsgType identifyType( const std::string& message )
+inline MsgType identifyType( const std::string& message ) THROW_DECL( MessageParseError )
 {
   MsgType::Pack pack( Message::identifyType( String::data(message), String::size(message) ) );
   return MsgType( pack.m_data, pack.m_length );

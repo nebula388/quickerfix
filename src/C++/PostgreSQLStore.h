@@ -112,18 +112,18 @@ public:
                    const std::string& password, const std::string& host, short port );
   ~PostgreSQLStore();
 
-  bool set( int, const std::string& );
-  void get( int, int, std::vector < std::string > & ) const;
+  bool set( int, const std::string& ) THROW_DECL( IOException );
+  void get( int, int, std::vector < std::string > & ) const THROW_DECL( IOException );
 
-  int getNextSenderMsgSeqNum() const;
-  int getNextTargetMsgSeqNum() const;
-  void setNextSenderMsgSeqNum( int value );
-  void setNextTargetMsgSeqNum( int value );
-  void incrNextSenderMsgSeqNum();
-  void incrNextTargetMsgSeqNum();
+  int getNextSenderMsgSeqNum() const THROW_DECL( IOException );
+  int getNextTargetMsgSeqNum() const THROW_DECL( IOException );
+  void setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException );
+  void setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException );
+  void incrNextSenderMsgSeqNum() THROW_DECL( IOException );
+  void incrNextTargetMsgSeqNum() THROW_DECL( IOException );
 
-  void reset();
-  void refresh();
+  void reset() THROW_DECL( IOException );
+  void refresh() THROW_DECL( IOException );
 
 private:
   void populateCache();

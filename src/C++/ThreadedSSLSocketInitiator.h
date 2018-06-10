@@ -137,10 +137,10 @@ class ThreadedSSLSocketInitiator : public Initiator
 {
 public:
   ThreadedSSLSocketInitiator(Application &, MessageStoreFactory &,
-                             const SessionSettings &);
+                             const SessionSettings &) THROW_DECL( ConfigError );
   ThreadedSSLSocketInitiator(Application &, MessageStoreFactory &,
                              const SessionSettings &,
-                             LogFactory &);
+                             LogFactory &) THROW_DECL( ConfigError );
 
   virtual ~ThreadedSSLSocketInitiator();
 
@@ -163,8 +163,8 @@ private:
   typedef std::pair< ThreadedSSLSocketInitiator *,
                      ThreadedSSLSocketConnection * > ThreadPair;
 
-  void onConfigure(const SessionSettings &);
-  void onInitialize(const SessionSettings &);
+  void onConfigure(const SessionSettings &) THROW_DECL( ConfigError );
+  void onInitialize(const SessionSettings &) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll(double timeout);

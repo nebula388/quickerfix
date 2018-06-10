@@ -595,6 +595,7 @@ bool Session::resend( Message& message )
 }
 
 void Session::persist( const Message& message,  const std::string& messageString ) 
+THROW_DECL( IOException )
 {
   if( m_persistMessages )
   {
@@ -1412,6 +1413,7 @@ void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& ms
 }
 
 bool Session::sendToTarget( Message& message, const std::string& qualifier )
+THROW_DECL( SessionNotFound )
 {
   try
   {
@@ -1422,6 +1424,7 @@ bool Session::sendToTarget( Message& message, const std::string& qualifier )
 }
 
 bool Session::sendToTarget( Message& message, const SessionID& sessionID )
+THROW_DECL( SessionNotFound )
 {
   message.setSessionID( sessionID );
   Session* pSession = lookupSession( sessionID );
@@ -1435,6 +1438,7 @@ bool Session::sendToTarget
   const SenderCompID& senderCompID,
   const TargetCompID& targetCompID,
   const std::string& qualifier )
+THROW_DECL( SessionNotFound )
 {
   Message::Sequence::set_in_ordered( message.getHeader(), senderCompID );
   Message::Sequence::set_in_ordered( message.getHeader(), targetCompID );
@@ -1444,6 +1448,7 @@ bool Session::sendToTarget
 bool Session::sendToTarget
 ( Message& message, const std::string& sender, const std::string& target,
   const std::string& qualifier )
+THROW_DECL( SessionNotFound )
 {
   return sendToTarget( message, SenderCompID( sender ),
                        TargetCompID( target ), qualifier );

@@ -36,6 +36,7 @@ namespace FIX
 Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
                       const SessionSettings& settings )
+THROW_DECL( ConfigError )
 : m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
@@ -50,6 +51,7 @@ Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
                       const SessionSettings& settings,
                       LogFactory& logFactory )
+THROW_DECL( ConfigError )
 : m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
@@ -61,6 +63,7 @@ Initiator::Initiator( Application& application,
 { initialize(); }
 
 void Initiator::initialize()
+THROW_DECL( ConfigError )
 {
   std::set < SessionID > sessions = m_settings.getSessions();
   std::set < SessionID > ::iterator i;
@@ -188,6 +191,7 @@ bool Initiator::isDisconnected( const SessionID& sessionID )
 }
 
 void Initiator::start()
+THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -201,6 +205,7 @@ void Initiator::start()
 
 
 void Initiator::block()
+THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -210,6 +215,7 @@ void Initiator::block()
 }
 
 bool Initiator::poll( double timeout )
+THROW_DECL( ConfigError, RuntimeError )
 {
   if( m_firstPoll )
   {

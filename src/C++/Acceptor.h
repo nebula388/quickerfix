@@ -50,9 +50,9 @@ class Acceptor
 {
 public:
   Acceptor( Application&, MessageStoreFactory&,
-            const SessionSettings& );
+            const SessionSettings& ) THROW_DECL( ConfigError );
   Acceptor( Application&, MessageStoreFactory&,
-            const SessionSettings&, LogFactory& );
+            const SessionSettings&, LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~Acceptor();
 
@@ -63,11 +63,11 @@ public:
   }
 
   /// Start acceptor.
-  void start();
+  void start() THROW_DECL( ConfigError, RuntimeError );
   /// Block on the acceptor
-  void block();
+  void block() THROW_DECL( ConfigError, RuntimeError );
   /// Poll the acceptor
-  bool poll( double timeout = 0.0 );
+  bool poll( double timeout = 0.0 ) THROW_DECL( ConfigError, RuntimeError );
 
   /// Stop acceptor.
   void stop( bool force = false );
@@ -92,12 +92,12 @@ public:
   { return m_messageStoreFactory; }
 
 private:
-  void initialize();
+  void initialize() THROW_DECL( ConfigError );
 
   /// Implemented to configure acceptor
-  virtual void onConfigure( const SessionSettings& ) {};
+  virtual void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError ) {};
   /// Implemented to initialize acceptor
-  virtual void onInitialize( const SessionSettings& ) {};
+  virtual void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError ) {};
   /// Implemented to start listening for connections.
   virtual void onStart() = 0;
   /// Implemented to connect and poll for events.

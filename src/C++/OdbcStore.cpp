@@ -162,6 +162,7 @@ MessageStore* OdbcStoreFactory::create( const SessionID& s, const Dictionary& se
 }
 
 bool OdbcStore::set( int msgSeqNum, const std::string& msg )
+THROW_DECL( IOException )
 {
   std::string msgCopy = msg;
   string_replace( "'", "''", msgCopy );
@@ -229,17 +230,17 @@ void OdbcStore::get( int begin, int end,
   }
 }
 
-int OdbcStore::getNextSenderMsgSeqNum() const
+int OdbcStore::getNextSenderMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextSenderMsgSeqNum();
 }
 
-int OdbcStore::getNextTargetMsgSeqNum() const
+int OdbcStore::getNextTargetMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextTargetMsgSeqNum();
 }
 
-void OdbcStore::setNextSenderMsgSeqNum( int value )
+void OdbcStore::setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET outgoing_seqnum=" << value << " WHERE "
@@ -253,7 +254,7 @@ void OdbcStore::setNextSenderMsgSeqNum( int value )
   m_cache.setNextSenderMsgSeqNum( value );
 }
 
-void OdbcStore::setNextTargetMsgSeqNum( int value )
+void OdbcStore::setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET incoming_seqnum=" << value << " WHERE "
@@ -269,19 +270,19 @@ void OdbcStore::setNextTargetMsgSeqNum( int value )
   m_cache.setNextTargetMsgSeqNum( value );
 }
 
-void OdbcStore::incrNextSenderMsgSeqNum()
+void OdbcStore::incrNextSenderMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextSenderMsgSeqNum();
   setNextSenderMsgSeqNum( m_cache.getNextSenderMsgSeqNum() );
 }
 
-void OdbcStore::incrNextTargetMsgSeqNum()
+void OdbcStore::incrNextTargetMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextTargetMsgSeqNum();
   setNextTargetMsgSeqNum( m_cache.getNextTargetMsgSeqNum() );
 }
 
-void OdbcStore::reset()
+void OdbcStore::reset() THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "DELETE FROM messages WHERE "
@@ -320,7 +321,7 @@ void OdbcStore::reset()
     query2.throwException();
 }
 
-void OdbcStore::refresh()
+void OdbcStore::refresh() THROW_DECL( IOException )
 {
   m_cache.reset();
   populateCache(); 

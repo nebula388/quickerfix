@@ -56,7 +56,7 @@ public:
   ~SessionFactory();
 
   Session* create( const SessionID& sessionID,
-                   const Dictionary& settings );
+                   const Dictionary& settings ) THROW_DECL( ConfigError );
   void destroy( Session* pSession );
 
 private:
@@ -64,15 +64,15 @@ private:
 
   ptr::shared_ptr<DataDictionary> createDataDictionary(const SessionID& sessionID, 
                                                        const Dictionary& settings, 
-                                                       const std::string& settingsKey);
+                                                       const std::string& settingsKey) THROW_DECL( ConfigError );
 
   void processFixtDataDictionaries(const SessionID& sessionID, 
                                    const Dictionary& settings, 
-                                   DataDictionaryProvider& provider);
+                                   DataDictionaryProvider& provider) THROW_DECL( ConfigError );
 
   void processFixDataDictionary(const SessionID& sessionID, 
                                 const Dictionary& settings, 
-                                DataDictionaryProvider& provider);
+                                DataDictionaryProvider& provider) THROW_DECL( ConfigError );
 
   std::string toApplVerID(const std::string& value);
 

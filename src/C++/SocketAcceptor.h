@@ -38,9 +38,9 @@ class SocketAcceptor : public Acceptor, SocketServer::Strategy
   friend class SocketConnection;
 public:
   SocketAcceptor( Application&, MessageStoreFactory&,
-                  const SessionSettings& );
+                  const SessionSettings& ) THROW_DECL( ConfigError );
   SocketAcceptor( Application&, MessageStoreFactory&,
-                  const SessionSettings&, LogFactory& );
+                  const SessionSettings&, LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~SocketAcceptor();
 
@@ -51,8 +51,8 @@ private:
   typedef std::map < int, Sessions > PortToSessions;
   typedef std::map < int, SocketConnection* > SocketConnections;
 
-  void onConfigure( const SessionSettings& );
-  void onInitialize( const SessionSettings& );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll( double timeout );

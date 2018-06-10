@@ -72,6 +72,7 @@ DataDictionary::DataDictionary()
 }
 
 DataDictionary::DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder )
+THROW_DECL( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
   m_headerGroups( get_allocator<FieldToGroup>() ),
@@ -98,6 +99,7 @@ DataDictionary::DataDictionary( std::istream& stream, bool preserveMsgFieldsOrde
 }
 
 DataDictionary::DataDictionary( const std::string& url, bool preserveMsgFieldsOrder )
+THROW_DECL( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
   m_headerGroups( get_allocator<FieldToGroup>() ),
@@ -259,6 +261,7 @@ void DataDictionary::checkHasRequiredInGroups( const FieldToGroup& groupFields, 
 }
 
 void LIGHTUSE DataDictionary::validate( const Message& message, bool bodyOnly ) const
+THROW_DECL( FIX::Exception )
 {
   const Header& header = message.getHeader();
   FieldMap::iterator it = header.begin();
@@ -290,6 +293,7 @@ void HEAVYUSE DataDictionary::validate( const Message& message,
                                const BeginString& beginString,
                                const DataDictionary::MsgInfo& msgInfo,
                                const DataDictionary* const pSessionDD)
+THROW_DECL( FIX::Exception )
 {
   const DataDictionary* pAppDD = msgInfo.applicationDictionary();
   unsigned session_checks, app_checks;
@@ -436,6 +440,7 @@ void HEAVYUSE DataDictionary::iterate( const FieldMap& map, const MsgTypeData& m
 }
 
 void LIGHTUSE DataDictionary::readFromURL( const std::string& url )
+THROW_DECL( ConfigError )
 {
   DOMDocumentPtr pDoc = DOMDocumentPtr(new PUGIXML_DOMDocument());
 
@@ -453,6 +458,7 @@ void LIGHTUSE DataDictionary::readFromURL( const std::string& url )
 }
 
 void LIGHTUSE DataDictionary::readFromStream( std::istream& stream )
+THROW_DECL( ConfigError )
 {
   DOMDocumentPtr pDoc = DOMDocumentPtr(new PUGIXML_DOMDocument());
 
@@ -463,6 +469,7 @@ void LIGHTUSE DataDictionary::readFromStream( std::istream& stream )
 }
 
 void LIGHTUSE DataDictionary::readFromDocument( const DOMDocumentPtr& pDoc )
+THROW_DECL( ConfigError )
 {
   // VERSION
   DOMNodePtr pFixNode = pDoc->getNode("/fix");
@@ -681,6 +688,7 @@ message_order const&  DataDictionary::getOrderedFields() const
 
 #ifdef ENABLE_DICTIONARY_FIELD_ORDER
 message_order const& LIGHTUSE DataDictionary::getHeaderOrderedFields() const
+THROW_DECL( ConfigError )
 {
   if( m_headerOrderArray ) return m_headerOrderArray;
 
@@ -695,6 +703,7 @@ message_order const& LIGHTUSE DataDictionary::getHeaderOrderedFields() const
 }
 
 message_order const& LIGHTUSE DataDictionary::getTrailerOrderedFields() const
+THROW_DECL( ConfigError )
 {
   if( m_trailerOrderArray ) return m_trailerOrderArray;
 

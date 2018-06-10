@@ -32,7 +32,7 @@ namespace FIX
 ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
-  const SessionSettings& settings )
+  const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings )
 { socket_init(); }
 
@@ -40,7 +40,7 @@ ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
   const SessionSettings& settings,
-  LogFactory& logFactory )
+  LogFactory& logFactory ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings, logFactory )
 { 
   socket_init(); 
@@ -52,6 +52,7 @@ ThreadedSocketAcceptor::~ThreadedSocketAcceptor()
 }
 
 void ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
+THROW_DECL( ConfigError )
 {
   std::set<SessionID> sessions = s.getSessions();
   std::set<SessionID>::iterator i;
@@ -67,6 +68,7 @@ void ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
 }
 
 void ThreadedSocketAcceptor::onInitialize( const SessionSettings& s )
+THROW_DECL( RuntimeError )
 {
   short port = 0;
   std::set<int> ports;

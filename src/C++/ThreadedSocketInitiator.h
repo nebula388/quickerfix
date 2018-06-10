@@ -40,10 +40,10 @@ class ThreadedSocketInitiator : public Initiator
 {
 public:
   ThreadedSocketInitiator( Application&, MessageStoreFactory&,
-                           const SessionSettings& );
+                           const SessionSettings& ) THROW_DECL( ConfigError );
   ThreadedSocketInitiator( Application&, MessageStoreFactory&,
                            const SessionSettings&,
-                           LogFactory& );
+                           LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~ThreadedSocketInitiator();
 
@@ -52,8 +52,8 @@ private:
   typedef std::map < SessionID, int > SessionToHostNum;
   typedef std::pair < ThreadedSocketInitiator*, ThreadedSocketConnection* > ThreadPair;
 
-  void onConfigure( const SessionSettings& );
-  void onInitialize( const SessionSettings& );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll( double timeout );

@@ -63,13 +63,13 @@ public:
   bool sentLogout() { return m_state.sentLogout(); }
   bool receivedLogon() { return m_state.receivedLogon(); }
   bool isLoggedOn() { return receivedLogon() && sentLogon(); }
-  void reset()
+  void reset() THROW_DECL( IOException )
   { generateLogout(); disconnect(); m_state.reset(); }
-  void refresh()
+  void refresh() THROW_DECL( IOException )
   { m_state.refresh(); }
-  void setNextSenderMsgSeqNum( int num )
+  void setNextSenderMsgSeqNum( int num ) THROW_DECL( IOException )
   { m_state.setNextSenderMsgSeqNum( num ); }
-  void setNextTargetMsgSeqNum( int num )
+  void setNextTargetMsgSeqNum( int num ) THROW_DECL( IOException )
   { m_state.setNextTargetMsgSeqNum( num ); }
 
   const SessionID& getSessionID() const
@@ -83,17 +83,20 @@ public:
   { return m_dataDictionaryProvider; }
 
   static bool sendToTarget( Message& message,
-                            const std::string& qualifier = "" );
-  static bool sendToTarget( Message& message, const SessionID& sessionID );
+                            const std::string& qualifier = "" )
+  THROW_DECL( SessionNotFound );
+  static bool sendToTarget( Message& message, const SessionID& sessionID )
+  THROW_DECL( SessionNotFound );
   static bool sendToTarget( Message&,
                             const SenderCompID& senderCompID,
                             const TargetCompID& targetCompID,
-                            const std::string& qualifier = "" );
+                            const std::string& qualifier = "" )
+  THROW_DECL( SessionNotFound );
   static bool sendToTarget( Message& message,
                             const std::string& senderCompID,
                             const std::string& targetCompID,
-                            const std::string& qualifier = "" );
-
+                            const std::string& qualifier = "" )
+  THROW_DECL( SessionNotFound );
   static std::set<SessionID> getSessions();
   static bool doesSessionExist( const SessionID& );
   static Session* lookupSession( const SessionID& );
@@ -265,7 +268,7 @@ private:
   bool tx( const std::string& );
   bool sendRaw( Message&, int msgSeqNum = 0 );
   bool resend( Message& message );
-  void persist( const Message&, const std::string& );
+  void persist( const Message&, const std::string& ) THROW_DECL( IOException );
   template <typename B> void persist( const Message& message, B buf, int n) {
     if( m_persistMessages )
     {

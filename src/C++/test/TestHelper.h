@@ -15,7 +15,8 @@ struct TestSettings
 class TestApplication : public NullApplication
 {
 public:
-  void fromApp( const Message&, const SessionID& ){}
+  void fromApp( const Message&, const SessionID& )
+    THROW_DECL( FieldNotFound, IncorrectDataFormat, IncorrectTagValue, UnsupportedMessageType ) {}
   void onRun() {}
 };
 
