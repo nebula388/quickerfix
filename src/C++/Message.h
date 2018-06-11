@@ -171,7 +171,7 @@ public:
     if ( p != NULL )
     {
       p += 4;
-      const char* e = (const char*)::memchr( p, '\001', length - (p - message) );
+      const char* e = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), p, length - (p - message) );
       if ( e != NULL )
         return MsgType::Pack( p, e - p );
     }
@@ -1183,7 +1183,7 @@ inline const char* Message::FieldReader::scan()
     if ( LIKELY(Util::Tag::parse(b, p, m_field, m_csum)) )
     {
       p++;
-      b = (char*)::memchr( p, '\001', m_end - p );
+      b = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), p, m_end - p );
       if ( LIKELY(b != NULL) )
       {
         m_start = p;
@@ -1206,7 +1206,7 @@ inline const char* Message::FieldReader::scan()
 inline void Message::FieldReader::skip()
 {
   const char* b = m_start + m_pos;
-  const char* p = (const char*)::memchr( b, '\001', m_end - b );
+  const char* p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), b, m_end - b );
   if ( LIKELY(p != NULL) )
   {
     m_start = b;

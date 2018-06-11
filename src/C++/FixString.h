@@ -464,7 +464,8 @@ fin:
              {
                if( LIKELY(pos < m_length) )
                {
-                 const char* p = (const char*)::memchr(m_fixed.data + pos, c, MaxLocalCapacity + 1 - pos);
+                 const char* p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>(c),
+                                                         m_fixed.data + pos, MaxLocalCapacity + 1 - pos );
                  if( p && (pos = (p - m_fixed.data)) < m_length)
                    return pos;
                }

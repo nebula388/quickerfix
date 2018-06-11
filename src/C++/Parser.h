@@ -217,8 +217,8 @@ public:
         // fall through
       case HAVE_CHECKSUM:
         if( LIKELY(m_pos - cursor > 0) &&
-            LIKELY(NULL != (p = (const char*)::memchr( m_buffer + cursor,
-                                               '\001', m_pos - cursor )) ) )
+            LIKELY(NULL != (p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'),
+                                                        m_buffer + cursor, m_pos - cursor )) ) )
         {
           cursor = p - m_buffer + 1;
           m_state = HAVE_MESSAGE;
@@ -291,7 +291,7 @@ public:
     if( LIKELY(NULL != b) )
     {
       std::size_t offset = ( b += S ) - (char*)IOV_BUF(msg);
-      const char* e = (const char*)::memchr( b, '\001', IOV_LEN(msg) - offset );
+      const char* e = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), b, IOV_LEN(msg) - offset );
       if ( LIKELY(NULL != e) )
       {
         IOV_BUF(msg) = (char*)IOV_BUF(msg) + offset;

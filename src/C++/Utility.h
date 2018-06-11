@@ -1430,6 +1430,9 @@ namespace FIX
         return x;
       }
 
+      template <typename T> static T verify(T a, T b)
+      { if ( a != b ) throw std::runtime_error("verification failed"); return a; }
+
       template <std::size_t S> union Fixed
       {
         char data[S];
@@ -1477,6 +1480,15 @@ namespace FIX
       static ALIGN_DECL_DEFAULT unsigned char s_vshift[32];
 #endif
     }; // CharBuffer
+
+    template <> union CharBuffer::Fixed<1>
+    {
+      typedef char value_type;
+      value_type value;
+      Fixed(char v) : value(v) {}
+    };
+    template <> inline std::size_t CharBuffer::find<1>(char v, const Fixed<1>& f)
+    { return v != f.value; }
 
     template <> union CharBuffer::Fixed<2>
     {
@@ -1542,7 +1554,7 @@ namespace FIX
         lo &= half ? sel : losel;
         lo |= hi & (~losel >> gap);
         hi &= hisel;
-        return _mm_unpacklo_epi64( _mm_cvtsi64_si128( lo ), _mm_cvtsi64_si128(hi));
+        return _mm_unpacklo_epi64( _mm_cvtsi64_si128(lo), _mm_cvtsi64_si128(hi) );
 #endif
       }
     };
@@ -1555,6 +1567,37 @@ namespace FIX
       value_type value;
 #endif
     };
+
+    template <>
+    inline const char* CharBuffer::find<1>(const CharBuffer::Fixed<1>& f,
+                                           const char* p, std::size_t size)
+    {
+      __m128i v = _mm_set1_epi8( f.value );
+      for (; size >= 16; size -= 16, p += 16)
+      {
+        uint32_t r = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_loadu_si128( (__m128i*)p ), v ) );
+        if ( LIKELY(r != 0) )
+        {
+#ifdef _MSC_VER
+          _BitScanForward(&r, r);
+#else
+          __asm__ ( "bsf %0, %0" : "+r"(r) : : "cc" );
+#endif
+          return p + r;
+        }
+      }
+      if (size > 1)
+      {
+        uint32_t r = _mm_movemask_epi8( _mm_cmpeq_epi8( Fixed<16>::loadu_si128_partial( p, size ), v ) ) | (1 << size);
+#ifdef _MSC_VER
+        _BitScanForward(&r, r);
+#else
+        __asm__ ( "bsf %0, %0" : "+r"(r) : : "cc" );
+#endif
+        return ( LIKELY(r < size) ) ? p + r : NULL;
+      }
+      return (size == 1 && *p == f.value) ? p : NULL;
+    }
 
     template <>
     inline const char* CharBuffer::find<2>(const CharBuffer::Fixed<2>& f,
@@ -1636,7 +1679,7 @@ namespace FIX
     inline std::size_t PURE_DECL CharBuffer::find<8>(char v, const CharBuffer::Fixed<8>& f)
     {
       // bits 8-15 will be set
-      unsigned long at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL ), _mm_cvtsi64_si128(f.value) ) );
+      uint32_t at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL ), _mm_cvtsi64_si128(f.value) ) );
 #ifdef _MSC_VER
       _BitScanForward(&at, at);
 #else
@@ -1648,8 +1691,7 @@ namespace FIX
     template<>
     inline std::size_t PURE_DECL CharBuffer::find<16>(char v, const CharBuffer::Fixed<16>& f)
     {
-      __m128i xv = _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL );
-      unsigned long at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_unpacklo_epi64( xv, xv), _mm_loadu_si128(&f.value) ) ) | (1 << 16);
+      uint32_t at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_set1_epi8(v), _mm_loadu_si128(&f.value) ) ) | (1 << 16);
 #ifdef _MSC_VER
       _BitScanForward(&at, at);
 #else
@@ -1771,6 +1813,12 @@ namespace FIX
 	return false;
       }
     };
+#else // if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+
+    template <>
+    inline const char* CharBuffer::find<1>(const Fixed<1>& f, const char* p, std::size_t size)
+    { return (const char*)::memchr(p, f.value, size); }
+
 #endif // if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
   
     class Tag
