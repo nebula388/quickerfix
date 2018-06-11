@@ -27,7 +27,7 @@
 
 namespace FIX
 {
-message_order::message_order( int first, ... )
+HEAVYUSE HOTSECTION message_order::message_order( int first, ... )
 : m_mode( group ), m_largest( 0 )
 {
   int field = first;
@@ -66,7 +66,7 @@ message_order::message_order( int first, ... )
   va_end( arguments );
 }
 
-message_order::message_order( const int order[] )
+HEAVYUSE HOTSECTION message_order::message_order( const int order[] )
 : m_mode( group ), m_largest( 0 )
 {
   int size = 0;

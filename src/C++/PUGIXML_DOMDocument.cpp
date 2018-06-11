@@ -70,16 +70,16 @@ namespace FIX
     return m_pNode.value();
   }
 
-  PUGIXML_DOMDocument::PUGIXML_DOMDocument() THROW_DECL( ConfigError )
+  COLDSECTION PUGIXML_DOMDocument::PUGIXML_DOMDocument() THROW_DECL( ConfigError )
   {
   }
 
-  PUGIXML_DOMDocument::~PUGIXML_DOMDocument()
+  COLDSECTION PUGIXML_DOMDocument::~PUGIXML_DOMDocument()
   {
     //xmlFreeDoc(m_pDoc);
   }
 
-  bool PUGIXML_DOMDocument::load( std::istream& stream )
+  bool COLDSECTION PUGIXML_DOMDocument::load( std::istream& stream )
   {
     try
     {
@@ -88,7 +88,7 @@ namespace FIX
     catch( ... ) { return false; }
   }
 
-  bool PUGIXML_DOMDocument::load( const std::string& url )
+  bool COLDSECTION PUGIXML_DOMDocument::load( const std::string& url )
   {
     try
     {
@@ -97,12 +97,12 @@ namespace FIX
     catch( ... ) { return false; }
   }
 
-  bool PUGIXML_DOMDocument::xml( std::ostream& out )
+  bool COLDSECTION PUGIXML_DOMDocument::xml( std::ostream& out )
   {
     return false;
   }
 
-  DOMNodePtr PUGIXML_DOMDocument::getNode( const std::string& XPath )
+  DOMNodePtr COLDSECTION PUGIXML_DOMDocument::getNode( const std::string& XPath )
   {
     pugi::xpath_node result = m_pDoc.select_single_node(XPath.c_str());
     if( !result ) return DOMNodePtr();

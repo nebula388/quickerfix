@@ -43,7 +43,7 @@ const std::string PostgreSQLStoreFactory::DEFAULT_PASSWORD = "";
 const std::string PostgreSQLStoreFactory::DEFAULT_HOST = "localhost";
 const short PostgreSQLStoreFactory::DEFAULT_PORT = 0;
 
-PostgreSQLStore::PostgreSQLStore
+COLDSECTION PostgreSQLStore::PostgreSQLStore
 ( const SessionID& s, const DatabaseConnectionID& d, PostgreSQLConnectionPool* p )
 : m_pConnectionPool( p ), m_sessionID( s )
 {
@@ -51,7 +51,7 @@ PostgreSQLStore::PostgreSQLStore
   populateCache();
 }
 
-PostgreSQLStore::PostgreSQLStore
+COLDSECTION PostgreSQLStore::PostgreSQLStore
 ( const SessionID& s, const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 ), m_sessionID( s )
@@ -60,7 +60,7 @@ PostgreSQLStore::PostgreSQLStore
   populateCache();
 }
 
-PostgreSQLStore::~PostgreSQLStore()
+COLDSECTION PostgreSQLStore::~PostgreSQLStore()
 {
   if( m_pConnectionPool )
     m_pConnectionPool->destroy( m_pConnection );
@@ -68,7 +68,7 @@ PostgreSQLStore::~PostgreSQLStore()
     delete m_pConnection;
 }
 
-void PostgreSQLStore::populateCache()
+COLDSECTION void PostgreSQLStore::populateCache()
 {
   std::stringstream queryString;
 
@@ -121,7 +121,7 @@ void PostgreSQLStore::populateCache()
   }
 }
 
-MessageStore* PostgreSQLStoreFactory::create( const SessionID& s )
+MessageStore* COLDSECTION PostgreSQLStoreFactory::create( const SessionID& s )
 {
   if( m_useSettings )
     return create( s, m_settings.get(s) );
@@ -134,7 +134,7 @@ MessageStore* PostgreSQLStoreFactory::create( const SessionID& s )
   }
 }
 
-MessageStore* PostgreSQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
+MessageStore* COLDSECTION PostgreSQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
 {
   std::string database = DEFAULT_DATABASE;
   std::string user = DEFAULT_USER;

@@ -133,6 +133,7 @@ int ThreadedSSLSocketInitiator::passwordHandleCB(char *buf, int bufsize, int ver
   return initObjT->passwordHandleCallback(buf, bufsize, verify, job);
 }
 
+COLDSECTION
 ThreadedSSLSocketInitiator::ThreadedSSLSocketInitiator(
     Application &application, MessageStoreFactory &factory,
     const SessionSettings &settings) THROW_DECL( ConfigError )
@@ -144,6 +145,7 @@ ThreadedSSLSocketInitiator::ThreadedSSLSocketInitiator(
   initObjT = this;
 }
 
+COLDSECTION
 ThreadedSSLSocketInitiator::ThreadedSSLSocketInitiator(
     Application &application, MessageStoreFactory &factory,
     const SessionSettings &settings, LogFactory &logFactory) THROW_DECL( ConfigError )
@@ -155,6 +157,7 @@ ThreadedSSLSocketInitiator::ThreadedSSLSocketInitiator(
   initObjT = this;
 }
 
+COLDSECTION
 ThreadedSSLSocketInitiator::~ThreadedSSLSocketInitiator()
 {
   if (m_sslInit)
@@ -167,6 +170,7 @@ ThreadedSSLSocketInitiator::~ThreadedSSLSocketInitiator()
   socket_term();
 }
 
+COLDSECTION
 void ThreadedSSLSocketInitiator::onConfigure(const SessionSettings &s)
 THROW_DECL( ConfigError )
 {
@@ -182,6 +186,7 @@ THROW_DECL( ConfigError )
     m_rcvBufSize = dict.getInt(SOCKET_RECEIVE_BUFFER_SIZE);
 }
 
+COLDSECTION
 void ThreadedSSLSocketInitiator::onInitialize(const SessionSettings &s)
 THROW_DECL( RuntimeError )
 {

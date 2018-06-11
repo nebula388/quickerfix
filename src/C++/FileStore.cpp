@@ -36,7 +36,7 @@
 
 namespace FIX
 {
-FileStore::FileStore( std::string path, const SessionID& s )
+COLDSECTION FileStore::FileStore( std::string path, const SessionID& s )
 : m_msgFileHandle( INVALID_FILE_HANDLE_VALUE ), m_headerFile( 0 ),
   m_seqNumsFile( 0 ), m_sessionFile( 0 )
 {
@@ -74,7 +74,7 @@ FileStore::FileStore( std::string path, const SessionID& s )
   }
 }
 
-FileStore::~FileStore()
+COLDSECTION FileStore::~FileStore()
 {
   if( m_msgFileHandle != INVALID_FILE_HANDLE_VALUE)
     file_handle_close( m_msgFileHandle );
@@ -84,7 +84,7 @@ FileStore::~FileStore()
   if( m_sessionFile ) ::fclose( m_sessionFile );
 }
 
-void FileStore::open( bool deleteFile )
+COLDSECTION void FileStore::open( bool deleteFile )
 {
   if ( m_msgFileHandle != INVALID_FILE_HANDLE_VALUE )
     file_handle_close( m_msgFileHandle );
@@ -136,7 +136,7 @@ void FileStore::open( bool deleteFile )
   setNextTargetMsgSeqNum( getNextTargetMsgSeqNum() );
 }
 
-void FileStore::populateCache()
+COLDSECTION void FileStore::populateCache()
 {
   FILE* headerFile;
   headerFile = file_fopen( m_headerFileName.c_str(), "r+" );

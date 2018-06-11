@@ -40,7 +40,7 @@ const std::string OdbcLogFactory::DEFAULT_PASSWORD = "";
 const std::string OdbcLogFactory::DEFAULT_CONNECTION_STRING
   = "DATABASE=quickfix;DRIVER={SQL Server};SERVER=(local);";
 
-OdbcLog::OdbcLog
+COLDSECTION OdbcLog::OdbcLog
 ( const SessionID& s, const std::string& user, const std::string& password, 
   const std::string& connectionString )
 {
@@ -49,7 +49,7 @@ OdbcLog::OdbcLog
   m_pConnection = new OdbcConnection( user, password, connectionString );
 }
 
-OdbcLog::OdbcLog
+COLDSECTION OdbcLog::OdbcLog
 ( const std::string& user, const std::string& password, 
   const std::string& connectionString )
 : m_pSessionID( 0 )
@@ -58,33 +58,34 @@ OdbcLog::OdbcLog
   m_pConnection = new OdbcConnection( user, password, connectionString );
 }
 
-void OdbcLog::init()
+COLDSECTION void OdbcLog::init()
 {
   setIncomingTable( "messages_log" );
   setOutgoingTable( "messages_log" );
   setEventTable( "event_log" );
 }
 
-OdbcLog::~OdbcLog()
+COLDSECTION OdbcLog::~OdbcLog()
 {
   delete m_pSessionID;
   delete m_pConnection;
 }
 
+COLDSECTION
 OdbcLogFactory::OdbcLogFactory( const std::string& user, const std::string& password, 
                                 const std::string& connectionString )
 : m_user( user ), m_password( password ), m_connectionString( connectionString ),
   m_useSettings( false )
 {}
 
-OdbcLogFactory::OdbcLogFactory()
+COLDSECTION OdbcLogFactory::OdbcLogFactory()
 : m_user( DEFAULT_USER ), m_password( DEFAULT_PASSWORD ),
   m_connectionString( DEFAULT_CONNECTION_STRING ), m_useSettings( false )
 {}
 
-OdbcLogFactory::~OdbcLogFactory() {}
+COLDSECTION OdbcLogFactory::~OdbcLogFactory() {}
 
-Log* OdbcLogFactory::create()
+COLDSECTION Log* OdbcLogFactory::create()
 {
   std::string database;
   std::string user;
@@ -96,7 +97,7 @@ Log* OdbcLogFactory::create()
   return result;
 }
 
-Log* OdbcLogFactory::create( const SessionID& s )
+COLDSECTION Log* OdbcLogFactory::create( const SessionID& s )
 {
   std::string database;
   std::string user;
@@ -112,7 +113,7 @@ Log* OdbcLogFactory::create( const SessionID& s )
   return result;
 }
 
-void OdbcLogFactory::init( const Dictionary& settings, 
+COLDSECTION void OdbcLogFactory::init( const Dictionary& settings, 
                            std::string& user,
                            std::string& password, 
                            std::string& connectionString )
@@ -140,7 +141,7 @@ void OdbcLogFactory::init( const Dictionary& settings,
   }
 }
 
-void OdbcLogFactory::initLog( const Dictionary& settings, OdbcLog& log )
+COLDSECTION void OdbcLogFactory::initLog( const Dictionary& settings, OdbcLog& log )
 {
     try { log.setIncomingTable( settings.getString( ODBC_LOG_INCOMING_TABLE ) ); }
     catch( ConfigError& ) {}
@@ -152,12 +153,12 @@ void OdbcLogFactory::initLog( const Dictionary& settings, OdbcLog& log )
     catch( ConfigError& ) {}
 }
 
-void OdbcLogFactory::destroy( Log* pLog )
+COLDSECTION void OdbcLogFactory::destroy( Log* pLog )
 {
   delete pLog;
 }
 
-void OdbcLog::clear()
+void COLDSECTION OdbcLog::clear()
 {
   std::stringstream whereClause;
 
@@ -197,7 +198,7 @@ void OdbcLog::clear()
   m_pConnection->execute( event );
 }
 
-void OdbcLog::backup() {}
+void COLDSECTION OdbcLog::backup() {}
 
 void OdbcLog::insert( const std::string& table, const std::string value )
 {

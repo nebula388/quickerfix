@@ -37,7 +37,7 @@ void MemoryStoreFactory::destroy( MessageStore* pStore )
   delete pStore;
 }
 
-bool MemoryStore::set( int msgSeqNum, const std::string& msg ) THROW_DECL( IOException )
+bool HOTSECTION MemoryStore::set( int msgSeqNum, const std::string& msg ) THROW_DECL( IOException )
 {
   m_messages[ msgSeqNum ] = msg;
   return true;

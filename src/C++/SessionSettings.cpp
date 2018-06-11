@@ -30,14 +30,14 @@
 
 namespace FIX
 {
-SessionSettings::SessionSettings( std::istream& stream, bool resolveEnvVars )
+COLDSECTION SessionSettings::SessionSettings( std::istream& stream, bool resolveEnvVars )
 THROW_DECL( ConfigError )
 : m_resolveEnvVars( resolveEnvVars )
 {
   stream >> *this;
 }
 
-SessionSettings::SessionSettings( const std::string& file, bool resolveEnvVars )
+COLDSECTION SessionSettings::SessionSettings( const std::string& file, bool resolveEnvVars )
 THROW_DECL( ConfigError )
 : m_resolveEnvVars( resolveEnvVars )
 {
@@ -47,7 +47,7 @@ THROW_DECL( ConfigError )
   fstream >> *this;
 }
 
-std::istream& operator>>( std::istream& stream, SessionSettings& s )
+COLDSECTION std::istream& operator>>( std::istream& stream, SessionSettings& s )
 THROW_DECL( ConfigError )
 {
   Settings settings(s.m_resolveEnvVars);
@@ -86,7 +86,7 @@ THROW_DECL( ConfigError )
   return stream;
 }
 
-std::ostream& operator<<( std::ostream& stream, const SessionSettings& s )
+COLDSECTION std::ostream& operator<<( std::ostream& stream, const SessionSettings& s )
 {
   const Dictionary& defaults = s.m_defaults;
   if( defaults.size() )

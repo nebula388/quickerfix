@@ -29,14 +29,14 @@
 
 namespace FIX
 {
-ThreadedSocketAcceptor::ThreadedSocketAcceptor(
+COLDSECTION ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
   const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings )
 { socket_init(); }
 
-ThreadedSocketAcceptor::ThreadedSocketAcceptor(
+COLDSECTION ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
   const SessionSettings& settings,
@@ -51,7 +51,7 @@ ThreadedSocketAcceptor::~ThreadedSocketAcceptor()
   socket_term(); 
 }
 
-void ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
+void COLDSECTION ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
 THROW_DECL( ConfigError )
 {
   std::set<SessionID> sessions = s.getSessions();
@@ -67,7 +67,7 @@ THROW_DECL( ConfigError )
   }
 }
 
-void ThreadedSocketAcceptor::onInitialize( const SessionSettings& s )
+void COLDSECTION ThreadedSocketAcceptor::onInitialize( const SessionSettings& s )
 THROW_DECL( RuntimeError )
 {
   short port = 0;
@@ -118,7 +118,7 @@ THROW_DECL( RuntimeError )
   }    
 }
 
-void ThreadedSocketAcceptor::onStart()
+void COLDSECTION ThreadedSocketAcceptor::onStart()
 {
   Sockets::iterator i;
   for( i = m_sockets.begin(); i != m_sockets.end(); ++i )
@@ -243,7 +243,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   return 0;
 }
 
-THREAD_PROC ThreadedSocketAcceptor::socketConnectionThread( void* p )
+THREAD_PROC HOTSECTION ThreadedSocketAcceptor::socketConnectionThread( void* p )
 {
   ConnectionThreadInfo * info = reinterpret_cast < ConnectionThreadInfo* > ( p );
 

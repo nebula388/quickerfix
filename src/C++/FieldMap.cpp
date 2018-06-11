@@ -43,7 +43,7 @@ FieldMap& FieldMap::operator=( const FieldMap& rhs )
   return *this;
 }
 
-FieldMap& FieldMap::addGroup( int field, const FieldMap& group, bool setCount )
+FieldMap& HOTSECTION FieldMap::addGroup( int field, const FieldMap& group, bool setCount )
 {
   FieldMap * pGroup = new FieldMap( group );
   addGroupPtr( field, pGroup, setCount );
@@ -91,18 +91,18 @@ void FieldMap::removeGroup( int field )
   removeGroup( (int)groupCount(field), field );
 }
 
-bool FieldMap::hasGroup( int num, int field ) const
+bool HOTSECTION FieldMap::hasGroup( int num, int field ) const
 {
   return (int)groupCount(field) >= num;
 }
 
-bool FieldMap::hasGroup( int field ) const
+bool HOTSECTION FieldMap::hasGroup( int field ) const
 {
   Groups::const_iterator i = m_groups.find( field );
   return i != m_groups.end();
 }
 
-size_t FieldMap::groupCount( int field ) const
+size_t HOTSECTION FieldMap::groupCount( int field ) const
 {
   Groups::const_iterator i = m_groups.find( field );
   if( i == m_groups.end() )
@@ -110,7 +110,7 @@ size_t FieldMap::groupCount( int field ) const
   return i->second.size();
 }
 
-size_t FieldMap::totalFields() const
+size_t COLDSECTION FieldMap::totalFields() const
 {
   size_t result = m_fields.size();
     
@@ -124,7 +124,7 @@ size_t FieldMap::totalFields() const
   return result;
 }
 
-std::string& FieldMap::calculateString( std::string& result, bool clear ) const
+std::string& COLDSECTION FieldMap::calculateString( std::string& result, bool clear ) const
 {
 
 #if defined(_MSC_VER) && _MSC_VER < 1300
@@ -139,7 +139,7 @@ std::string& FieldMap::calculateString( std::string& result, bool clear ) const
   return serializeTo( result );
 }
 
-int FieldMap::calculateLength( int beginStringField,
+int COLDSECTION FieldMap::calculateLength( int beginStringField,
                                int bodyLengthField,
                                int checkSumField ) const
 {
@@ -164,7 +164,7 @@ int FieldMap::calculateLength( int beginStringField,
   return result;
 }
 
-int HEAVYUSE FieldMap::calculateTotal( int checkSumField ) const
+int HEAVYUSE HOTSECTION FieldMap::calculateTotal( int checkSumField ) const
 {
   int result = 0;
   Fields::const_iterator i, fe = f_end();
@@ -185,7 +185,7 @@ int HEAVYUSE FieldMap::calculateTotal( int checkSumField ) const
   return result;
 }
 
-void FieldMap::addGroupPtr( int field, FieldMap * group, bool setCount )
+void HOTSECTION FieldMap::addGroupPtr( int field, FieldMap * group, bool setCount )
 {
   GroupItem& vec = m_groups[ field ];
   vec.push_back( group );

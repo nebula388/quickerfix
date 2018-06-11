@@ -33,7 +33,7 @@
 
 namespace FIX
 {
-Acceptor::Acceptor( Application& application,
+COLDSECTION Acceptor::Acceptor( Application& application,
                     MessageStoreFactory& messageStoreFactory,
                     const SessionSettings& settings )
 THROW_DECL( ConfigError )
@@ -49,7 +49,7 @@ THROW_DECL( ConfigError )
   initialize();
 }
 
-Acceptor::Acceptor( Application& application,
+COLDSECTION Acceptor::Acceptor( Application& application,
                     MessageStoreFactory& messageStoreFactory,
                     const SessionSettings& settings,
                     LogFactory& logFactory )
@@ -66,7 +66,7 @@ THROW_DECL( ConfigError )
   initialize();
 }
 
-void Acceptor::initialize() THROW_DECL( ConfigError )
+COLDSECTION void Acceptor::initialize() THROW_DECL( ConfigError )
 {
   std::set < SessionID > sessions = m_settings.getSessions();
   std::set < SessionID > ::iterator i;
@@ -90,7 +90,7 @@ void Acceptor::initialize() THROW_DECL( ConfigError )
     throw ConfigError( "No sessions defined for acceptor" );
 }
 
-Acceptor::~Acceptor()
+COLDSECTION Acceptor::~Acceptor()
 {
   Sessions::iterator i;
   for ( i = m_sessions.begin(); i != m_sessions.end(); ++i )

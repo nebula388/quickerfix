@@ -39,7 +39,7 @@
 namespace FIX
 {
 
-ALIGN_DECL_DEFAULT const DataDictionary::group_key_holder DataDictionary::GroupKey =
+ALIGN_DECL_DEFAULT HOTDATA const DataDictionary::group_key_holder DataDictionary::GroupKey =
        { DataDictionary::string_type("_header_"),
          DataDictionary::string_type("_trailer_") };
 
@@ -49,7 +49,7 @@ DataDictionary::MsgFields    DataDictionary::m_noFields;
 DataDictionary::MsgTypeData DataDictionary::m_noData( DataDictionary::m_noFields,
                                                       DataDictionary::m_noGroups,
                                                       DataDictionary::m_noProps );
-DataDictionary::DataDictionary()
+COLDSECTION DataDictionary::DataDictionary()
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
   m_headerGroups( get_allocator<FieldToGroup>() ),
@@ -71,7 +71,7 @@ DataDictionary::DataDictionary()
   Message::TrailerFieldSet::spec( *this );
 }
 
-DataDictionary::DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder )
+COLDSECTION DataDictionary::DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder )
 THROW_DECL( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
@@ -98,7 +98,7 @@ THROW_DECL( ConfigError )
   readFromStream( stream );
 }
 
-DataDictionary::DataDictionary( const std::string& url, bool preserveMsgFieldsOrder )
+COLDSECTION DataDictionary::DataDictionary( const std::string& url, bool preserveMsgFieldsOrder )
 THROW_DECL( ConfigError )
 : m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
@@ -125,7 +125,7 @@ THROW_DECL( ConfigError )
   readFromURL( url );
 }
 
-DataDictionary::DataDictionary( const DataDictionary& copy )
+COLDSECTION DataDictionary::DataDictionary( const DataDictionary& copy )
 : DataDictionaryBase(copy),
   m_hasVersion( false ), m_checks(AllChecks),
   m_headerData( false ), m_trailerData( false ),
@@ -147,7 +147,7 @@ DataDictionary::DataDictionary( const DataDictionary& copy )
   *this = copy;
 }
 
-DataDictionary::~DataDictionary()
+COLDSECTION DataDictionary::~DataDictionary()
 {
   for ( FieldToGroup::iterator i = m_headerGroups.begin(); i != m_headerGroups.end(); ++i)
     delete i->second.second;
@@ -161,7 +161,7 @@ DataDictionary::~DataDictionary()
   }
 }
 
-DataDictionary& DataDictionary::operator=( const DataDictionary& rhs )
+COLDSECTION DataDictionary& DataDictionary::operator=( const DataDictionary& rhs )
 {
   m_hasVersion = rhs.m_hasVersion;
   m_checks = rhs.m_checks;
@@ -260,7 +260,7 @@ void DataDictionary::checkHasRequiredInGroups( const FieldToGroup& groupFields, 
   }
 }
 
-void LIGHTUSE DataDictionary::validate( const Message& message, bool bodyOnly ) const
+void LIGHTUSE COLDSECTION DataDictionary::validate( const Message& message, bool bodyOnly ) const
 THROW_DECL( FIX::Exception )
 {
   const Header& header = message.getHeader();
@@ -289,7 +289,7 @@ THROW_DECL( FIX::Exception )
   throw FieldNotFound( FIELD::BeginString );
 }
 
-void HEAVYUSE DataDictionary::validate( const Message& message,
+void HEAVYUSE HOTSECTION DataDictionary::validate( const Message& message,
                                const BeginString& beginString,
                                const DataDictionary::MsgInfo& msgInfo,
                                const DataDictionary* const pSessionDD)
@@ -362,7 +362,7 @@ THROW_DECL( FIX::Exception )
   }
 }
 
-void HEAVYUSE DataDictionary::iterate( const FieldMap& map ) const
+void HEAVYUSE HOTSECTION DataDictionary::iterate( const FieldMap& map ) const
 {
   int lastField = 0;
 
@@ -380,7 +380,7 @@ void HEAVYUSE DataDictionary::iterate( const FieldMap& map ) const
   }
 }
 
-void HEAVYUSE DataDictionary::iterate( const FieldMap& map, bool hasVersion, bool hasBegin ) const
+void HEAVYUSE HOTSECTION DataDictionary::iterate( const FieldMap& map, bool hasVersion, bool hasBegin ) const
 {
   int lastField = 0;
 
@@ -408,7 +408,7 @@ void HEAVYUSE DataDictionary::iterate( const FieldMap& map, bool hasVersion, boo
   }
 }
 
-void HEAVYUSE DataDictionary::iterate( const FieldMap& map, const MsgTypeData& msgData, bool hasVersion, bool hasBegin ) const
+void HEAVYUSE HOTSECTION DataDictionary::iterate( const FieldMap& map, const MsgTypeData& msgData, bool hasVersion, bool hasBegin ) const
 {
   int lastField = 0;
 
@@ -439,7 +439,7 @@ void HEAVYUSE DataDictionary::iterate( const FieldMap& map, const MsgTypeData& m
   }
 }
 
-void LIGHTUSE DataDictionary::readFromURL( const std::string& url )
+void LIGHTUSE COLDSECTION DataDictionary::readFromURL( const std::string& url )
 THROW_DECL( ConfigError )
 {
   DOMDocumentPtr pDoc = DOMDocumentPtr(new PUGIXML_DOMDocument());
@@ -457,7 +457,7 @@ THROW_DECL( ConfigError )
   }
 }
 
-void LIGHTUSE DataDictionary::readFromStream( std::istream& stream )
+void LIGHTUSE COLDSECTION DataDictionary::readFromStream( std::istream& stream )
 THROW_DECL( ConfigError )
 {
   DOMDocumentPtr pDoc = DOMDocumentPtr(new PUGIXML_DOMDocument());
@@ -468,7 +468,7 @@ THROW_DECL( ConfigError )
   readFromDocument( pDoc );
 }
 
-void LIGHTUSE DataDictionary::readFromDocument( const DOMDocumentPtr& pDoc )
+void LIGHTUSE COLDSECTION DataDictionary::readFromDocument( const DOMDocumentPtr& pDoc )
 THROW_DECL( ConfigError )
 {
   // VERSION
@@ -687,7 +687,7 @@ message_order const&  DataDictionary::getOrderedFields() const
 }
 
 #ifdef ENABLE_DICTIONARY_FIELD_ORDER
-message_order const& LIGHTUSE DataDictionary::getHeaderOrderedFields() const
+message_order const& LIGHTUSE COLDSECTION DataDictionary::getHeaderOrderedFields() const
 THROW_DECL( ConfigError )
 {
   if( m_headerOrderArray ) return m_headerOrderArray;
@@ -702,7 +702,7 @@ THROW_DECL( ConfigError )
   return  (m_headerOrderArray = message_order(ordered.get()));
 }
 
-message_order const& LIGHTUSE DataDictionary::getTrailerOrderedFields() const
+message_order const& LIGHTUSE COLDSECTION DataDictionary::getTrailerOrderedFields() const
 THROW_DECL( ConfigError )
 {
   if( m_trailerOrderArray ) return m_trailerOrderArray;
@@ -736,7 +736,7 @@ int DataDictionary::lookupXMLFieldNumber
   return i->second;
 }
 
-int LIGHTUSE DataDictionary::addXMLComponentFields( DOMDocument* pDoc, DOMNode* pNode,
+int LIGHTUSE COLDSECTION DataDictionary::addXMLComponentFields( DOMDocument* pDoc, DOMNode* pNode,
                                             const std::string& msgtype,
                                             DataDictionary& DD,
                                             bool componentRequired )
@@ -800,7 +800,7 @@ int LIGHTUSE DataDictionary::addXMLComponentFields( DOMDocument* pDoc, DOMNode* 
   return firstField;
 }
 
-void LIGHTUSE DataDictionary::addXMLGroup( DOMDocument* pDoc, DOMNode* pNode,
+void LIGHTUSE COLDSECTION DataDictionary::addXMLGroup( DOMDocument* pDoc, DOMNode* pNode,
                                   const std::string& msgtype,
                                   DataDictionary& DD, bool groupRequired  )
 {
@@ -901,25 +901,25 @@ void DataDictionary::setVersion( const std::string& beginString )
   m_hasVersion = true;
 }
 
-void LIGHTUSE DataDictionary::addField( int field )
+void LIGHTUSE COLDSECTION DataDictionary::addField( int field )
 {
   m_fieldProps[ field ].defined( true );
   m_orderedFields.push_back( field );
 }
 
-void LIGHTUSE DataDictionary::addFieldName( int field, const std::string& name )
+void LIGHTUSE COLDSECTION DataDictionary::addFieldName( int field, const std::string& name )
 {
   if( m_names.insert( std::make_pair(name, field) ).second == false )
     throw ConfigError( "Field named " + name + " defined multiple times" );
   m_fieldNames[field] = name;
 }
 
-void LIGHTUSE DataDictionary::addValueName( int field, const std::string& value, const std::string& name )
+void LIGHTUSE COLDSECTION DataDictionary::addValueName( int field, const std::string& value, const std::string& name )
 {
   m_valueNames[std::make_pair(field, value)] = name;
 }
 
-DataDictionary::MsgTypeToData::iterator LIGHTUSE DataDictionary::addMsgType( const std::string& msgType )
+DataDictionary::MsgTypeToData::iterator LIGHTUSE COLDSECTION DataDictionary::addMsgType( const std::string& msgType )
 {
   string_type name = string_type( msgType.c_str(), msgType.length());
   MsgTypeToData::iterator it = m_messageData.find( name );
@@ -933,7 +933,7 @@ DataDictionary::MsgTypeToData::iterator LIGHTUSE DataDictionary::addMsgType( con
   return it;
 }
 
-void LIGHTUSE DataDictionary::addMsgField( const std::string& msgType, int field )
+void LIGHTUSE COLDSECTION DataDictionary::addMsgField( const std::string& msgType, int field )
 {
   string_type name = string_type( msgType.c_str(), msgType.length());
   MsgTypeToData::iterator i = m_messageData.find( name );
@@ -951,7 +951,7 @@ void LIGHTUSE DataDictionary::addMsgField( const std::string& msgType, int field
 #endif
 }
 
-void LIGHTUSE DataDictionary::addHeaderField( int field, bool required )
+void LIGHTUSE COLDSECTION DataDictionary::addHeaderField( int field, bool required )
 {
 #ifdef ENABLE_DICTIONARY_FIELD_ORDER
   if ( m_storeMsgFieldsOrder )
@@ -964,7 +964,7 @@ void LIGHTUSE DataDictionary::addHeaderField( int field, bool required )
     m_requiredHeaderFields.insert( field );
 }
 
-void LIGHTUSE DataDictionary::addTrailerField( int field, bool required )
+void LIGHTUSE COLDSECTION DataDictionary::addTrailerField( int field, bool required )
 {
 #ifdef ENABLE_DICTIONARY_FIELD_ORDER
   if ( m_storeMsgFieldsOrder )
@@ -977,13 +977,13 @@ void LIGHTUSE DataDictionary::addTrailerField( int field, bool required )
     m_requiredTrailerFields.insert( field );
 }
 
-void LIGHTUSE DataDictionary::addFieldType( int field, FIX::TYPE::Type type )
+void LIGHTUSE COLDSECTION DataDictionary::addFieldType( int field, FIX::TYPE::Type type )
 {
   m_fieldTypes[ field ] = type;
   m_fieldProps[ field ].hasData(type == TYPE::Data);
 }
 
-void LIGHTUSE DataDictionary::addRequiredField( const std::string& msgType, int field )
+void LIGHTUSE COLDSECTION DataDictionary::addRequiredField( const std::string& msgType, int field )
 {
   string_type name = string_type( msgType.c_str(), msgType.length());
   MsgTypeToData::iterator i = m_messageData.find( name );
@@ -991,7 +991,7 @@ void LIGHTUSE DataDictionary::addRequiredField( const std::string& msgType, int 
   i->second.m_required.insert( field );
 }
 
-void LIGHTUSE DataDictionary::addFieldValue( int field, const DataDictionary::string_type& value )
+void LIGHTUSE COLDSECTION DataDictionary::addFieldValue( int field, const DataDictionary::string_type& value )
 {
   FieldToValue::iterator i = m_fieldValues.find( field );
   if (i == m_fieldValues.end())
@@ -1001,7 +1001,7 @@ void LIGHTUSE DataDictionary::addFieldValue( int field, const DataDictionary::st
   m_fieldValues[ field ].insert( value );
 }
 
-void LIGHTUSE DataDictionary::addGroup( const std::string& msgType, int field, int delim,
+void LIGHTUSE COLDSECTION DataDictionary::addGroup( const std::string& msgType, int field, int delim,
                const DataDictionary& dataDictionary )
 {
   DataDictionary * pDD = new DataDictionary( dataDictionary );

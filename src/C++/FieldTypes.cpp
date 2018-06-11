@@ -31,7 +31,7 @@
 
 namespace FIX {
 
-DateTime DateTime::nowUtc()
+DateTime HEAVYUSE HOTSECTION DateTime::nowUtc()
 {
 #if defined( _POSIX_SOURCE ) || defined(HAVE_GETTIMEOFDAY)
     struct timeval tv;
@@ -46,7 +46,7 @@ DateTime DateTime::nowUtc()
 #endif
 }
 
-DateTime DateTime::nowLocal()
+DateTime HEAVYUSE HOTSECTION DateTime::nowLocal()
 {
 #if defined( _POSIX_SOURCE ) || defined(HAVE_GETTIMEOFDAY)
     struct timeval tv;

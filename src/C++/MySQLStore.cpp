@@ -43,7 +43,7 @@ const std::string MySQLStoreFactory::DEFAULT_PASSWORD = "";
 const std::string MySQLStoreFactory::DEFAULT_HOST = "localhost";
 const short MySQLStoreFactory::DEFAULT_PORT = 3306;
 
-MySQLStore::MySQLStore
+COLDSECTION MySQLStore::MySQLStore
 ( const SessionID& s, const DatabaseConnectionID& d, MySQLConnectionPool* p )
   : m_pConnectionPool( p ), m_sessionID( s )
 {
@@ -51,7 +51,7 @@ MySQLStore::MySQLStore
   populateCache();
 }
 
-MySQLStore::MySQLStore
+COLDSECTION MySQLStore::MySQLStore
 ( const SessionID& s, const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 ), m_sessionID( s )
@@ -60,7 +60,7 @@ MySQLStore::MySQLStore
   populateCache();
 }
 
-MySQLStore::~MySQLStore()
+COLDSECTION MySQLStore::~MySQLStore()
 {
   if( m_pConnectionPool )
     m_pConnectionPool->destroy( m_pConnection );
@@ -68,7 +68,7 @@ MySQLStore::~MySQLStore()
     delete m_pConnection;
 }
 
-void MySQLStore::populateCache()
+void COLDSECTION MySQLStore::populateCache()
 {
   std::stringstream queryString;
 
@@ -122,7 +122,7 @@ void MySQLStore::populateCache()
   }
 }
 
-MessageStore* MySQLStoreFactory::create( const SessionID& s )
+MessageStore* COLDSECTION MySQLStoreFactory::create( const SessionID& s )
 {
   if( m_useSettings )
     return create( s, m_settings.get(s) );
@@ -135,7 +135,7 @@ MessageStore* MySQLStoreFactory::create( const SessionID& s )
   }
 }
 
-MessageStore* MySQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
+MessageStore* COLDSECTION MySQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
 {
   std::string database = DEFAULT_DATABASE;
   std::string user = DEFAULT_USER;

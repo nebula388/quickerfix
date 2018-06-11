@@ -134,6 +134,7 @@ int ThreadedSSLSocketAcceptor::passPhraseHandleCB(char *buf, int bufsize, int ve
   return acceptObjT->passwordHandleCallback(buf, bufsize, verify, job);
 }
 
+COLDSECTION
 ThreadedSSLSocketAcceptor::ThreadedSSLSocketAcceptor(
     Application &application, MessageStoreFactory &factory,
     const SessionSettings &settings) THROW_DECL( ConfigError )
@@ -144,6 +145,7 @@ ThreadedSSLSocketAcceptor::ThreadedSSLSocketAcceptor(
   acceptObjT = this;
 }
 
+COLDSECTION
 ThreadedSSLSocketAcceptor::ThreadedSSLSocketAcceptor(
     Application &application, MessageStoreFactory &factory,
     const SessionSettings &settings, LogFactory &logFactory) THROW_DECL( ConfigError )
@@ -154,6 +156,7 @@ ThreadedSSLSocketAcceptor::ThreadedSSLSocketAcceptor(
   acceptObjT = this;
 }
 
+COLDSECTION
 ThreadedSSLSocketAcceptor::~ThreadedSSLSocketAcceptor()
 {
   if (m_sslInit)
@@ -166,6 +169,7 @@ ThreadedSSLSocketAcceptor::~ThreadedSSLSocketAcceptor()
   socket_term();
 }
 
+COLDSECTION
 void ThreadedSSLSocketAcceptor::onConfigure(const SessionSettings &s)
 THROW_DECL( ConfigError )
 {
@@ -182,6 +186,7 @@ THROW_DECL( ConfigError )
   }
 }
 
+COLDSECTION
 void ThreadedSSLSocketAcceptor::onInitialize(const SessionSettings &s)
 THROW_DECL( RuntimeError )
 {

@@ -27,7 +27,7 @@
 
 namespace FIX
 {
-Log* FileLogFactory::create()
+Log* COLDSECTION FileLogFactory::create()
 {
   m_globalLogCount++;
   if( m_globalLogCount > 1 ) return m_globalLog;
@@ -56,7 +56,7 @@ Log* FileLogFactory::create()
   }
 }
 
-Log* FileLogFactory::create( const SessionID& s )
+Log* COLDSECTION FileLogFactory::create( const SessionID& s )
 {
   if ( m_path.size() && m_backupPath.size() )
     return new FileLog( m_path, m_backupPath, s );
@@ -77,7 +77,7 @@ Log* FileLogFactory::create( const SessionID& s )
   return new FileLog( path, backupPath, s, FileLog::getRollover(rollover) );
 }
 
-void FileLogFactory::destroy( Log* pLog )
+void COLDSECTION FileLogFactory::destroy( Log* pLog )
 {
   if( pLog == m_globalLog )
   {
@@ -129,31 +129,31 @@ void FileLog::rollover(const UtcTimeStamp& current, UtcTimeStamp& last, const st
   last = current;
 }
 
-FileLog::FileLog( const std::string& path, Rollover r )
+COLDSECTION FileLog::FileLog( const std::string& path, Rollover r )
 : m_rollover(r)
 {
   init( path, path, "GLOBAL" );
 }
 
-FileLog::FileLog( const std::string& path, const std::string& backupPath, Rollover r )
+COLDSECTION FileLog::FileLog( const std::string& path, const std::string& backupPath, Rollover r )
 : m_rollover(r)
 {
   init( path, backupPath, "GLOBAL" );
 }
 
-FileLog::FileLog( const std::string& path, const SessionID& s, Rollover r )
+COLDSECTION FileLog::FileLog( const std::string& path, const SessionID& s, Rollover r )
 : m_rollover(r)
 {
   init( path, path, generatePrefix(s) );
 }
 
-FileLog::FileLog( const std::string& path, const std::string& backupPath, const SessionID& s, Rollover r )
+COLDSECTION FileLog::FileLog( const std::string& path, const std::string& backupPath, const SessionID& s, Rollover r )
 : m_rollover(r)
 {
   init( path, backupPath, generatePrefix(s) );
 }
 
-std::string FileLog::generatePrefix( const SessionID& s )
+COLDSECTION std::string FileLog::generatePrefix( const SessionID& s )
 {
   const std::string& begin =
     s.getBeginString().dupString();
@@ -171,7 +171,7 @@ std::string FileLog::generatePrefix( const SessionID& s )
   return prefix;
 }
 
-void FileLog::init( std::string path, std::string backupPath, const std::string& prefix )
+COLDSECTION void FileLog::init( std::string path, std::string backupPath, const std::string& prefix )
 {
   m_timeStamp.reserve(32);
 	
@@ -198,13 +198,13 @@ void FileLog::init( std::string path, std::string backupPath, const std::string&
   if ( !m_event.is_open() ) throw ConfigError( "Could not open event file: " + m_eventFileName );
 }
 
-FileLog::~FileLog()
+COLDSECTION FileLog::~FileLog()
 {
   m_messages.close();
   m_event.close();
 }
 
-void FileLog::clear()
+COLDSECTION void FileLog::clear()
 {
   m_messages.close();
   m_event.close();
@@ -213,7 +213,7 @@ void FileLog::clear()
   m_event.open( m_eventFileName.c_str(), std::ios::out | std::ios::trunc );
 }
 
-void FileLog::backup()
+COLDSECTION void FileLog::backup()
 {
   m_messages.close();
   m_event.close();

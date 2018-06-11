@@ -134,7 +134,7 @@ int SSLSocketInitiator::passwordHandleCB(char *buf, int bufsize, int verify, voi
   return initObj->passwordHandleCallback(buf, bufsize, verify, job);
 }
 
-SSLSocketInitiator::SSLSocketInitiator( Application& application,
+COLDSECTION SSLSocketInitiator::SSLSocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Initiator( application, factory, settings ),
@@ -145,7 +145,7 @@ SSLSocketInitiator::SSLSocketInitiator( Application& application,
   initObj = this;
 }
 
-SSLSocketInitiator::SSLSocketInitiator( Application& application,
+COLDSECTION SSLSocketInitiator::SSLSocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings,
                                   LogFactory& logFactory ) THROW_DECL( ConfigError )
@@ -157,7 +157,7 @@ SSLSocketInitiator::SSLSocketInitiator( Application& application,
   initObj = this;
 }
 
-SSLSocketInitiator::~SSLSocketInitiator()
+COLDSECTION SSLSocketInitiator::~SSLSocketInitiator()
 {
   SocketConnections::iterator i;
   for (i = m_connections.begin();
@@ -176,7 +176,7 @@ SSLSocketInitiator::~SSLSocketInitiator()
   }
 }
 
-void SSLSocketInitiator::onConfigure( const SessionSettings& s )
+COLDSECTION void SSLSocketInitiator::onConfigure( const SessionSettings& s )
 THROW_DECL( ConfigError )
 {
   const Dictionary& dict = s.get();
@@ -191,7 +191,7 @@ THROW_DECL( ConfigError )
     m_rcvBufSize = dict.getInt( SOCKET_RECEIVE_BUFFER_SIZE );
 }
 
-void SSLSocketInitiator::onInitialize( const SessionSettings& s )
+COLDSECTION void SSLSocketInitiator::onInitialize( const SessionSettings& s )
 THROW_DECL( RuntimeError )
 {
   if (m_sslInit)

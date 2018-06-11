@@ -34,11 +34,11 @@
 
 namespace FIX
 {
-SessionFactory::~SessionFactory()
+COLDSECTION SessionFactory::~SessionFactory()
 {
 }
 
-Session* SessionFactory::create( const SessionID& sessionID,
+Session* COLDSECTION SessionFactory::create( const SessionID& sessionID,
                                  const Dictionary& settings ) THROW_DECL( ConfigError )
 {
   std::string connectionType = settings.getString( CONNECTION_TYPE );
@@ -207,7 +207,7 @@ void SessionFactory::destroy( Session* pSession )
   delete pSession;
 }
 
-ptr::shared_ptr<DataDictionary> SessionFactory::createDataDictionary(const SessionID& sessionID, 
+ptr::shared_ptr<DataDictionary> COLDSECTION SessionFactory::createDataDictionary(const SessionID& sessionID, 
                                                                      const Dictionary& settings, 
                                                                      const std::string& settingsKey) THROW_DECL( ConfigError )
 {
@@ -263,7 +263,7 @@ ptr::shared_ptr<DataDictionary> SessionFactory::createDataDictionary(const Sessi
   return pCopyOfDD;    
 }
 
-void SessionFactory::processFixtDataDictionaries(const SessionID& sessionID, 
+void COLDSECTION SessionFactory::processFixtDataDictionaries(const SessionID& sessionID, 
                                                  const Dictionary& settings, 
                                                  DataDictionaryProvider& provider) THROW_DECL( ConfigError )
 {
@@ -294,7 +294,7 @@ void SessionFactory::processFixtDataDictionaries(const SessionID& sessionID,
   }
 }
 
-void SessionFactory::processFixDataDictionary(const SessionID& sessionID, 
+void COLDSECTION SessionFactory::processFixDataDictionary(const SessionID& sessionID, 
                                               const Dictionary& settings, 
                                               DataDictionaryProvider& provider) THROW_DECL( ConfigError )
 {

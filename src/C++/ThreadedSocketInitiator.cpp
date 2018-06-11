@@ -29,6 +29,7 @@
 
 namespace FIX
 {
+COLDSECTION
 ThreadedSocketInitiator::ThreadedSocketInitiator(
   Application& application,
   MessageStoreFactory& factory,
@@ -40,6 +41,7 @@ ThreadedSocketInitiator::ThreadedSocketInitiator(
   socket_init(); 
 }
 
+COLDSECTION
 ThreadedSocketInitiator::ThreadedSocketInitiator(
   Application& application,
   MessageStoreFactory& factory,
@@ -57,6 +59,7 @@ ThreadedSocketInitiator::~ThreadedSocketInitiator()
   socket_term(); 
 }
 
+COLDSECTION
 void ThreadedSocketInitiator::onConfigure( const SessionSettings& s )
 THROW_DECL( ConfigError )
 {
@@ -72,6 +75,7 @@ THROW_DECL( ConfigError )
     m_rcvBufSize = dict.getInt( SOCKET_RECEIVE_BUFFER_SIZE );
 }
 
+COLDSECTION
 void ThreadedSocketInitiator::onInitialize( const SessionSettings& s )
 THROW_DECL( RuntimeError )
 {

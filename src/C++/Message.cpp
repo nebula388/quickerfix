@@ -33,7 +33,7 @@ namespace FIX
 const char* Message::FieldReader::ErrDelimiter = "Equal sign not found in field";
 const char* Message::FieldReader::ErrSOH = "SOH not found at end of field";
 
-ALIGN_DECL_DEFAULT Message::AdminSet Message::s_adminTypeSet;
+ALIGN_DECL_DEFAULT HOTDATA Message::AdminSet Message::s_adminTypeSet;
 SmartPtr<DataDictionary> Message::s_dataDictionary;
 
 int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
@@ -85,7 +85,7 @@ namespace detail {
 	};
 }
 
-std::string& HEAVYUSE
+std::string& HEAVYUSE HOTSECTION
 Message::toString( const FieldCounter& c, std::string& str ) const
 {
   char* p;
@@ -158,7 +158,7 @@ bool Message::extractField ( Message::FieldReader& reader,
 }
 
 // FIXT deserialization with separate session and application dictionaries
-void HEAVYUSE
+void HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation,
                     DataDictionary::MsgInfo& msgInfo,
                     const DataDictionary& sessionDataDictionary,
@@ -353,7 +353,7 @@ ndict:
 }
 
 // standard deserializatrion with a single dictionary only
-void HEAVYUSE
+void HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation,
                      DataDictionary::MsgInfo& msgInfo, const DataDictionary& dataDictionary )
 {
@@ -485,7 +485,7 @@ rest:
 }
 
 // generic case without a dictionary
-const MsgType* HEAVYUSE
+const MsgType* HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation )
 {
   int field;
@@ -586,7 +586,7 @@ void LIGHTUSE Message::setGroup( const std::string& msg,
   pos = reader.pos() - String::data(str);
 }
 
-void HEAVYUSE Message::setGroup( Message::FieldReader& reader,
+void HEAVYUSE HOTSECTION Message::setGroup( Message::FieldReader& reader,
 			FieldMap& fields,
                         const DataDictionary& dataDictionary,
                         int group, int delim,
@@ -703,7 +703,7 @@ void Message::validate(const BodyLength* pBodyLength)
     throw InvalidMessage("BodyLength missing");
 }
 
-ALIGN_DECL_DEFAULT Message::HeaderFieldSet Message::headerFieldSet;
+ALIGN_DECL_DEFAULT HOTDATA Message::HeaderFieldSet Message::headerFieldSet;
 
 ALIGN_DECL_DEFAULT const int Message::HeaderFieldSet::m_fields[] =
 {
@@ -747,7 +747,7 @@ FIELD::SignatureLength,
 0
 };
 
-Message::AdminSet::AdminSet()
+COLDSECTION Message::AdminSet::AdminSet()
 {
   _value.set('0');
   _value.set('1');
@@ -844,7 +844,7 @@ void Message::reverseRoute( const Header& header )
   }
 }
 
-bool Message::InitializeXML( const std::string& url )
+bool COLDSECTION Message::InitializeXML( const std::string& url )
 {
   try
   {

@@ -39,7 +39,7 @@ Mutex Session::s_mutex;
 #define LOGEX( method ) try { method; } catch( std::exception& e ) \
   { m_state.onEvent( e.what() ); }
 
-Session::Session( Application& application,
+COLDSECTION Session::Session( Application& application,
                   MessageStoreFactory& messageStoreFactory,
                   const SessionID& sessionID,
                   const DataDictionaryProvider& dataDictionaryProvider,
@@ -105,7 +105,7 @@ void Session::fill( Header& header, UtcTimeStamp now )
   insertSendingTime( header, now );
 }
 
-Message::admin_trait Session::fill( Header& header, int num, UtcTimeStamp now )
+Message::admin_trait HEAVYUSE HOTSECTION Session::fill( Header& header, int num, UtcTimeStamp now )
 {
   Message::admin_trait trait = Message::admin_none;
   FieldMap::iterator it = header.begin();
@@ -130,7 +130,7 @@ Message::admin_trait Session::fill( Header& header, int num, UtcTimeStamp now )
   return trait;
 }
 
-void HEAVYUSE Session::next( const UtcTimeStamp& timeStamp )
+void HEAVYUSE HOTSECTION Session::next( const UtcTimeStamp& timeStamp )
 {
   try
   {
@@ -439,7 +439,7 @@ void Session::nextResendRequest( const Message& resendRequest, const UtcTimeStam
     m_state.incrNextTargetMsgSeqNum();
 }
 
-bool HEAVYUSE Session::send( Message& message )
+bool HEAVYUSE HOTSECTION Session::send( Message& message )
 {
   int f[2] = { FIELD::PossDupFlag, FIELD::OrigSendingTime };
   message.getHeader().removeFields( f, f + sizeof(f)/sizeof(int));
@@ -447,7 +447,7 @@ bool HEAVYUSE Session::send( Message& message )
   return sendRaw( message );
 }
 
-bool HEAVYUSE Session::sendRaw( Message& message, int num )
+bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
 {
   Locker l( m_mutex );
 
@@ -930,7 +930,7 @@ void Session::populateRejectReason( Message& reject, const std::string& text )
   reject.setField( Text::Pack( text ) );
 }
 
-bool HEAVYUSE Session::verify( const Message& msg, Message::Admin::AdminType adminType,
+bool HEAVYUSE HOTSECTION Session::verify( const Message& msg, Message::Admin::AdminType adminType,
                                           const UtcTimeStamp& now,
                                           const Header& header,
                                           bool checkTooHigh, bool checkTooLow )
@@ -1205,7 +1205,7 @@ bool Session::nextQueued( int num, const UtcTimeStamp& timeStamp )
   return false;
 }
 
-void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bool queued )
+void HEAVYUSE HOTSECTION Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bool queued )
 {
   const char* msg = Sg::data<const char*>(buf);
   try
@@ -1252,7 +1252,7 @@ void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bo
   }
 }
 
-void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& msgInfo,
+void HEAVYUSE HOTSECTION Session::next( const Message& message, DataDictionary::MsgInfo& msgInfo,
                              const DataDictionary* sessionDD, const UtcTimeStamp& timeStamp, bool queued )
 {
   const Header& header = message.getHeader();

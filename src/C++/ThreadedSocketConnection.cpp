@@ -88,7 +88,7 @@ void ThreadedSocketConnection::disconnect()
   m_parser.reset();
 }
 
-inline bool HEAVYUSE ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
+inline bool HEAVYUSE HOTSECTION ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
 {
   while( true )
   {
@@ -112,7 +112,7 @@ inline bool HEAVYUSE ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
   return false;
 }
 
-inline void HEAVYUSE ThreadedSocketConnection::processStream()
+inline void HEAVYUSE HOTSECTION ThreadedSocketConnection::processStream()
 {
   Sg::sg_buf_t buf;
   while( readMessage( buf ) )
@@ -138,7 +138,7 @@ inline void HEAVYUSE ThreadedSocketConnection::processStream()
   }
 }
 
-bool HEAVYUSE ThreadedSocketConnection::read()
+bool HEAVYUSE HOTSECTION ThreadedSocketConnection::read()
 {
   try
   {

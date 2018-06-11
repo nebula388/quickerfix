@@ -40,7 +40,7 @@ namespace FIX
 struct header_order
 {
   // BeginString = 8 < BodyLength = 9 < MsgType = 35 < other
-  static inline bool PURE_DECL NOTHROW compare( const int x, const int y )
+  static inline bool PURE_DECL NOTHROW HEAVYUSE compare( const int x, const int y )
   {
     int orderedX = getOrderedPosition( x );
     int orderedY = getOrderedPosition( y );
@@ -48,7 +48,7 @@ struct header_order
     return orderedX < orderedY;
   }
 
-  static inline int PURE_DECL NOTHROW getOrderedPosition( const int field )
+  static inline int PURE_DECL NOTHROW HEAVYUSE getOrderedPosition( const int field )
   {
     return field - (((field == FIX::FIELD::MsgType) | ((unsigned)(field - FIX::FIELD::BeginString) <= 1)) << 6);
   }
@@ -57,7 +57,7 @@ struct header_order
 /// Sorts fields in correct trailer order.
 struct trailer_order
 {
-  static inline bool PURE_DECL NOTHROW compare( const int x, const int y )
+  static inline bool PURE_DECL NOTHROW HEAVYUSE compare( const int x, const int y )
   {
     return ((x < y) || (y == FIELD::CheckSum)) && (x != FIELD::CheckSum);
   }
@@ -66,7 +66,7 @@ struct trailer_order
 /// Sorts fields in correct group order
 struct group_order
 {
-  static inline bool PURE_DECL NOTHROW compare( const int x, const int y, const int* order, int largest )
+  static inline bool PURE_DECL NOTHROW HEAVYUSE compare( const int x, const int y, const int* order, int largest )
   {
     int iX = (x <= largest) ? order[x] : x;
     int iY = (y <= largest) ? order[y] : y;
@@ -199,7 +199,7 @@ public:
   , m_groupOrder( copy.m_groupOrder )
   {}
 
-  inline bool PURE_DECL NOTHROW operator() ( const int x, const int y ) const
+  inline bool PURE_DECL NOTHROW HEAVYUSE operator() ( const int x, const int y ) const
   {
     if ( LIKELY(m_mode == normal) ) return x < y;
 

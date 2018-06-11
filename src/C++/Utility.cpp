@@ -47,7 +47,7 @@ ALIGN_DECL_DEFAULT const int detail::bitop_base::Mod67Position[] = {
 
 #if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
 // cacheline aligned block of magic constants
-ALIGN_DECL(64) Util::x86Data::ConvBits Util::x86Data::cbits =
+ALIGN_DECL(64) HOTDATA Util::x86Data::ConvBits Util::x86Data::cbits =
 {
   { // mul_10
    10, 10, 10, 10, 10, 10, 10, 10
@@ -72,15 +72,15 @@ ALIGN_DECL(64) Util::x86Data::ConvBits Util::x86Data::cbits =
 };
 
 #ifdef __SSSE3__
-ALIGN_DECL_DEFAULT unsigned char Util::CharBuffer::s_vmask[32] = 
+ALIGN_DECL_DEFAULT HOTDATA unsigned char Util::CharBuffer::s_vmask[32] = 
         { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0    };
-ALIGN_DECL_DEFAULT unsigned char Util::CharBuffer::s_vshift[32] =
+ALIGN_DECL_DEFAULT HOTDATA unsigned char Util::CharBuffer::s_vshift[32] =
         { 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   15,
           0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
 #endif
 
-ALIGN_DECL_DEFAULT Util::x86Data::Log2 Util::x86Data::m_digits[32] = 
+ALIGN_DECL_DEFAULT HOTDATA Util::x86Data::Log2 Util::x86Data::m_digits[32] = 
 {
   { { 1, 9 } },
   { { 1, 9 } },
@@ -116,7 +116,7 @@ ALIGN_DECL_DEFAULT Util::x86Data::Log2 Util::x86Data::m_digits[32] =
   { { 10, (std::numeric_limits<uint32_t>::max)() } }
 };
 
-ALIGN_DECL_DEFAULT Util::NumData::DigitPair Util::NumData::m_pairs[100] =
+ALIGN_DECL_DEFAULT HOTDATA Util::NumData::DigitPair Util::NumData::m_pairs[100] =
 {
 { {'0','0'} }, { {'0','1'} }, { {'0','2'} }, { {'0','3'} }, { {'0','4'} }, { {'0','5'} }, { {'0','6'} }, { {'0','7'} }, { {'0','8'} }, { {'0','9'} },
 { {'1','0'} }, { {'1','1'} }, { {'1','2'} }, { {'1','3'} }, { {'1','4'} }, { {'1','5'} }, { {'1','6'} }, { {'1','7'} }, { {'1','8'} }, { {'1','9'} },

@@ -100,7 +100,7 @@ bool SocketConnection::send( Sg::sg_buf_ptr bufs, int n )
   return send( Sg::toString( bufs, n ) );
 }
 
-bool SocketConnection::processQueue()
+bool HEAVYUSE HOTSECTION SocketConnection::processQueue()
 {
   Locker l( m_mutex );
 
@@ -136,7 +136,7 @@ void SocketConnection::disconnect()
     m_pMonitor->drop( m_socket );
 }
 
-bool SocketConnection::read( SocketConnector& s )
+bool HEAVYUSE HOTSECTION SocketConnection::read( SocketConnector& s )
 {
   if ( !m_pSession ) return false;
 
@@ -153,7 +153,7 @@ bool SocketConnection::read( SocketConnector& s )
   return true;
 }
 
-bool SocketConnection::read( SocketAcceptor& a, SocketServer& s )
+bool HEAVYUSE HOTSECTION SocketConnection::read( SocketAcceptor& a, SocketServer& s )
 {
   try
   {
@@ -214,7 +214,7 @@ bool SocketConnection::isValidSession()
   return !( m_sessions.find(sessionID) == m_sessions.end() );
 }
 
-void SocketConnection::readFromSocket()
+void HEAVYUSE HOTSECTION SocketConnection::readFromSocket()
 THROW_DECL( SocketRecvFailed )
 {
   ssize_t size;

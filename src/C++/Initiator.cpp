@@ -33,7 +33,7 @@
 
 namespace FIX
 {
-Initiator::Initiator( Application& application,
+COLDSECTION Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
                       const SessionSettings& settings )
 THROW_DECL( ConfigError )
@@ -47,7 +47,7 @@ THROW_DECL( ConfigError )
   m_stop( true )
 { initialize(); }
 
-Initiator::Initiator( Application& application,
+COLDSECTION Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
                       const SessionSettings& settings,
                       LogFactory& logFactory )
@@ -62,7 +62,7 @@ THROW_DECL( ConfigError )
   m_stop( true )
 { initialize(); }
 
-void Initiator::initialize()
+COLDSECTION void Initiator::initialize()
 THROW_DECL( ConfigError )
 {
   std::set < SessionID > sessions = m_settings.getSessions();
@@ -88,7 +88,7 @@ THROW_DECL( ConfigError )
     throw ConfigError( "No sessions defined for initiator" );
 }
 
-Initiator::~Initiator()
+COLDSECTION Initiator::~Initiator()
 {
   Sessions::iterator i;
   for ( i = m_sessions.begin(); i != m_sessions.end(); ++i )

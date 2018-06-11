@@ -136,7 +136,7 @@ int SSLSocketAcceptor::passPhraseHandleCB(char *buf, int bufsize, int verify, vo
   return acceptObj->passwordHandleCallback(buf, bufsize, verify, job);
 }
 
-SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
+COLDSECTION SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings ),
@@ -146,7 +146,7 @@ SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
   acceptObj = this;
 }
 
-SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
+COLDSECTION SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings,
                                 LogFactory& logFactory ) THROW_DECL( ConfigError )
@@ -157,7 +157,7 @@ SSLSocketAcceptor::SSLSocketAcceptor( Application& application,
   acceptObj = this;
 }
 
-SSLSocketAcceptor::~SSLSocketAcceptor()
+COLDSECTION SSLSocketAcceptor::~SSLSocketAcceptor()
 {
   SocketConnections::iterator iter;
   for ( iter = m_connections.begin(); iter != m_connections.end(); ++iter )
@@ -171,6 +171,7 @@ SSLSocketAcceptor::~SSLSocketAcceptor()
   }
 }
 
+COLDSECTION
 void SSLSocketAcceptor::onConfigure( const SessionSettings& s )
 THROW_DECL( ConfigError )
 {
@@ -187,6 +188,7 @@ THROW_DECL( ConfigError )
   }
 }
 
+COLDSECTION
 void SSLSocketAcceptor::onInitialize( const SessionSettings& s )
 THROW_DECL( RuntimeError )
 {

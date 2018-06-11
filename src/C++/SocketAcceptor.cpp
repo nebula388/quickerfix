@@ -31,14 +31,14 @@
 
 namespace FIX
 {
-SocketAcceptor::SocketAcceptor( Application& application,
+COLDSECTION SocketAcceptor::SocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings )
 THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings ),
   m_pServer( 0 ) {}
 
-SocketAcceptor::SocketAcceptor( Application& application,
+COLDSECTION SocketAcceptor::SocketAcceptor( Application& application,
                                 MessageStoreFactory& factory,
                                 const SessionSettings& settings,
                                 LogFactory& logFactory )
@@ -55,7 +55,7 @@ SocketAcceptor::~SocketAcceptor()
     delete iter->second;
 }
 
-void SocketAcceptor::onConfigure( const SessionSettings& s )
+void COLDSECTION SocketAcceptor::onConfigure( const SessionSettings& s )
 THROW_DECL( ConfigError )
 {
   std::set<SessionID> sessions = s.getSessions();
@@ -71,7 +71,7 @@ THROW_DECL( ConfigError )
   }
 }
 
-void SocketAcceptor::onInitialize( const SessionSettings& s )
+void COLDSECTION SocketAcceptor::onInitialize( const SessionSettings& s )
 THROW_DECL( RuntimeError )
 {
   short port = 0;
@@ -181,7 +181,7 @@ void SocketAcceptor::onConnect( SocketServer& server, int a, int s )
     getLog()->onEvent( stream.str() );
 }
 
-void SocketAcceptor::onWrite( SocketServer& server, int s )
+void HOTSECTION SocketAcceptor::onWrite( SocketServer& server, int s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;
@@ -190,7 +190,7 @@ void SocketAcceptor::onWrite( SocketServer& server, int s )
     pSocketConnection->unsignal();
 }
 
-bool SocketAcceptor::onData( SocketServer& server, int s )
+bool HOTSECTION SocketAcceptor::onData( SocketServer& server, int s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return false;

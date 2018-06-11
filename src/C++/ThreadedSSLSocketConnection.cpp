@@ -128,6 +128,7 @@
 
 namespace FIX
 {
+COLDSECTION
 ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(int s, SSL *ssl,
                                                          Sessions sessions,
                                                          Log *pLog)
@@ -138,6 +139,7 @@ ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(int s, SSL *ssl,
   FD_SET(m_socket, &m_fds);
 }
 
+COLDSECTION
 ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(
     const SessionID &sessionID, int s, SSL *ssl, const std::string &address,
     short port, Log *pLog)
@@ -150,6 +152,7 @@ ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(
     m_pSession->setResponder(this);
 }
 
+COLDSECTION
 ThreadedSSLSocketConnection::~ThreadedSSLSocketConnection()
 {
   if (m_pSession)

@@ -205,6 +205,9 @@ typedef int ssize_t;
   #define NOTHROW __declspec(nothrow)
   #define NOTHROW_PRE __declspec(nothrow)
   #define NOTHROW_POST
+  #define HOTDATA
+  #define HOTSECTION
+  #define COLDSECTION
   #define LIGHTUSE
   #define HEAVYUSE
   #define PREFETCH(addr, rw, longevity) _mm_prefetch(addr, longevity)
@@ -220,8 +223,11 @@ typedef int ssize_t;
   #define NOTHROW __attribute__ ((nothrow))
   #define NOTHROW_PRE
   #define NOTHROW_POST __attribute__ ((nothrow))
+  #define HOTDATA __attribute__((section(".data_likely")))
+  #define HOTSECTION __attribute__((section(".text_likely")))
+  #define COLDSECTION __attribute__((section(".text_unlikely")))
   #define HEAVYUSE __attribute__((hot))
-  #define LIGHTUSE __attribute__((cold))
+  #define LIGHTUSE __attribute__((cold)) 
   #define PREFETCH(addr, rw, longevity) __builtin_prefetch(addr, rw, longevity)
   #define LIKELY(x) __builtin_expect((x),1)
   #define UNLIKELY(x) __builtin_expect((x),0)
@@ -239,6 +245,9 @@ typedef int ssize_t;
   #define NOTHROW
   #define NOTHROW_PRE
   #define NOTHROW_POST
+  #define HOTDATA
+  #define HOTSECTION
+  #define COLDSECTION
   #define HEAVYUSE
   #define LIGHTUSE 
   #define PREFETCH(addr, rw, longevity) while(false)
