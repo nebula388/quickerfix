@@ -4,6 +4,7 @@
 #define HEAVYUSE
 #define LIGHTUSE
 #define PURE_DECL
+#define THROW_DECL(...)
 #define ALIGN_DECL_DEFAULT
 
 %exceptionclass FIX::Exception;
