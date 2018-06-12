@@ -205,6 +205,7 @@ typedef int ssize_t;
   #define NOTHROW __declspec(nothrow)
   #define NOTHROW_PRE __declspec(nothrow)
   #define NOTHROW_POST
+  // HOTDATA is for const non-zero-initalized globals only
   #define HOTDATA
   #define HOTSECTION
   #define COLDSECTION
@@ -729,7 +730,7 @@ namespace FIX
         char     c[2];
         uint16_t u;
       };
-      static ALIGN_DECL_DEFAULT DigitPair m_pairs[100]; /* string representations of "00" to "99" */
+      static ALIGN_DECL_DEFAULT const DigitPair m_pairs[100]; /* string representations of "00" to "99" */
     };
 
 #if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
@@ -742,14 +743,14 @@ namespace FIX
         };
         uint64_t m_qword;
       };
-      static ALIGN_DECL_DEFAULT Log2 m_digits[32];
+      static ALIGN_DECL_DEFAULT const Log2 m_digits[32];
       static struct ConvBits
       { 
         uint16_t mul_10[8];
         uint16_t div_const[8];
         uint16_t shl_const[8];
         uint8_t  to_ascii[16];
-      } ALIGN_DECL(64) cbits;
+      } ALIGN_DECL(64) const cbits;
     };
 
     class UInt : public x86Data {
@@ -1102,7 +1103,7 @@ namespace FIX
         uint64_t m_threshold;
         int64_t m_count;
       };
-      static ALIGN_DECL_DEFAULT Log2 m_digits[64];
+      static ALIGN_DECL_DEFAULT const Log2 m_digits[64];
       public:
       static inline std::size_t PURE_DECL HEAVYUSE numDigits( uint64_t i )
       {
@@ -1485,9 +1486,10 @@ namespace FIX
       };
 
 #ifdef __SSSE3__
-      static ALIGN_DECL_DEFAULT unsigned char s_vmask[32];
-      static ALIGN_DECL_DEFAULT unsigned char s_vshift[32];
+      static ALIGN_DECL_DEFAULT const unsigned char s_vmask[32];
+      static ALIGN_DECL_DEFAULT const unsigned char s_vshift[32];
 #endif
+      static ALIGN_DECL_DEFAULT const Fixed<16> s_uint_charset;
     }; // CharBuffer
 
     template <> union CharBuffer::Fixed<1>
@@ -2005,15 +2007,80 @@ namespace FIX
 
     }; // Tag
 
-    template <std::size_t N> class BitSet {
+    template <std::size_t N, typename U = unsigned long> struct BitArray {
 
-      typedef unsigned long word_type;
+      typedef U word_type;
 
       static const std::size_t word_size = sizeof(word_type) * 8;
       static const std::size_t word_shift = detail::log_<sizeof(word_type) * 8>::value;
       static const std::size_t Width = N/word_size + ((N%word_size) ? 1 : 0);
 
       word_type m_bits[Width];
+
+      std::size_t size() const { return N; }
+
+      void NOTHROW set( int bit )
+      {
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+        __asm__ __volatile__ (
+                "bts %1, %0; "
+                : "+m" (*(volatile word_type*)m_bits)
+                : "Ir" (bit)
+                : "cc", "memory");   
+#elif defined(_MSC_VER)
+        _bittestandset( (long*)m_bits, bit );
+#else
+        m_bits[bit >> word_shift] |= ((word_type)1 << (bit & (word_size - 1)));
+#endif
+      }
+
+      bool NOTHROW test( int bit ) const
+      {
+        unsigned char v;
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+        __asm__ __volatile__ (
+                "bt %1, %2; "
+                "setc %b0 "                                     
+                : "=r" (v)                                   
+                : "Ir" (bit), "m"(*(volatile word_type*)m_bits) 
+                : "cc");
+        return v;
+#elif defined(_MSC_VER)
+        v = _bittest( (long*)m_bits, bit );
+        return v != 0;
+#else
+        v = (m_bits[bit >> word_shift] &
+            ((word_type)1 << (bit & (word_size - 1)))) ? 1 : 0;
+        return v != 0;
+#endif
+      }
+
+      void NOTHROW reset( int bit )
+      {
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+ 	    __asm__ __volatile__ (
+                "btr %1, %0; "
+                : "+m" (*(volatile word_type*)m_bits)
+                : "Ir" (bit)
+                : "cc", "memory");   
+#elif defined(_MSC_VER)
+        _bittestandreset( (long*)m_bits, bit );
+#else
+        m_bits[bit >> word_shift] &= ~((base_type::word_type)1 << (bit & (word_size - 1)));
+#endif
+      }
+    };
+
+    template <std::size_t N> class BitSet : public BitArray<N> {
+
+      typedef BitArray<N> base_type;
+      typedef typename base_type::word_type word_type;
+
+      using base_type::word_size;
+      using base_type::word_shift;
+      using base_type::Width;
+
+      using base_type::m_bits;
 
       std::size_t _Find_from( int word )
       {
@@ -2037,17 +2104,7 @@ namespace FIX
       }
       BitSet NOTHROW_PRE & NOTHROW_POST reset( int bit )
       {
-#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
- 	    __asm__ __volatile__ (
-                "btr %1, %0; "
-                : "+m" (*(volatile word_type*)m_bits)
-                : "Ir" (bit)
-                : "cc", "memory");   
-#elif defined(_MSC_VER)
-        _bittestandreset( (long*)m_bits, bit );
-#else
-        m_bits[bit >> word_shift] &= ~((word_type)1 << (bit & (word_size - 1)));
-#endif
+        base_type::reset( bit );
         return *this;
       }
 
@@ -2063,17 +2120,7 @@ namespace FIX
       }
       inline BitSet NOTHROW_PRE & NOTHROW_POST set( int bit )
       {
-#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-        __asm__ __volatile__ (
-                "bts %1, %0; "
-                : "+m" (*(volatile word_type*)m_bits)
-                : "Ir" (bit)
-                : "cc", "memory");   
-#elif defined(_MSC_VER)
-        _bittestandset( (long*)m_bits, bit );
-#else
-        m_bits[bit >> word_shift] |= ((word_type)1 << (bit & (word_size - 1)));
-#endif
+        base_type::set( bit );
         return *this;
       }
       inline BitSet NOTHROW_PRE & NOTHROW_POST set( int bit, bool value )
@@ -2083,23 +2130,7 @@ namespace FIX
 
       inline bool NOTHROW operator[]( int bit ) const
       {
-        unsigned char nRet;
-#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-        __asm__ __volatile__ (
-                "bt %1, %2; "
-                "setc %b0 "                                     
-                : "=r" (nRet)                                   
-                : "Ir" (bit), "m"(*(volatile word_type*)m_bits) 
-                : "cc");
-        return nRet;
-#elif defined(_MSC_VER)
-        nRet = _bittest( (long*)m_bits, bit );
-        return nRet != 0;
-#else
-        nRet = (m_bits[bit >> word_shift] &
-               ((word_type)1 << (bit & (word_size - 1)))) ? 1 : 0;
-        return nRet != 0;
-#endif
+        return base_type::test( bit );
       }
 
       inline int NOTHROW _Find_first()

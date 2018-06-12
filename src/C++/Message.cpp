@@ -33,7 +33,6 @@ namespace FIX
 const char* Message::FieldReader::ErrDelimiter = "Equal sign not found in field";
 const char* Message::FieldReader::ErrSOH = "SOH not found at end of field";
 
-ALIGN_DECL_DEFAULT HOTDATA Message::AdminSet Message::s_adminTypeSet;
 SmartPtr<DataDictionary> Message::s_dataDictionary;
 
 int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
@@ -703,9 +702,7 @@ void Message::validate(const BodyLength* pBodyLength)
     throw InvalidMessage("BodyLength missing");
 }
 
-ALIGN_DECL_DEFAULT HOTDATA Message::HeaderFieldSet Message::headerFieldSet;
-
-ALIGN_DECL_DEFAULT const int Message::HeaderFieldSet::m_fields[] =
+static ALIGN_DECL_DEFAULT const int s_HeaderFieldList[] =
 {
 FIELD::BeginString,
 FIELD::BodyLength,
@@ -739,7 +736,7 @@ FIELD::NoHops,
 0
 };
 
-ALIGN_DECL_DEFAULT const int Message::TrailerFieldSet::m_fields[] =
+static ALIGN_DECL_DEFAULT const int s_TrailerFieldList[] =
 {
 FIELD::CheckSum, // should be first
 FIELD::Signature,
@@ -747,6 +744,24 @@ FIELD::SignatureLength,
 0
 };
 
+#if defined(__BYTE_ORDER__)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+ALIGN_DECL_DEFAULT HOTDATA const Message::AdminSet Message::adminTypeSet = 
+  { { { 0, 4128768, 2, 0, 0, 0, 0, 0 } } };
+ALIGN_DECL_DEFAULT HOTDATA const Message::HeaderFieldSet Message::headerFieldSet =
+  { { { 768, 51775500, 67108864, 68681730, 245763, 0, 3145728, 0,
+        0, 0, 134217728, 393216, 0, 0, 0, 0,
+        0, 0, 0, 524288, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 768, 0, 0, 0, 0 } } };
+#else // construct on load
+ALIGN_DECL_DEFAULT const Message::AdminSet Message::adminTypeSet;
+ALIGN_DECL_DEFAULT const Message::HeaderFieldSet Message::headerFieldSet;
+
+COLDSECTION Message::HeaderFieldSet::HeaderFieldSet()
+{
+  for(const int* p = s_HeaderFieldList; *p; p++)
+    if ((unsigned)*p < size()) _value.set(*p); 
+}
 COLDSECTION Message::AdminSet::AdminSet()
 {
   _value.set('0');
@@ -757,6 +772,20 @@ COLDSECTION Message::AdminSet::AdminSet()
   _value.set('5');
   _value.set('A');
 };
+#endif
+
+void COLDSECTION Message::HeaderFieldSet::spec( DataDictionary& dict )
+{
+  for(int i = 0; s_HeaderFieldList[i]; i++)
+    dict.addSpecHeaderField( s_HeaderFieldList[i] );
+}
+
+void COLDSECTION Message::TrailerFieldSet::spec( DataDictionary& dict )
+{
+  for(int i = 0; s_TrailerFieldList[i]; i++)
+    dict.addSpecTrailerField( s_TrailerFieldList[i] );
+}
+
 
 void Message::reverseRoute( const Header& header )
 {

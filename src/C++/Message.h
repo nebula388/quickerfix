@@ -137,12 +137,6 @@ class Message : public FieldMap
 {
 public:
 
-  struct AdminSet {
-    Util::BitSet<256> _value;
-    AdminSet();
-    bool test(char v) { return _value[(unsigned char)v]; }
-  };
-
   struct Admin
   {
     enum AdminType
@@ -182,6 +176,32 @@ private:
   friend class DataDictionary;
   friend class Session;
 
+  struct AdminSet {
+    Util::BitArray<256, uint32_t> _value;
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+    AdminSet();
+#endif // static initialization otherwise
+    bool test(char v) const { return _value.test( (unsigned char)v ); }
+  };
+  static ALIGN_DECL_DEFAULT const AdminSet adminTypeSet;
+
+  struct HeaderFieldSet
+  {
+    Util::BitArray<1280, uint32_t> _value;
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+    HeaderFieldSet();
+#endif // static initialization otherwise
+    void static spec( DataDictionary& dict );
+    std::size_t size() const { return _value.size(); }
+    bool test( std::size_t bit ) const { return _value.test( bit ); }
+  };
+  static ALIGN_DECL_DEFAULT const HeaderFieldSet headerFieldSet;
+
+  struct TrailerFieldSet
+  {
+    void static spec( DataDictionary& dict );
+  };
+
   enum status_type {
 	tag_out_of_order,
 	invalid_tag_format,
@@ -205,27 +225,6 @@ private:
     admin_session = 1, // TestRequest, Heartbeat, Reject
     admin_status = 2, // ResendRequest, SequenceReset, Logout
     admin_logon = 4  // Logon
-  };
-
-  struct HeaderFieldSet : public Util::BitSet<1280>
-  {
-    static const int   n_required = 3; // BeginString, BodyLength and MsgType are required
-    static const int   m_fields[];
-    HeaderFieldSet()
-    { for(const int* p = m_fields; *p; p++) if ((unsigned)*p < size()) set(*p); }
-    void static spec( DataDictionary& dict )
-    { for(int i = 0; m_fields[i]; i++) dict.addSpecHeaderField( m_fields[i] ); }
-  };
-  static ALIGN_DECL_DEFAULT HeaderFieldSet headerFieldSet;
-
-  struct TrailerFieldSet : public Util::BitSet<128>
-  {
-    static const int   n_required = 1; // CheckSum is required
-    static const int   m_fields[];
-    TrailerFieldSet()
-    { for(const int* p = m_fields; *p; p++) if ((unsigned)*p < size()) set(*p); }
-    void static spec( DataDictionary& dict )
-    { for(int i = 0; m_fields[i]; i++) dict.addSpecTrailerField( m_fields[i] ); }
   };
 
   class FieldReader : public Sequence {
@@ -417,7 +416,7 @@ private:
     {
       Util::CharBuffer::Fixed<4> const v = { { '\001', '3', '5', '=' } };
       const char* p = Util::CharBuffer::find( v, msg, size );
-      return p && p[5] == '\001' && s_adminTypeSet.test( p[4] );
+      return p && p[5] == '\001' && adminTypeSet.test( p[4] );
     }
     throw InvalidMessage();
   }
@@ -634,14 +633,14 @@ private:
     typedef Admin::AdminType result_type;
     template <typename S> result_type operator()( const S& v ) const {
       const char* value;
-      return String::size(v) == 1 && s_adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::AdminType)value[0] : Admin::None;
+      return String::size(v) == 1 && adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::AdminType)value[0] : Admin::None;
     }
   };
 
   struct TestAdminMsgType {
     typedef bool result_type;
     template <typename S> result_type operator()( const S& v ) const {
-      return String::size(v) == 1 && s_adminTypeSet.test( String::data(v)[0] );
+      return String::size(v) == 1 && adminTypeSet.test( String::data(v)[0] );
     }
   };
 
@@ -1016,7 +1015,7 @@ public:
   { return msgType.forString( TestAdminMsgType() ); }
 
   static inline bool NOTHROW isAdminMsgType( const MsgType::Pack& msgType )
-  { return msgType.m_length == 1 && s_adminTypeSet.test(msgType.m_data[0]); }
+  { return msgType.m_length == 1 && adminTypeSet.test(msgType.m_data[0]); }
 
   static ApplVerID toApplVerID(const BeginString& value)
   {
@@ -1066,7 +1065,7 @@ public:
 				    const DataDictionary* pD = 0 )
   {
     return ( LIKELY((unsigned)field < headerFieldSet.size()) &&
-	     headerFieldSet[field] ) || 
+	     headerFieldSet.test( field ) ) || 
 	   ( pD && pD->isHeaderField( field ) );
   }
   
@@ -1168,7 +1167,6 @@ protected:
   intptr_t m_status;
   intptr_t m_status_data;
 
-  static ALIGN_DECL_DEFAULT AdminSet s_adminTypeSet;
   static SmartPtr<DataDictionary> s_dataDictionary;
 };
 /*! @} */

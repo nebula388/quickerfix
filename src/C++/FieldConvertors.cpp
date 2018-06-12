@@ -31,9 +31,6 @@ namespace FIX {
 ALIGN_DECL_DEFAULT HOTDATA const double DoubleConvertor::m_mul1[8] = { 1E1, 1E2, 1E3, 1E4, 1E5, 1E6, 1E7, 1E8 };
 ALIGN_DECL_DEFAULT HOTDATA const double DoubleConvertor::m_mul8[8] = { 1E8, 1E16, 1E24, 1E32, 1E40, 1E48, 1E56, 1E64 };
 
-ALIGN_DECL_DEFAULT HOTDATA const Util::CharBuffer::Fixed<16> IntConvertor::m_charset =
-      { { '0','1','2','3','4','5','6','7','8','9','9','9','9','9','9','9' } };
-
 #define NUMOF(a) (sizeof(a) / sizeof(a[0]))
 
 std::size_t HEAVYUSE HOTSECTION DoubleConvertor::Proxy::generate(char* buf, double value, std::size_t padded, bool rounded) const
@@ -48,7 +45,7 @@ std::size_t HEAVYUSE HOTSECTION DoubleConvertor::Proxy::generate(char* buf, doub
   */
 
   static const double threshold = 1000000000000000LL; // 10^(MaxPrecision)
-  ALIGN_DECL_DEFAULT HOTDATA static const double pwr10[] =
+  ALIGN_DECL_DEFAULT static const double pwr10[] =
   {
     1, 10, 100, 1000, 10000, 100000, 1000000,
     10000000, 100000000, 1000000000, 10000000000LL,

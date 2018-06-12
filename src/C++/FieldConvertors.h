@@ -100,8 +100,6 @@ struct IntConvertor
   static const std::size_t BufferSize = MaxValueSize >= 16 ? MaxValueSize : 16;
   static std::size_t RequiredSize(value_type v = 0) { return MaxValueSize; }
 
-  ALIGN_DECL_DEFAULT static const Util::CharBuffer::Fixed<16> m_charset;
-
   class Proxy {
 	value_type m_value;
 
@@ -219,7 +217,7 @@ struct IntConvertor
     const char* s = String::data(value);
     std::size_t l = String::size(value);
     int negative = s[0] == '-';
-    return l > 0 && Util::CharBuffer::match(m_charset, s + negative, l - negative);
+    return l > 0 && Util::CharBuffer::match(Util::CharBuffer::s_uint_charset, s + negative, l - negative);
   }
 };
 
@@ -483,7 +481,7 @@ struct CheckSumConvertor
   {
     const char* s = String::data(value);
     std::size_t l = String::size(value);
-    return l == 3 && Util::CharBuffer::match(IntConvertor::m_charset, s, 3) && s[0] < '3';
+    return l == 3 && Util::CharBuffer::match(Util::CharBuffer::s_uint_charset, s, 3) && s[0] < '3';
   }
 };
 
