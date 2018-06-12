@@ -68,7 +68,8 @@ OPTIONAL DEPENDENCIES FOR EXTRA PERFORMANCE
         --with-field-order
 
         Dynamic exception specifications are on by default for the c++03 compilation
-        mode and off by default for the c++11 mode and above. 
+        mode and off by default for the c++11 mode and above. There is an option
+        to enable or disable them explicitly.
 
         --with-throw-decl={ yes, no }
 
@@ -99,12 +100,9 @@ PLATFORM-SPECIFIC NOTES
         as string implementations shipped with them already employ this optimization.
 
         Recommended environment for G++ on Nehalem and above:
-        CXXFLAGS="-O3 -march=core2 -msse4.2 -falign-functions=16 -falign-jumps=16" or
-		 "-O3 -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16"
+        CXXFLAGS="-O3 -flto -march=core2 -msse4.2 -falign-functions=16 -falign-jumps=16" or
+		 "-O3 -flto -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16"
 	if AVX support is available.
-
-        GCC releases 5.x and 6.x demonstrate performance regressions compared to the test
-        scores below. GCC release 7.x fares somewhat better.
 
         Visual Studio builds need to use /Ox optimization level for best performance.
 
@@ -122,7 +120,7 @@ Configuration:
 	Quickfix 1.15.1 --with-boost --with-tbb --with-allocator=tbb --with-openssl
 	quickerfix:	--with-boost --with-sso --with-tbb --with-allocator=tbb --with-openssl
 
-	g++ options: -O3 -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16
+	g++ options: -O3 -flto -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16
 
 	Lockless allocator library (locklessinc.com/downloads).
 
@@ -136,10 +134,10 @@ CODEC:	Measures encoding and decoding performance for a NewOrderSingle message.
 	Results (usec per message, lower is better):
 
 		FIX8		Quickfix 	Quickfix 	quickerfix
-		1.3.2		1.13.3		1.15.1		20180528
+		1.3.2		1.13.3		1.15.1		20180611
 
-to string	2.25516		8.17674		4.16642		0.775209
-from string	7.6158		25.7686		7.21911		1.90974
+to string	2.25516		8.17674		4.16642		0.797276
+from string	7.6158		25.7686		7.21911		1.84118
 
 
 PT:	Measures performance of various QuickFix subsystems
@@ -148,99 +146,104 @@ PT:	Measures performance of various QuickFix subsystems
 	Command line:
 	LD_PRELOAD=libllalloc.so taskset -c 1,9 ./pt -p 1234 -c 1000000
 
-	Results (operations per second, higher is better):
+	Results (average of 10, operations per second, higher is better):
 
 				Quickfix 	Quickfix 	quickerfix 
-				1.13.3		1.15.1		20180528
+				1.13.3		1.15.1		20180611
 
-Converting integers to strings:	2.17391e+07	2.32558e+07	2.48091e+07
+Converting integers to strings:	2.17391e+07	2.30972e+07	2.53413e+07
 
-Converting strings to integers:	1.66667e+08	2.5e+08		3.01001e+08
+Converting strings to integers:	1.66667e+08	2.4e+08		3.10991e+08
 
-Converting doubles to strings:	1.10375e+06	2.26757e+06	9.27561e+06
+Converting doubles to strings:	1.10375e+06	2.22079e+06	9.19689e+06
 
-Converting strings to doubles:	4.6729e+06	1.28205e+07	8.03551e+07
+Converting strings to doubles:	4.6729e+06	1.22004e+07	8.0849e+07
 
-Creating Heartbeat messages:	1.00604e+06	1.66113e+06	5.62208e+06
+Creating Heartbeat messages:	1.00604e+06	1.61747e+06	4.05621e+06
 
-Identifying message types:	6.99301e+06	8.33333e+06	1.20229e+07
-
-Serializing Heartbeat messages
-to strings:			847458		1.69492e+06	3.39677e+06
+Identifying message types:	6.99301e+06	7.66758e+06	3.94824e+07
 
 Serializing Heartbeat messages
-from strings:			392003		840336		3.12246e+06
+to strings:			847458		1.64637e+06	3.43063e+06
 
 Serializing Heartbeat messages
-from strings and validation:	-		789266		2.52467e+06
+from strings:			392003		813028		3.33006e+06
+
+Serializing Heartbeat messages
+from strings and validation:	-		747152		2.57019e+06
 
 Creating NewOrderSingle
-messages:			331785		534474		1.70487e+06
- (packed):			-		-		2.05787e+06
+messages:			331785		479870		1.58731e+06
+ (packed):			-		-		1.82762e+06
 
 Serializing NewOrderSingle
-messages to strings:		652316		1.3369e+06	2.60218e+06
+messages to strings:		652316		1.31906e+06	2.69414e+06
 
 Serializing NewOrderSingle
-messages from strings:		152346		382117		1.5022e+06
+messages from strings:		152346		376396		1.68191e+06
 
 Serializing NewOrderSingle
 messages from strings
-and validation:			-		364697		1.30045e+06
+and validation:			-		358043		1.34246e+06
 
 Creating QuoteRequest
-messages:			13621.9		19260		61789.9
- (packed):			-		-		93949
- (packed, in place):		-		-		153371
+messages:			13621.9		19086.8		57714.8
+ (packed):			-		-		82644.3
+ (packed, in place):		-		-		140506
 
 Serializing QuoteRequest
-messages to strings:		174490		368460		599807
+messages to strings:		174490		359842		558147
 
 Serializing QuoteRequest
-messages from strings:		16942.8		60997.9		147767
+messages from strings:		16942.8		59188.7		139316
 
 Serializing QuoteRequest
 messages from strings
-and validation:			-		58657.9		128075
+and validation:			-		56900.8		121510
 
 Reading fields
-from QuoteRequest message:	28681.2		127567		128467
+from QuoteRequest message:	28681.2		127245		126850
 
 Storing NewOrderSingle
-messages:			299670		275255		324767
+messages:			299670		267331		325388
 
 Validating NewOrderSingle
 messages without
-data dictionary:		5.64972e+06	1.14943e+07	1.30351e+07
+data dictionary:		5.64972e+06	1.11361e+07	1.2633e+07
 
 Validating NewOrderSingle
-messages with data dictionary:	345901		507614		1.60626e+06
+messages with data dictionary:	345901		508688		1.71617e+06
 
 Validating QuoteRequest
 messages without
-data dictionary:		9.80392e+06	1.78571e+07	1.85668e+07
+data dictionary:		9.80392e+06	1.7987e+07	1.84857e+07
 
 Validating QuoteRequest
-messages with data dictionary:	478240		689180		1.57783e+06
+messages with data dictionary:	478240		693746		1.68103e+06
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket			59883.8		105352		348340
-(low latency profile)		-		108731		348965
+on Socket			59883.8		104712		345053
+(low latency profile)		-		106351		346286
 
 Sending/Receiving
 NewOrderSingle/ExecutionReport
-on ThreadedSocket		59862.3		109625		406811
-(low latency profile)		-		114168		424531
+on ThreadedSocket		59862.3		107162		432154
+(low latency profile)		-		110967		446551
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket with data dictionary	-		83878.5		275328
-(low latency profile)		-		85910.7		354082
+on Socket with data dictionary	-		80872.2		304980
+(low latency profile)		-		81855.7		348562
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
 on ThreadedSocket
-with data dictionary		-		84774.5		278692
-(low latency profile)		-		87100.4		418606
+with data dictionary		-		82162.3		302659
+(low latency profile)		-		83803.6		435598
+
+Sending/Receiving
+NewOrderSingle/ExecutionReports
+on ThreadedSSLSocket		-		61060.4		102127
+with data dictionary		-		50959.2		89600.3
 
