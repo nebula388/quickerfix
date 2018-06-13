@@ -1,7 +1,7 @@
 require 'PrintFile'
 
 class GeneratorCPP
-  def initialize(type, major, minor, sp, verid, basedir)
+  def initialize(type, major, minor, sp, verid, aggregator, basedir)
     @type = type
     @major = major
     @minor = minor
@@ -10,6 +10,7 @@ class GeneratorCPP
       @namespace += "SP#{sp}"
     end
     @verid = verid
+    @aggregator = aggregator
     @beginstring = type + "." + major + "." + minor
     if @type == "FIX" && major >= "5"
       @beginstring = "FIXT.1.1"
@@ -75,15 +76,26 @@ class GeneratorCPP
     @f.indent
     @f.puts "class Message : public FIX::Message"
     @f.puts "{"
+    @f.puts "protected:"
+    @f.indent
+    @f.puts "Message( const FIX::MsgType::Pack& msgtype )"
+    @f.puts ": FIX::Message("
+    @f.puts "  FIX::BeginString::Pack(\"" + @beginstring + "\"), msgtype )"
+    if( @verid == "0" )
+      @f.puts " {} "
+    else
+      @f.puts " { Sequence::push_back_to( getHeader(), FIX::ApplVerID::Pack(\"" + @verid + "\") ); }"
+    end
+    @f.dedent
     @f.puts "public:"
     @f.indent
     @f.puts "Message( const FIX::MsgType& msgtype )"
     @f.puts ": FIX::Message("
-    @f.puts "  FIX::BeginString(\"" + @beginstring + "\"), msgtype )"
+    @f.puts "  FIX::BeginString::Pack(\"" + @beginstring + "\"), msgtype )"
     if( @verid == "0" )
       @f.puts " {} "
     else
-      @f.puts " { getHeader().setField( FIX::ApplVerID(\"" + @verid + "\") ); }"
+      @f.puts " { Sequence::push_back_to( getHeader(), FIX::ApplVerID::Pack(\"" + @verid + "\") ); }"
     end
     @f.puts
     @f.puts "Message(const FIX::Message& m) : FIX::Message(m) {}"
@@ -130,20 +142,25 @@ class GeneratorCPP
     @f.indent
     @f.puts "class " + name + " : public Message"
     @f.puts "{"
+    @f.indent
+    @f.puts "static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack(" + "\"" + msgtype + "\"); }"
+    @f.dedent
     @f.puts "public:"
     @f.indent
-    @f.puts name + "() : Message(MsgType()) {}"
+    @f.puts name + "() : Message(PackedType()) {}"
     @f.puts name + "(const FIX::Message& m) : Message(m) {}"
     @f.puts name + "(const Message& m) : Message(m) {}"
     @f.puts name + "(const #{name}& m) : Message(m) {}"
     @f.puts "static FIX::MsgType MsgType() { return FIX::MsgType(" + "\"" + msgtype + "\"); }"
 
     if( required.size > 0 )
+      args = []
       @f.puts
       @f.puts name + "("
       @f.indent
       required.each_index { |i|
         field = required[i]
+        args.push( @aggregator.getFields[field] )
         @f.print "const FIX::" + field + "& a" + field 
         if(i != required.size-1)
           @f.putsInline ","
@@ -152,11 +169,31 @@ class GeneratorCPP
         end
       }
       @f.dedent
-      @f.puts ": Message(MsgType())"
+      @f.puts ": Message(PackedType())"
+      @f.puts "{"
+      args.sort! {|x, y| x["number"].to_i <=> y["number"].to_i}
+      @f.indent
+      args.each { |field| @f.puts "Sequence::push_back_to(*this, a" + field["name"] + ");" }
+      @f.dedent
+      @f.puts "}"
+
+      @f.puts
+      @f.puts name + "("
+      @f.indent
+      required.each_index { |i|
+        field = required[i]
+        @f.print "const FIX::" + field + "::Pack& a" + field 
+        if(i != required.size-1)
+          @f.putsInline ","
+        else
+          @f.putsInline " )"
+        end
+      }
+      @f.dedent
+      @f.puts ": Message(PackedType())"
       @f.puts "{"
       @f.indent
-      required.each { |field|
-  @f.puts "set(a" + field + ");" }
+      args.each { |field| @f.puts "Sequence::push_back_to(*this, a" + field["name"] + ");" }
       @f.dedent
       @f.puts "}"
     end
