@@ -8,8 +8,9 @@ namespace FIX43
 
   class NewOrderMultileg : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AB"); }
   public:
-    NewOrderMultileg() : Message(MsgType()) {}
+    NewOrderMultileg() : Message(PackedType()) {}
     NewOrderMultileg(const FIX::Message& m) : Message(m) {}
     NewOrderMultileg(const Message& m) : Message(m) {}
     NewOrderMultileg(const NewOrderMultileg& m) : Message(m) {}
@@ -21,13 +22,30 @@ namespace FIX43
       const FIX::Side& aSide,
       const FIX::TransactTime& aTransactTime,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aClOrdID);
-      set(aHandlInst);
-      set(aSide);
-      set(aTransactTime);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aTransactTime);
+    }
+
+    NewOrderMultileg(
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::HandlInst::Pack& aHandlInst,
+      const FIX::Side::Pack& aSide,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aTransactTime);
     }
 
     FIELD_SET(*this, FIX::ClOrdID);

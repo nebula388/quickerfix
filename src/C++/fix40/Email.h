@@ -8,8 +8,9 @@ namespace FIX40
 
   class Email : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("C"); }
   public:
-    Email() : Message(MsgType()) {}
+    Email() : Message(PackedType()) {}
     Email(const FIX::Message& m) : Message(m) {}
     Email(const Message& m) : Message(m) {}
     Email(const Email& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX40
       const FIX::EmailType& aEmailType,
       const FIX::LinesOfText& aLinesOfText,
       const FIX::Text& aText )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aEmailType);
-      set(aLinesOfText);
-      set(aText);
+      // must be in this order
+      Sequence::push_back_to(*this, aLinesOfText);
+      Sequence::push_back_to(*this, aText);
+      Sequence::push_back_to(*this, aEmailType);
+    }
+
+    Email(
+      const FIX::EmailType::Pack& aEmailType,
+      const FIX::LinesOfText::Pack& aLinesOfText,
+      const FIX::Text::Pack& aText )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aLinesOfText);
+      Sequence::push_back_to(*this, aText);
+      Sequence::push_back_to(*this, aEmailType);
     }
 
     FIELD_SET(*this, FIX::EmailType);

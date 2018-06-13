@@ -8,8 +8,9 @@ namespace FIX43
 
   class BidRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("k"); }
   public:
-    BidRequest() : Message(MsgType()) {}
+    BidRequest() : Message(PackedType()) {}
     BidRequest(const FIX::Message& m) : Message(m) {}
     BidRequest(const Message& m) : Message(m) {}
     BidRequest(const BidRequest& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX43
       const FIX::BidType& aBidType,
       const FIX::TradeType& aTradeType,
       const FIX::BasisPxType& aBasisPxType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aClientBidID);
-      set(aBidRequestTransType);
-      set(aTotalNumSecurities);
-      set(aBidType);
-      set(aTradeType);
-      set(aBasisPxType);
+      // must be in this order
+      Sequence::push_back_to(*this, aBidRequestTransType);
+      Sequence::push_back_to(*this, aClientBidID);
+      Sequence::push_back_to(*this, aTotalNumSecurities);
+      Sequence::push_back_to(*this, aBidType);
+      Sequence::push_back_to(*this, aTradeType);
+      Sequence::push_back_to(*this, aBasisPxType);
+    }
+
+    BidRequest(
+      const FIX::ClientBidID::Pack& aClientBidID,
+      const FIX::BidRequestTransType::Pack& aBidRequestTransType,
+      const FIX::TotalNumSecurities::Pack& aTotalNumSecurities,
+      const FIX::BidType::Pack& aBidType,
+      const FIX::TradeType::Pack& aTradeType,
+      const FIX::BasisPxType::Pack& aBasisPxType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aBidRequestTransType);
+      Sequence::push_back_to(*this, aClientBidID);
+      Sequence::push_back_to(*this, aTotalNumSecurities);
+      Sequence::push_back_to(*this, aBidType);
+      Sequence::push_back_to(*this, aTradeType);
+      Sequence::push_back_to(*this, aBasisPxType);
     }
 
     FIELD_SET(*this, FIX::BidID);

@@ -8,8 +8,9 @@ namespace FIX50SP1
 
   class ListCancelRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("K"); }
   public:
-    ListCancelRequest() : Message(MsgType()) {}
+    ListCancelRequest() : Message(PackedType()) {}
     ListCancelRequest(const FIX::Message& m) : Message(m) {}
     ListCancelRequest(const Message& m) : Message(m) {}
     ListCancelRequest(const ListCancelRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP1
     ListCancelRequest(
       const FIX::ListID& aListID,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aListID);
+    }
+
+    ListCancelRequest(
+      const FIX::ListID::Pack& aListID,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aListID);
     }
 
     FIELD_SET(*this, FIX::ListID);

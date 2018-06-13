@@ -8,8 +8,9 @@ namespace FIX50SP1
 
   class SecurityTypeRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("v"); }
   public:
-    SecurityTypeRequest() : Message(MsgType()) {}
+    SecurityTypeRequest() : Message(PackedType()) {}
     SecurityTypeRequest(const FIX::Message& m) : Message(m) {}
     SecurityTypeRequest(const Message& m) : Message(m) {}
     SecurityTypeRequest(const SecurityTypeRequest& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX50SP1
 
     SecurityTypeRequest(
       const FIX::SecurityReqID& aSecurityReqID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+    }
+
+    SecurityTypeRequest(
+      const FIX::SecurityReqID::Pack& aSecurityReqID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);

@@ -8,8 +8,9 @@ namespace FIX42
 
   class SecurityDefinition : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("d"); }
   public:
-    SecurityDefinition() : Message(MsgType()) {}
+    SecurityDefinition() : Message(PackedType()) {}
     SecurityDefinition(const FIX::Message& m) : Message(m) {}
     SecurityDefinition(const Message& m) : Message(m) {}
     SecurityDefinition(const SecurityDefinition& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX42
       const FIX::SecurityReqID& aSecurityReqID,
       const FIX::SecurityResponseID& aSecurityResponseID,
       const FIX::TotalNumSecurities& aTotalNumSecurities )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
-      set(aSecurityResponseID);
-      set(aTotalNumSecurities);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityResponseID);
+      Sequence::push_back_to(*this, aTotalNumSecurities);
+    }
+
+    SecurityDefinition(
+      const FIX::SecurityReqID::Pack& aSecurityReqID,
+      const FIX::SecurityResponseID::Pack& aSecurityResponseID,
+      const FIX::TotalNumSecurities::Pack& aTotalNumSecurities )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityResponseID);
+      Sequence::push_back_to(*this, aTotalNumSecurities);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);

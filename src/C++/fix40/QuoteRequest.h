@@ -21,6 +21,7 @@ namespace FIX40
       const FIX::Symbol& aSymbol )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aSymbol);
       Sequence::push_back_to(*this, aQuoteReqID);
     }
@@ -30,6 +31,7 @@ namespace FIX40
       const FIX::Symbol::Pack& aSymbol )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aSymbol);
       Sequence::push_back_to(*this, aQuoteReqID);
     }

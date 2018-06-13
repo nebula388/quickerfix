@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class SettlementInstructionRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AV"); }
   public:
-    SettlementInstructionRequest() : Message(MsgType()) {}
+    SettlementInstructionRequest() : Message(PackedType()) {}
     SettlementInstructionRequest(const FIX::Message& m) : Message(m) {}
     SettlementInstructionRequest(const Message& m) : Message(m) {}
     SettlementInstructionRequest(const SettlementInstructionRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP2
     SettlementInstructionRequest(
       const FIX::SettlInstReqID& aSettlInstReqID,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSettlInstReqID);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aSettlInstReqID);
+    }
+
+    SettlementInstructionRequest(
+      const FIX::SettlInstReqID::Pack& aSettlInstReqID,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aSettlInstReqID);
     }
 
     FIELD_SET(*this, FIX::SettlInstReqID);

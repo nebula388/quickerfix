@@ -8,8 +8,9 @@ namespace FIX43
 
   class CrossOrderCancelRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("u"); }
   public:
-    CrossOrderCancelRequest() : Message(MsgType()) {}
+    CrossOrderCancelRequest() : Message(PackedType()) {}
     CrossOrderCancelRequest(const FIX::Message& m) : Message(m) {}
     CrossOrderCancelRequest(const Message& m) : Message(m) {}
     CrossOrderCancelRequest(const CrossOrderCancelRequest& m) : Message(m) {}
@@ -21,13 +22,30 @@ namespace FIX43
       const FIX::CrossType& aCrossType,
       const FIX::CrossPrioritization& aCrossPrioritization,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aCrossID);
-      set(aOrigCrossID);
-      set(aCrossType);
-      set(aCrossPrioritization);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
+    }
+
+    CrossOrderCancelRequest(
+      const FIX::CrossID::Pack& aCrossID,
+      const FIX::OrigCrossID::Pack& aOrigCrossID,
+      const FIX::CrossType::Pack& aCrossType,
+      const FIX::CrossPrioritization::Pack& aCrossPrioritization,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
     }
 
     FIELD_SET(*this, FIX::OrderID);

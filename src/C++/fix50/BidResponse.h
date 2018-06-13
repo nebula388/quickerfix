@@ -8,8 +8,9 @@ namespace FIX50
 
   class BidResponse : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("l"); }
   public:
-    BidResponse() : Message(MsgType()) {}
+    BidResponse() : Message(PackedType()) {}
     BidResponse(const FIX::Message& m) : Message(m) {}
     BidResponse(const Message& m) : Message(m) {}
     BidResponse(const BidResponse& m) : Message(m) {}

@@ -8,8 +8,9 @@ namespace FIX40
 
   class DontKnowTrade : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("Q"); }
   public:
-    DontKnowTrade() : Message(MsgType()) {}
+    DontKnowTrade() : Message(PackedType()) {}
     DontKnowTrade(const FIX::Message& m) : Message(m) {}
     DontKnowTrade(const Message& m) : Message(m) {}
     DontKnowTrade(const DontKnowTrade& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX40
       const FIX::OrderQty& aOrderQty,
       const FIX::LastShares& aLastShares,
       const FIX::LastPx& aLastPx )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aDKReason);
-      set(aSymbol);
-      set(aSide);
-      set(aOrderQty);
-      set(aLastShares);
-      set(aLastPx);
+      // must be in this order
+      Sequence::push_back_to(*this, aLastPx);
+      Sequence::push_back_to(*this, aLastShares);
+      Sequence::push_back_to(*this, aOrderQty);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aDKReason);
+    }
+
+    DontKnowTrade(
+      const FIX::DKReason::Pack& aDKReason,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide,
+      const FIX::OrderQty::Pack& aOrderQty,
+      const FIX::LastShares::Pack& aLastShares,
+      const FIX::LastPx::Pack& aLastPx )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aLastPx);
+      Sequence::push_back_to(*this, aLastShares);
+      Sequence::push_back_to(*this, aOrderQty);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aDKReason);
     }
 
     FIELD_SET(*this, FIX::OrderID);

@@ -8,8 +8,9 @@ namespace FIX43
 
   class NewOrderCross : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("s"); }
   public:
-    NewOrderCross() : Message(MsgType()) {}
+    NewOrderCross() : Message(PackedType()) {}
     NewOrderCross(const FIX::Message& m) : Message(m) {}
     NewOrderCross(const Message& m) : Message(m) {}
     NewOrderCross(const NewOrderCross& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX43
       const FIX::HandlInst& aHandlInst,
       const FIX::TransactTime& aTransactTime,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aCrossID);
-      set(aCrossType);
-      set(aCrossPrioritization);
-      set(aHandlInst);
-      set(aTransactTime);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+    }
+
+    NewOrderCross(
+      const FIX::CrossID::Pack& aCrossID,
+      const FIX::CrossType::Pack& aCrossType,
+      const FIX::CrossPrioritization::Pack& aCrossPrioritization,
+      const FIX::HandlInst::Pack& aHandlInst,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
     }
 
     FIELD_SET(*this, FIX::CrossID);

@@ -8,8 +8,9 @@ namespace FIX42
 
   class MarketDataIncrementalRefresh : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("X"); }
   public:
-    MarketDataIncrementalRefresh() : Message(MsgType()) {}
+    MarketDataIncrementalRefresh() : Message(PackedType()) {}
     MarketDataIncrementalRefresh(const FIX::Message& m) : Message(m) {}
     MarketDataIncrementalRefresh(const Message& m) : Message(m) {}
     MarketDataIncrementalRefresh(const MarketDataIncrementalRefresh& m) : Message(m) {}

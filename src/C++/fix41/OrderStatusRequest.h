@@ -8,8 +8,9 @@ namespace FIX41
 
   class OrderStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("H"); }
   public:
-    OrderStatusRequest() : Message(MsgType()) {}
+    OrderStatusRequest() : Message(PackedType()) {}
     OrderStatusRequest(const FIX::Message& m) : Message(m) {}
     OrderStatusRequest(const Message& m) : Message(m) {}
     OrderStatusRequest(const OrderStatusRequest& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX41
       const FIX::ClOrdID& aClOrdID,
       const FIX::Symbol& aSymbol,
       const FIX::Side& aSide )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aClOrdID);
-      set(aSymbol);
-      set(aSide);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+    }
+
+    OrderStatusRequest(
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
     }
 
     FIELD_SET(*this, FIX::OrderID);

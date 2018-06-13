@@ -8,8 +8,9 @@ namespace FIX43
 
   class QuoteCancel : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("Z"); }
   public:
-    QuoteCancel() : Message(MsgType()) {}
+    QuoteCancel() : Message(PackedType()) {}
     QuoteCancel(const FIX::Message& m) : Message(m) {}
     QuoteCancel(const Message& m) : Message(m) {}
     QuoteCancel(const QuoteCancel& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     QuoteCancel(
       const FIX::QuoteID& aQuoteID,
       const FIX::QuoteCancelType& aQuoteCancelType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteID);
-      set(aQuoteCancelType);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
+      Sequence::push_back_to(*this, aQuoteCancelType);
+    }
+
+    QuoteCancel(
+      const FIX::QuoteID::Pack& aQuoteID,
+      const FIX::QuoteCancelType::Pack& aQuoteCancelType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
+      Sequence::push_back_to(*this, aQuoteCancelType);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);

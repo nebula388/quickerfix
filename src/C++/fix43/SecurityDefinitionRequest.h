@@ -8,8 +8,9 @@ namespace FIX43
 
   class SecurityDefinitionRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("c"); }
   public:
-    SecurityDefinitionRequest() : Message(MsgType()) {}
+    SecurityDefinitionRequest() : Message(PackedType()) {}
     SecurityDefinitionRequest(const FIX::Message& m) : Message(m) {}
     SecurityDefinitionRequest(const Message& m) : Message(m) {}
     SecurityDefinitionRequest(const SecurityDefinitionRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     SecurityDefinitionRequest(
       const FIX::SecurityReqID& aSecurityReqID,
       const FIX::SecurityRequestType& aSecurityRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
-      set(aSecurityRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityRequestType);
+    }
+
+    SecurityDefinitionRequest(
+      const FIX::SecurityReqID::Pack& aSecurityReqID,
+      const FIX::SecurityRequestType::Pack& aSecurityRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityRequestType);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);

@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class ConfirmationAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AU"); }
   public:
-    ConfirmationAck() : Message(MsgType()) {}
+    ConfirmationAck() : Message(PackedType()) {}
     ConfirmationAck(const FIX::Message& m) : Message(m) {}
     ConfirmationAck(const Message& m) : Message(m) {}
     ConfirmationAck(const ConfirmationAck& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX50SP2
       const FIX::TradeDate& aTradeDate,
       const FIX::TransactTime& aTransactTime,
       const FIX::AffirmStatus& aAffirmStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aConfirmID);
-      set(aTradeDate);
-      set(aTransactTime);
-      set(aAffirmStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aConfirmID);
+      Sequence::push_back_to(*this, aAffirmStatus);
+    }
+
+    ConfirmationAck(
+      const FIX::ConfirmID::Pack& aConfirmID,
+      const FIX::TradeDate::Pack& aTradeDate,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::AffirmStatus::Pack& aAffirmStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aConfirmID);
+      Sequence::push_back_to(*this, aAffirmStatus);
     }
 
     FIELD_SET(*this, FIX::ConfirmID);

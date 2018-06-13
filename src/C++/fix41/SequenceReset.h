@@ -8,8 +8,9 @@ namespace FIX41
 
   class SequenceReset : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("4"); }
   public:
-    SequenceReset() : Message(MsgType()) {}
+    SequenceReset() : Message(PackedType()) {}
     SequenceReset(const FIX::Message& m) : Message(m) {}
     SequenceReset(const Message& m) : Message(m) {}
     SequenceReset(const SequenceReset& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX41
 
     SequenceReset(
       const FIX::NewSeqNo& aNewSeqNo )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aNewSeqNo);
+      // must be in this order
+      Sequence::push_back_to(*this, aNewSeqNo);
+    }
+
+    SequenceReset(
+      const FIX::NewSeqNo::Pack& aNewSeqNo )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aNewSeqNo);
     }
 
     FIELD_SET(*this, FIX::GapFillFlag);

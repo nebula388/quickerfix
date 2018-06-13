@@ -8,8 +8,9 @@ namespace FIX43
 
   class AllocationAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("P"); }
   public:
-    AllocationAck() : Message(MsgType()) {}
+    AllocationAck() : Message(PackedType()) {}
     AllocationAck(const FIX::Message& m) : Message(m) {}
     AllocationAck(const Message& m) : Message(m) {}
     AllocationAck(const AllocationAck& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX43
       const FIX::AllocID& aAllocID,
       const FIX::TradeDate& aTradeDate,
       const FIX::AllocStatus& aAllocStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAllocID);
-      set(aTradeDate);
-      set(aAllocStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aAllocStatus);
+    }
+
+    AllocationAck(
+      const FIX::AllocID::Pack& aAllocID,
+      const FIX::TradeDate::Pack& aTradeDate,
+      const FIX::AllocStatus::Pack& aAllocStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aAllocStatus);
     }
 
     FIELD_SET(*this, FIX::NoPartyIDs);

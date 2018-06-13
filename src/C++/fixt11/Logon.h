@@ -8,8 +8,9 @@ namespace FIXT11
 
   class Logon : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("A"); }
   public:
-    Logon() : Message(MsgType()) {}
+    Logon() : Message(PackedType()) {}
     Logon(const FIX::Message& m) : Message(m) {}
     Logon(const Message& m) : Message(m) {}
     Logon(const Logon& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIXT11
       const FIX::EncryptMethod& aEncryptMethod,
       const FIX::HeartBtInt& aHeartBtInt,
       const FIX::DefaultApplVerID& aDefaultApplVerID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aEncryptMethod);
-      set(aHeartBtInt);
-      set(aDefaultApplVerID);
+      // must be in this order
+      Sequence::push_back_to(*this, aEncryptMethod);
+      Sequence::push_back_to(*this, aHeartBtInt);
+      Sequence::push_back_to(*this, aDefaultApplVerID);
+    }
+
+    Logon(
+      const FIX::EncryptMethod::Pack& aEncryptMethod,
+      const FIX::HeartBtInt::Pack& aHeartBtInt,
+      const FIX::DefaultApplVerID::Pack& aDefaultApplVerID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aEncryptMethod);
+      Sequence::push_back_to(*this, aHeartBtInt);
+      Sequence::push_back_to(*this, aDefaultApplVerID);
     }
 
     FIELD_SET(*this, FIX::EncryptMethod);

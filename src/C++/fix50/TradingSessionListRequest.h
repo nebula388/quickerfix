@@ -8,8 +8,9 @@ namespace FIX50
 
   class TradingSessionListRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BI"); }
   public:
-    TradingSessionListRequest() : Message(MsgType()) {}
+    TradingSessionListRequest() : Message(PackedType()) {}
     TradingSessionListRequest(const FIX::Message& m) : Message(m) {}
     TradingSessionListRequest(const Message& m) : Message(m) {}
     TradingSessionListRequest(const TradingSessionListRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50
     TradingSessionListRequest(
       const FIX::TradSesReqID& aTradSesReqID,
       const FIX::SubscriptionRequestType& aSubscriptionRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradSesReqID);
-      set(aSubscriptionRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aTradSesReqID);
+    }
+
+    TradingSessionListRequest(
+      const FIX::TradSesReqID::Pack& aTradSesReqID,
+      const FIX::SubscriptionRequestType::Pack& aSubscriptionRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aTradSesReqID);
     }
 
     FIELD_SET(*this, FIX::TradSesReqID);

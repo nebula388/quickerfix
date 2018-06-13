@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class ApplicationMessageRequestAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BX"); }
   public:
-    ApplicationMessageRequestAck() : Message(MsgType()) {}
+    ApplicationMessageRequestAck() : Message(PackedType()) {}
     ApplicationMessageRequestAck(const FIX::Message& m) : Message(m) {}
     ApplicationMessageRequestAck(const Message& m) : Message(m) {}
     ApplicationMessageRequestAck(const ApplicationMessageRequestAck& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX50SP2
 
     ApplicationMessageRequestAck(
       const FIX::ApplResponseID& aApplResponseID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aApplResponseID);
+      // must be in this order
+      Sequence::push_back_to(*this, aApplResponseID);
+    }
+
+    ApplicationMessageRequestAck(
+      const FIX::ApplResponseID::Pack& aApplResponseID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aApplResponseID);
     }
 
     FIELD_SET(*this, FIX::ApplResponseID);

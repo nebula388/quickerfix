@@ -8,8 +8,9 @@ namespace FIXT11
 
   class Logout : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("5"); }
   public:
-    Logout() : Message(MsgType()) {}
+    Logout() : Message(PackedType()) {}
     Logout(const FIX::Message& m) : Message(m) {}
     Logout(const Message& m) : Message(m) {}
     Logout(const Logout& m) : Message(m) {}

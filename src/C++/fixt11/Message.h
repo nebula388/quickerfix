@@ -63,7 +63,6 @@ namespace FIXT11
     : FIX::Message(
       FIX::BeginString::Pack("FIXT.1.1"), msgtype )
      {} 
-
   public:
     Message( const FIX::MsgType& msgtype )
     : FIX::Message(

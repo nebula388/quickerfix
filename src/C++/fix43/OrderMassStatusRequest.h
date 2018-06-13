@@ -8,8 +8,9 @@ namespace FIX43
 
   class OrderMassStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AF"); }
   public:
-    OrderMassStatusRequest() : Message(MsgType()) {}
+    OrderMassStatusRequest() : Message(PackedType()) {}
     OrderMassStatusRequest(const FIX::Message& m) : Message(m) {}
     OrderMassStatusRequest(const Message& m) : Message(m) {}
     OrderMassStatusRequest(const OrderMassStatusRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     OrderMassStatusRequest(
       const FIX::MassStatusReqID& aMassStatusReqID,
       const FIX::MassStatusReqType& aMassStatusReqType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aMassStatusReqID);
-      set(aMassStatusReqType);
+      // must be in this order
+      Sequence::push_back_to(*this, aMassStatusReqID);
+      Sequence::push_back_to(*this, aMassStatusReqType);
+    }
+
+    OrderMassStatusRequest(
+      const FIX::MassStatusReqID::Pack& aMassStatusReqID,
+      const FIX::MassStatusReqType::Pack& aMassStatusReqType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aMassStatusReqID);
+      Sequence::push_back_to(*this, aMassStatusReqType);
     }
 
     FIELD_SET(*this, FIX::MassStatusReqID);

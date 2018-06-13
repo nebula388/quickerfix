@@ -8,8 +8,9 @@ namespace FIX42
 
   class TradingSessionStatus : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("h"); }
   public:
-    TradingSessionStatus() : Message(MsgType()) {}
+    TradingSessionStatus() : Message(PackedType()) {}
     TradingSessionStatus(const FIX::Message& m) : Message(m) {}
     TradingSessionStatus(const Message& m) : Message(m) {}
     TradingSessionStatus(const TradingSessionStatus& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX42
     TradingSessionStatus(
       const FIX::TradingSessionID& aTradingSessionID,
       const FIX::TradSesStatus& aTradSesStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradingSessionID);
-      set(aTradSesStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aTradingSessionID);
+      Sequence::push_back_to(*this, aTradSesStatus);
+    }
+
+    TradingSessionStatus(
+      const FIX::TradingSessionID::Pack& aTradingSessionID,
+      const FIX::TradSesStatus::Pack& aTradSesStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTradingSessionID);
+      Sequence::push_back_to(*this, aTradSesStatus);
     }
 
     FIELD_SET(*this, FIX::TradSesReqID);

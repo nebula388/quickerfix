@@ -8,8 +8,9 @@ namespace FIX42
 
   class SecurityStatus : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("f"); }
   public:
-    SecurityStatus() : Message(MsgType()) {}
+    SecurityStatus() : Message(PackedType()) {}
     SecurityStatus(const FIX::Message& m) : Message(m) {}
     SecurityStatus(const Message& m) : Message(m) {}
     SecurityStatus(const SecurityStatus& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX42
 
     SecurityStatus(
       const FIX::Symbol& aSymbol )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSymbol);
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+    }
+
+    SecurityStatus(
+      const FIX::Symbol::Pack& aSymbol )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
     }
 
     FIELD_SET(*this, FIX::SecurityStatusReqID);

@@ -8,8 +8,9 @@ namespace FIX41
 
   class News : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("B"); }
   public:
-    News() : Message(MsgType()) {}
+    News() : Message(PackedType()) {}
     News(const FIX::Message& m) : Message(m) {}
     News(const Message& m) : Message(m) {}
     News(const News& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX41
 
     News(
       const FIX::Headline& aHeadline )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aHeadline);
+      // must be in this order
+      Sequence::push_back_to(*this, aHeadline);
+    }
+
+    News(
+      const FIX::Headline::Pack& aHeadline )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aHeadline);
     }
 
     FIELD_SET(*this, FIX::OrigTime);

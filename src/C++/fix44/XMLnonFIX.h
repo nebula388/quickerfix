@@ -8,8 +8,9 @@ namespace FIX44
 
   class XMLnonFIX : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("n"); }
   public:
-    XMLnonFIX() : Message(MsgType()) {}
+    XMLnonFIX() : Message(PackedType()) {}
     XMLnonFIX(const FIX::Message& m) : Message(m) {}
     XMLnonFIX(const Message& m) : Message(m) {}
     XMLnonFIX(const XMLnonFIX& m) : Message(m) {}

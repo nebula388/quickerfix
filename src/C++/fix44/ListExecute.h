@@ -8,8 +8,9 @@ namespace FIX44
 
   class ListExecute : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("L"); }
   public:
-    ListExecute() : Message(MsgType()) {}
+    ListExecute() : Message(PackedType()) {}
     ListExecute(const FIX::Message& m) : Message(m) {}
     ListExecute(const Message& m) : Message(m) {}
     ListExecute(const ListExecute& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX44
     ListExecute(
       const FIX::ListID& aListID,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aListID);
+    }
+
+    ListExecute(
+      const FIX::ListID::Pack& aListID,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aListID);
     }
 
     FIELD_SET(*this, FIX::ListID);

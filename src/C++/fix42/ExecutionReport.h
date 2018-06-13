@@ -10,7 +10,7 @@ namespace FIX42
   {
     static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("8"); }
   public:
-    ExecutionReport() : Message(MsgType()) {}
+    ExecutionReport() : Message(PackedType()) {}
     ExecutionReport(const FIX::Message& m) : Message(m) {}
     ExecutionReport(const Message& m) : Message(m) {}
     ExecutionReport(const ExecutionReport& m) : Message(m) {}
@@ -29,6 +29,7 @@ namespace FIX42
       const FIX::AvgPx& aAvgPx )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aAvgPx);
       Sequence::push_back_to(*this, aCumQty);
       Sequence::push_back_to(*this, aExecID);
@@ -54,6 +55,7 @@ namespace FIX42
       const FIX::AvgPx::Pack& aAvgPx )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aAvgPx);
       Sequence::push_back_to(*this, aCumQty);
       Sequence::push_back_to(*this, aExecID);

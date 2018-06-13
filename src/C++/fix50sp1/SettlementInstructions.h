@@ -8,8 +8,9 @@ namespace FIX50SP1
 
   class SettlementInstructions : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("T"); }
   public:
-    SettlementInstructions() : Message(MsgType()) {}
+    SettlementInstructions() : Message(PackedType()) {}
     SettlementInstructions(const FIX::Message& m) : Message(m) {}
     SettlementInstructions(const Message& m) : Message(m) {}
     SettlementInstructions(const SettlementInstructions& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX50SP1
       const FIX::SettlInstMsgID& aSettlInstMsgID,
       const FIX::SettlInstMode& aSettlInstMode,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSettlInstMsgID);
-      set(aSettlInstMode);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aSettlInstMode);
+      Sequence::push_back_to(*this, aSettlInstMsgID);
+    }
+
+    SettlementInstructions(
+      const FIX::SettlInstMsgID::Pack& aSettlInstMsgID,
+      const FIX::SettlInstMode::Pack& aSettlInstMode,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aSettlInstMode);
+      Sequence::push_back_to(*this, aSettlInstMsgID);
     }
 
     FIELD_SET(*this, FIX::SettlInstMsgID);
@@ -72,6 +86,31 @@ namespace FIX50SP1
       FIELD_SET(*this, FIX::StandInstDbType);
       FIELD_SET(*this, FIX::StandInstDbName);
       FIELD_SET(*this, FIX::StandInstDbID);
+      FIELD_SET(*this, FIX::NoDlvyInst);
+      class NoDlvyInst: public FIX::Group
+      {
+      public:
+      NoDlvyInst() : FIX::Group(85,165,FIX::message_order(165,787,781,0)) {}
+        FIELD_SET(*this, FIX::SettlInstSource);
+        FIELD_SET(*this, FIX::DlvyInstType);
+        FIELD_SET(*this, FIX::NoSettlPartyIDs);
+        class NoSettlPartyIDs: public FIX::Group
+        {
+        public:
+        NoSettlPartyIDs() : FIX::Group(781,782,FIX::message_order(782,783,784,801,0)) {}
+          FIELD_SET(*this, FIX::SettlPartyID);
+          FIELD_SET(*this, FIX::SettlPartyIDSource);
+          FIELD_SET(*this, FIX::SettlPartyRole);
+          FIELD_SET(*this, FIX::NoSettlPartySubIDs);
+          class NoSettlPartySubIDs: public FIX::Group
+          {
+          public:
+          NoSettlPartySubIDs() : FIX::Group(801,785,FIX::message_order(785,786,0)) {}
+            FIELD_SET(*this, FIX::SettlPartySubID);
+            FIELD_SET(*this, FIX::SettlPartySubIDType);
+          };
+        };
+      };
       FIELD_SET(*this, FIX::PaymentMethod);
       FIELD_SET(*this, FIX::PaymentRef);
       FIELD_SET(*this, FIX::CardHolderName);

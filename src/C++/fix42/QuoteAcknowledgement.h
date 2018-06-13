@@ -8,8 +8,9 @@ namespace FIX42
 
   class QuoteAcknowledgement : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("b"); }
   public:
-    QuoteAcknowledgement() : Message(MsgType()) {}
+    QuoteAcknowledgement() : Message(PackedType()) {}
     QuoteAcknowledgement(const FIX::Message& m) : Message(m) {}
     QuoteAcknowledgement(const Message& m) : Message(m) {}
     QuoteAcknowledgement(const QuoteAcknowledgement& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX42
 
     QuoteAcknowledgement(
       const FIX::QuoteAckStatus& aQuoteAckStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteAckStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteAckStatus);
+    }
+
+    QuoteAcknowledgement(
+      const FIX::QuoteAckStatus::Pack& aQuoteAckStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteAckStatus);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);

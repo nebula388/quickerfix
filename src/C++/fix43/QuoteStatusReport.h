@@ -8,8 +8,9 @@ namespace FIX43
 
   class QuoteStatusReport : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AI"); }
   public:
-    QuoteStatusReport() : Message(MsgType()) {}
+    QuoteStatusReport() : Message(PackedType()) {}
     QuoteStatusReport(const FIX::Message& m) : Message(m) {}
     QuoteStatusReport(const Message& m) : Message(m) {}
     QuoteStatusReport(const QuoteStatusReport& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX43
 
     QuoteStatusReport(
       const FIX::QuoteID& aQuoteID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteID);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
+    }
+
+    QuoteStatusReport(
+      const FIX::QuoteID::Pack& aQuoteID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
     }
 
     FIELD_SET(*this, FIX::QuoteStatusReqID);

@@ -8,8 +8,9 @@ namespace FIX43
 
   class TradeCaptureReport : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AE"); }
   public:
-    TradeCaptureReport() : Message(MsgType()) {}
+    TradeCaptureReport() : Message(PackedType()) {}
     TradeCaptureReport(const FIX::Message& m) : Message(m) {}
     TradeCaptureReport(const Message& m) : Message(m) {}
     TradeCaptureReport(const TradeCaptureReport& m) : Message(m) {}
@@ -23,15 +24,36 @@ namespace FIX43
       const FIX::LastPx& aLastPx,
       const FIX::TradeDate& aTradeDate,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradeReportID);
-      set(aExecType);
-      set(aPreviouslyReported);
-      set(aLastQty);
-      set(aLastPx);
-      set(aTradeDate);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aLastPx);
+      Sequence::push_back_to(*this, aLastQty);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aExecType);
+      Sequence::push_back_to(*this, aPreviouslyReported);
+      Sequence::push_back_to(*this, aTradeReportID);
+    }
+
+    TradeCaptureReport(
+      const FIX::TradeReportID::Pack& aTradeReportID,
+      const FIX::ExecType::Pack& aExecType,
+      const FIX::PreviouslyReported::Pack& aPreviouslyReported,
+      const FIX::LastQty::Pack& aLastQty,
+      const FIX::LastPx::Pack& aLastPx,
+      const FIX::TradeDate::Pack& aTradeDate,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aLastPx);
+      Sequence::push_back_to(*this, aLastQty);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aExecType);
+      Sequence::push_back_to(*this, aPreviouslyReported);
+      Sequence::push_back_to(*this, aTradeReportID);
     }
 
     FIELD_SET(*this, FIX::TradeReportID);

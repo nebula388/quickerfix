@@ -8,8 +8,9 @@ namespace FIX50SP1
 
   class NetworkCounterpartySystemStatusResponse : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BD"); }
   public:
-    NetworkCounterpartySystemStatusResponse() : Message(MsgType()) {}
+    NetworkCounterpartySystemStatusResponse() : Message(PackedType()) {}
     NetworkCounterpartySystemStatusResponse(const FIX::Message& m) : Message(m) {}
     NetworkCounterpartySystemStatusResponse(const Message& m) : Message(m) {}
     NetworkCounterpartySystemStatusResponse(const NetworkCounterpartySystemStatusResponse& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP1
     NetworkCounterpartySystemStatusResponse(
       const FIX::NetworkStatusResponseType& aNetworkStatusResponseType,
       const FIX::NetworkResponseID& aNetworkResponseID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aNetworkStatusResponseType);
-      set(aNetworkResponseID);
+      // must be in this order
+      Sequence::push_back_to(*this, aNetworkResponseID);
+      Sequence::push_back_to(*this, aNetworkStatusResponseType);
+    }
+
+    NetworkCounterpartySystemStatusResponse(
+      const FIX::NetworkStatusResponseType::Pack& aNetworkStatusResponseType,
+      const FIX::NetworkResponseID::Pack& aNetworkResponseID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aNetworkResponseID);
+      Sequence::push_back_to(*this, aNetworkStatusResponseType);
     }
 
     FIELD_SET(*this, FIX::NetworkStatusResponseType);

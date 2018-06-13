@@ -8,8 +8,9 @@ namespace FIX43
 
   class OrderMassCancelReport : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("r"); }
   public:
-    OrderMassCancelReport() : Message(MsgType()) {}
+    OrderMassCancelReport() : Message(PackedType()) {}
     OrderMassCancelReport(const FIX::Message& m) : Message(m) {}
     OrderMassCancelReport(const Message& m) : Message(m) {}
     OrderMassCancelReport(const OrderMassCancelReport& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX43
       const FIX::OrderID& aOrderID,
       const FIX::MassCancelRequestType& aMassCancelRequestType,
       const FIX::MassCancelResponse& aMassCancelResponse )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrderID);
-      set(aMassCancelRequestType);
-      set(aMassCancelResponse);
+      // must be in this order
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aMassCancelRequestType);
+      Sequence::push_back_to(*this, aMassCancelResponse);
+    }
+
+    OrderMassCancelReport(
+      const FIX::OrderID::Pack& aOrderID,
+      const FIX::MassCancelRequestType::Pack& aMassCancelRequestType,
+      const FIX::MassCancelResponse::Pack& aMassCancelResponse )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aMassCancelRequestType);
+      Sequence::push_back_to(*this, aMassCancelResponse);
     }
 
     FIELD_SET(*this, FIX::ClOrdID);

@@ -8,8 +8,9 @@ namespace FIX50SP1
 
   class MarketDataRequestReject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("Y"); }
   public:
-    MarketDataRequestReject() : Message(MsgType()) {}
+    MarketDataRequestReject() : Message(PackedType()) {}
     MarketDataRequestReject(const FIX::Message& m) : Message(m) {}
     MarketDataRequestReject(const Message& m) : Message(m) {}
     MarketDataRequestReject(const MarketDataRequestReject& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX50SP1
 
     MarketDataRequestReject(
       const FIX::MDReqID& aMDReqID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aMDReqID);
+      // must be in this order
+      Sequence::push_back_to(*this, aMDReqID);
+    }
+
+    MarketDataRequestReject(
+      const FIX::MDReqID::Pack& aMDReqID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aMDReqID);
     }
 
     FIELD_SET(*this, FIX::MDReqID);

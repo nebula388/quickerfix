@@ -8,8 +8,9 @@ namespace FIX43
 
   class DerivativeSecurityList : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AA"); }
   public:
-    DerivativeSecurityList() : Message(MsgType()) {}
+    DerivativeSecurityList() : Message(PackedType()) {}
     DerivativeSecurityList(const FIX::Message& m) : Message(m) {}
     DerivativeSecurityList(const Message& m) : Message(m) {}
     DerivativeSecurityList(const DerivativeSecurityList& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX43
       const FIX::SecurityReqID& aSecurityReqID,
       const FIX::SecurityResponseID& aSecurityResponseID,
       const FIX::SecurityRequestResult& aSecurityRequestResult )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
-      set(aSecurityResponseID);
-      set(aSecurityRequestResult);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityResponseID);
+      Sequence::push_back_to(*this, aSecurityRequestResult);
+    }
+
+    DerivativeSecurityList(
+      const FIX::SecurityReqID::Pack& aSecurityReqID,
+      const FIX::SecurityResponseID::Pack& aSecurityResponseID,
+      const FIX::SecurityRequestResult::Pack& aSecurityRequestResult )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityResponseID);
+      Sequence::push_back_to(*this, aSecurityRequestResult);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);

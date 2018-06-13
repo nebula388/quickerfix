@@ -22,13 +22,12 @@ namespace FIX50SP2
     Message( const FIX::MsgType::Pack& msgtype )
     : FIX::Message(
       FIX::BeginString::Pack("FIXT.1.1"), msgtype )
-     { Sequence::push_back_to( getHeader(), FIX::ApplVerID("9") ); }
-
+     { Sequence::push_back_to( getHeader(), FIX::ApplVerID::Pack("9") ); }
   public:
     Message( const FIX::MsgType& msgtype )
     : FIX::Message(
       FIX::BeginString::Pack("FIXT.1.1"), msgtype )
-     { Sequence::push_back_to( getHeader(), FIX::ApplVerID("9") ); }
+     { Sequence::push_back_to( getHeader(), FIX::ApplVerID::Pack("9") ); }
 
     Message(const FIX::Message& m) : FIX::Message(m) {}
     Message(const Message& m) : FIX::Message(m) {}

@@ -8,8 +8,9 @@ namespace FIX43
 
   class RFQRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AH"); }
   public:
-    RFQRequest() : Message(MsgType()) {}
+    RFQRequest() : Message(PackedType()) {}
     RFQRequest(const FIX::Message& m) : Message(m) {}
     RFQRequest(const Message& m) : Message(m) {}
     RFQRequest(const RFQRequest& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX43
 
     RFQRequest(
       const FIX::RFQReqID& aRFQReqID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aRFQReqID);
+      // must be in this order
+      Sequence::push_back_to(*this, aRFQReqID);
+    }
+
+    RFQRequest(
+      const FIX::RFQReqID::Pack& aRFQReqID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aRFQReqID);
     }
 
     FIELD_SET(*this, FIX::RFQReqID);

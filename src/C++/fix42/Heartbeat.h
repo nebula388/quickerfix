@@ -8,8 +8,9 @@ namespace FIX42
 
   class Heartbeat : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("0"); }
   public:
-    Heartbeat() : Message(FIX::MsgType::Pack("0")) {}
+    Heartbeat() : Message(PackedType()) {}
     Heartbeat(const FIX::Message& m) : Message(m) {}
     Heartbeat(const Message& m) : Message(m) {}
     Heartbeat(const Heartbeat& m) : Message(m) {}

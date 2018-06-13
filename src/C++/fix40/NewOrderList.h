@@ -8,8 +8,9 @@ namespace FIX40
 
   class NewOrderList : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("E"); }
   public:
-    NewOrderList() : Message(MsgType()) {}
+    NewOrderList() : Message(PackedType()) {}
     NewOrderList(const FIX::Message& m) : Message(m) {}
     NewOrderList(const Message& m) : Message(m) {}
     NewOrderList(const NewOrderList& m) : Message(m) {}
@@ -25,17 +26,42 @@ namespace FIX40
       const FIX::Side& aSide,
       const FIX::OrderQty& aOrderQty,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aListSeqNo);
-      set(aListNoOrds);
-      set(aClOrdID);
-      set(aHandlInst);
-      set(aSymbol);
-      set(aSide);
-      set(aOrderQty);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrderQty);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aListSeqNo);
+      Sequence::push_back_to(*this, aListNoOrds);
+    }
+
+    NewOrderList(
+      const FIX::ListID::Pack& aListID,
+      const FIX::ListSeqNo::Pack& aListSeqNo,
+      const FIX::ListNoOrds::Pack& aListNoOrds,
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::HandlInst::Pack& aHandlInst,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide,
+      const FIX::OrderQty::Pack& aOrderQty,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrderQty);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aListSeqNo);
+      Sequence::push_back_to(*this, aListNoOrds);
     }
 
     FIELD_SET(*this, FIX::ListID);

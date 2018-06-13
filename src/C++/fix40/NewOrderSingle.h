@@ -25,6 +25,7 @@ namespace FIX40
       const FIX::OrdType& aOrdType )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aClOrdID);
       Sequence::push_back_to(*this, aHandlInst);
       Sequence::push_back_to(*this, aOrderQty);
@@ -42,6 +43,7 @@ namespace FIX40
       const FIX::OrdType::Pack& aOrdType )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aClOrdID);
       Sequence::push_back_to(*this, aHandlInst);
       Sequence::push_back_to(*this, aOrderQty);

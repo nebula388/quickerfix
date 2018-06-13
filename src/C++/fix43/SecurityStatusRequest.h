@@ -8,8 +8,9 @@ namespace FIX43
 
   class SecurityStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("e"); }
   public:
-    SecurityStatusRequest() : Message(MsgType()) {}
+    SecurityStatusRequest() : Message(PackedType()) {}
     SecurityStatusRequest(const FIX::Message& m) : Message(m) {}
     SecurityStatusRequest(const Message& m) : Message(m) {}
     SecurityStatusRequest(const SecurityStatusRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     SecurityStatusRequest(
       const FIX::SecurityStatusReqID& aSecurityStatusReqID,
       const FIX::SubscriptionRequestType& aSubscriptionRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityStatusReqID);
-      set(aSubscriptionRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aSecurityStatusReqID);
+    }
+
+    SecurityStatusRequest(
+      const FIX::SecurityStatusReqID::Pack& aSecurityStatusReqID,
+      const FIX::SubscriptionRequestType::Pack& aSubscriptionRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aSecurityStatusReqID);
     }
 
     FIELD_SET(*this, FIX::SecurityStatusReqID);

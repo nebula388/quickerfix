@@ -8,8 +8,9 @@ namespace FIX43
 
   class DerivativeSecurityListRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("z"); }
   public:
-    DerivativeSecurityListRequest() : Message(MsgType()) {}
+    DerivativeSecurityListRequest() : Message(PackedType()) {}
     DerivativeSecurityListRequest(const FIX::Message& m) : Message(m) {}
     DerivativeSecurityListRequest(const Message& m) : Message(m) {}
     DerivativeSecurityListRequest(const DerivativeSecurityListRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     DerivativeSecurityListRequest(
       const FIX::SecurityReqID& aSecurityReqID,
       const FIX::SecurityListRequestType& aSecurityListRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
-      set(aSecurityListRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityListRequestType);
+    }
+
+    DerivativeSecurityListRequest(
+      const FIX::SecurityReqID::Pack& aSecurityReqID,
+      const FIX::SecurityListRequestType::Pack& aSecurityListRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityListRequestType);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);

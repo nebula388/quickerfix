@@ -8,8 +8,9 @@ namespace FIX41
 
   class Advertisement : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("7"); }
   public:
-    Advertisement() : Message(MsgType()) {}
+    Advertisement() : Message(PackedType()) {}
     Advertisement(const FIX::Message& m) : Message(m) {}
     Advertisement(const Message& m) : Message(m) {}
     Advertisement(const Advertisement& m) : Message(m) {}
@@ -21,13 +22,30 @@ namespace FIX41
       const FIX::Symbol& aSymbol,
       const FIX::AdvSide& aAdvSide,
       const FIX::Shares& aShares )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAdvId);
-      set(aAdvTransType);
-      set(aSymbol);
-      set(aAdvSide);
-      set(aShares);
+      // must be in this order
+      Sequence::push_back_to(*this, aAdvId);
+      Sequence::push_back_to(*this, aAdvSide);
+      Sequence::push_back_to(*this, aAdvTransType);
+      Sequence::push_back_to(*this, aShares);
+      Sequence::push_back_to(*this, aSymbol);
+    }
+
+    Advertisement(
+      const FIX::AdvId::Pack& aAdvId,
+      const FIX::AdvTransType::Pack& aAdvTransType,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::AdvSide::Pack& aAdvSide,
+      const FIX::Shares::Pack& aShares )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aAdvId);
+      Sequence::push_back_to(*this, aAdvSide);
+      Sequence::push_back_to(*this, aAdvTransType);
+      Sequence::push_back_to(*this, aShares);
+      Sequence::push_back_to(*this, aSymbol);
     }
 
     FIELD_SET(*this, FIX::AdvId);

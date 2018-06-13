@@ -8,8 +8,9 @@ namespace FIX43
 
   class RegistrationInstructionsResponse : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("p"); }
   public:
-    RegistrationInstructionsResponse() : Message(MsgType()) {}
+    RegistrationInstructionsResponse() : Message(PackedType()) {}
     RegistrationInstructionsResponse(const FIX::Message& m) : Message(m) {}
     RegistrationInstructionsResponse(const Message& m) : Message(m) {}
     RegistrationInstructionsResponse(const RegistrationInstructionsResponse& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX43
       const FIX::RegistTransType& aRegistTransType,
       const FIX::RegistRefID& aRegistRefID,
       const FIX::RegistStatus& aRegistStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aRegistID);
-      set(aRegistTransType);
-      set(aRegistRefID);
-      set(aRegistStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aRegistStatus);
+      Sequence::push_back_to(*this, aRegistRefID);
+      Sequence::push_back_to(*this, aRegistID);
+      Sequence::push_back_to(*this, aRegistTransType);
+    }
+
+    RegistrationInstructionsResponse(
+      const FIX::RegistID::Pack& aRegistID,
+      const FIX::RegistTransType::Pack& aRegistTransType,
+      const FIX::RegistRefID::Pack& aRegistRefID,
+      const FIX::RegistStatus::Pack& aRegistStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aRegistStatus);
+      Sequence::push_back_to(*this, aRegistRefID);
+      Sequence::push_back_to(*this, aRegistID);
+      Sequence::push_back_to(*this, aRegistTransType);
     }
 
     FIELD_SET(*this, FIX::RegistID);

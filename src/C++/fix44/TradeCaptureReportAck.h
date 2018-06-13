@@ -8,8 +8,9 @@ namespace FIX44
 
   class TradeCaptureReportAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AR"); }
   public:
-    TradeCaptureReportAck() : Message(MsgType()) {}
+    TradeCaptureReportAck() : Message(PackedType()) {}
     TradeCaptureReportAck(const FIX::Message& m) : Message(m) {}
     TradeCaptureReportAck(const Message& m) : Message(m) {}
     TradeCaptureReportAck(const TradeCaptureReportAck& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX44
     TradeCaptureReportAck(
       const FIX::TradeReportID& aTradeReportID,
       const FIX::ExecType& aExecType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradeReportID);
-      set(aExecType);
+      // must be in this order
+      Sequence::push_back_to(*this, aExecType);
+      Sequence::push_back_to(*this, aTradeReportID);
+    }
+
+    TradeCaptureReportAck(
+      const FIX::TradeReportID::Pack& aTradeReportID,
+      const FIX::ExecType::Pack& aExecType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aExecType);
+      Sequence::push_back_to(*this, aTradeReportID);
     }
 
     FIELD_SET(*this, FIX::TradeReportID);
@@ -46,6 +58,14 @@ namespace FIX44
     FIELD_SET(*this, FIX::SymbolSfx);
     FIELD_SET(*this, FIX::SecurityID);
     FIELD_SET(*this, FIX::SecurityIDSource);
+    FIELD_SET(*this, FIX::NoSecurityAltID);
+    class NoSecurityAltID: public FIX::Group
+    {
+    public:
+    NoSecurityAltID() : FIX::Group(454,455,FIX::message_order(455,456,0)) {}
+      FIELD_SET(*this, FIX::SecurityAltID);
+      FIELD_SET(*this, FIX::SecurityAltIDSource);
+    };
     FIELD_SET(*this, FIX::Product);
     FIELD_SET(*this, FIX::CFICode);
     FIELD_SET(*this, FIX::SecurityType);
@@ -81,6 +101,16 @@ namespace FIX44
     FIELD_SET(*this, FIX::ContractSettlMonth);
     FIELD_SET(*this, FIX::CPProgram);
     FIELD_SET(*this, FIX::CPRegType);
+    FIELD_SET(*this, FIX::NoEvents);
+    class NoEvents: public FIX::Group
+    {
+    public:
+    NoEvents() : FIX::Group(864,865,FIX::message_order(865,866,867,868,0)) {}
+      FIELD_SET(*this, FIX::EventType);
+      FIELD_SET(*this, FIX::EventDate);
+      FIELD_SET(*this, FIX::EventPx);
+      FIELD_SET(*this, FIX::EventText);
+    };
     FIELD_SET(*this, FIX::DatedDate);
     FIELD_SET(*this, FIX::InterestAccrualDate);
     FIELD_SET(*this, FIX::TransactTime);
@@ -107,6 +137,14 @@ namespace FIX44
       FIELD_SET(*this, FIX::LegSymbolSfx);
       FIELD_SET(*this, FIX::LegSecurityID);
       FIELD_SET(*this, FIX::LegSecurityIDSource);
+      FIELD_SET(*this, FIX::NoLegSecurityAltID);
+      class NoLegSecurityAltID: public FIX::Group
+      {
+      public:
+      NoLegSecurityAltID() : FIX::Group(604,605,FIX::message_order(605,606,0)) {}
+        FIELD_SET(*this, FIX::LegSecurityAltID);
+        FIELD_SET(*this, FIX::LegSecurityAltIDSource);
+      };
       FIELD_SET(*this, FIX::LegProduct);
       FIELD_SET(*this, FIX::LegCFICode);
       FIELD_SET(*this, FIX::LegSecurityType);

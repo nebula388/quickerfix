@@ -8,8 +8,9 @@ namespace FIX41
 
   class SettlementInstructions : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("T"); }
   public:
-    SettlementInstructions() : Message(MsgType()) {}
+    SettlementInstructions() : Message(PackedType()) {}
     SettlementInstructions(const FIX::Message& m) : Message(m) {}
     SettlementInstructions(const Message& m) : Message(m) {}
     SettlementInstructions(const SettlementInstructions& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX41
       const FIX::SettlInstSource& aSettlInstSource,
       const FIX::AllocAccount& aAllocAccount,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSettlInstID);
-      set(aSettlInstTransType);
-      set(aSettlInstMode);
-      set(aSettlInstSource);
-      set(aAllocAccount);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aAllocAccount);
+      Sequence::push_back_to(*this, aSettlInstMode);
+      Sequence::push_back_to(*this, aSettlInstID);
+      Sequence::push_back_to(*this, aSettlInstTransType);
+      Sequence::push_back_to(*this, aSettlInstSource);
+    }
+
+    SettlementInstructions(
+      const FIX::SettlInstID::Pack& aSettlInstID,
+      const FIX::SettlInstTransType::Pack& aSettlInstTransType,
+      const FIX::SettlInstMode::Pack& aSettlInstMode,
+      const FIX::SettlInstSource::Pack& aSettlInstSource,
+      const FIX::AllocAccount::Pack& aAllocAccount,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aAllocAccount);
+      Sequence::push_back_to(*this, aSettlInstMode);
+      Sequence::push_back_to(*this, aSettlInstID);
+      Sequence::push_back_to(*this, aSettlInstTransType);
+      Sequence::push_back_to(*this, aSettlInstSource);
     }
 
     FIELD_SET(*this, FIX::SettlInstID);

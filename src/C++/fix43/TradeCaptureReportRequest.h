@@ -8,8 +8,9 @@ namespace FIX43
 
   class TradeCaptureReportRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AD"); }
   public:
-    TradeCaptureReportRequest() : Message(MsgType()) {}
+    TradeCaptureReportRequest() : Message(PackedType()) {}
     TradeCaptureReportRequest(const FIX::Message& m) : Message(m) {}
     TradeCaptureReportRequest(const Message& m) : Message(m) {}
     TradeCaptureReportRequest(const TradeCaptureReportRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     TradeCaptureReportRequest(
       const FIX::TradeRequestID& aTradeRequestID,
       const FIX::TradeRequestType& aTradeRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradeRequestID);
-      set(aTradeRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aTradeRequestID);
+      Sequence::push_back_to(*this, aTradeRequestType);
+    }
+
+    TradeCaptureReportRequest(
+      const FIX::TradeRequestID::Pack& aTradeRequestID,
+      const FIX::TradeRequestType::Pack& aTradeRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTradeRequestID);
+      Sequence::push_back_to(*this, aTradeRequestType);
     }
 
     FIELD_SET(*this, FIX::TradeRequestID);
