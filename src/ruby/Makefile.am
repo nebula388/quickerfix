@@ -7,7 +7,7 @@ local_ruby_lib=$(top_builddir)/lib/ruby
 
 all-local:
 	mkdir -p $(local_ruby_lib)
-	bash ./make_ruby.sh "$(CXX)" "$(CXXFLAGS)" "$(LIBS)"
+	bash ./make_ruby.sh "$(CXX)" "$(CXXFLAGS)" "$(LIBS)" "$(RUBY)"
 	ln -sf $(local_ruby_src)/quickfix* $(local_ruby_lib)
 	ln -sf $(top_builddir)/spec spec
 

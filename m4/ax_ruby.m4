@@ -2,7 +2,7 @@ AC_DEFUN([AX_RUBY],
 [
 RUBY=${RUBY:-"ruby"}
 
-RUBY_PREFIX=[`$RUBY -e 'require "rbconfig"; print Config::CONFIG["archdir"], "\n"'`]
+RUBY_PREFIX=[`$RUBY -e 'require "rbconfig"; print RbConfig::CONFIG["archdir"], "\n"'`]
 AC_SUBST(RUBY_PREFIX)
 
 has_ruby=false
@@ -19,11 +19,13 @@ AC_ARG_WITH(ruby,
 
 if test $has_ruby = true
 then
+    AC_SUBST(RUBY)
     RUBY_CFLAGS="-I${RUBY_PREFIX}" 
     AC_SUBST(RUBY_CFLAGS)
-    RUBY_SITE_PACKAGES=[`ruby -e 'require "rbconfig"; print Config::CONFIG["sitedir"], "\n"'`]
+    RUBY_SITE_PACKAGES=[`$RUBY -e 'require "rbconfig"; print RbConfig::CONFIG["sitedir"], "\n"'`]
     AC_SUBST(RUBY_SITE_PACKAGES)
     AC_DEFINE(HAVE_RUBY, 1, Define if you have ruby)
+    AC_MSG_NOTICE(Building Ruby support with $RUBY)
 fi
 AM_CONDITIONAL(HAVE_RUBY, $has_ruby)
 ])
