@@ -173,6 +173,7 @@ class GeneratorCPP
       @f.puts "{"
       args.sort! {|x, y| x["number"].to_i <=> y["number"].to_i}
       @f.indent
+      @f.puts "// must be in this order"
       args.each { |field| @f.puts "Sequence::push_back_to(*this, a" + field["name"] + ");" }
       @f.dedent
       @f.puts "}"
@@ -193,6 +194,7 @@ class GeneratorCPP
       @f.puts ": Message(PackedType())"
       @f.puts "{"
       @f.indent
+      @f.puts "// must be in this order"
       args.each { |field| @f.puts "Sequence::push_back_to(*this, a" + field["name"] + ");" }
       @f.dedent
       @f.puts "}"
