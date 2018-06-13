@@ -4,12 +4,17 @@
 #define HEAVYUSE
 #define LIGHTUSE
 #define PURE_DECL
-#define THROW_DECL(...)
 #define ALIGN_DECL_DEFAULT
 
 %exceptionclass FIX::Exception;
 
 %include "C++/Config.h"
+
+#ifdef ENABLE_THROW_DECL
+#define THROW_DECL(...) throw(__VA_ARGS__)
+#else
+#define THROW_DECL(...)
+#endif
 
 %include typemaps.i
 %include std_string.i
