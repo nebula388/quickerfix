@@ -202,16 +202,17 @@ private:
     void static spec( DataDictionary& dict );
   };
 
-  enum status_type {
+  typedef uintptr_t status_value_type;
+  enum status_enum_type {
 	tag_out_of_order,
 	invalid_tag_format,
 	incorrect_data_format,
 
 	has_external_allocator,
 
-	has_sender_comp_id = FIELD::SenderCompID - (sizeof(intptr_t) <= 4 ? 32 : 0), // 49/17
-	has_target_comp_id = FIELD::TargetCompID - (sizeof(intptr_t) <= 4 ? 32 : 0), // 56/24
-	serialized_once    = (sizeof(intptr_t) * 8) - 1
+	has_sender_comp_id = FIELD::SenderCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 49/17
+	has_target_comp_id = FIELD::TargetCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 56/24
+	serialized_once    = (sizeof(status_value_tupe) * 8) - 1
   };
   static const intptr_t status_error_mask =  (1 << tag_out_of_order) |
                                              (1 << invalid_tag_format) |
@@ -1124,22 +1125,24 @@ private:
   void validate(const BodyLength* pBodyLength);
   std::string toXMLFields(const FieldMap& fields, int space) const;
 
-  static inline int createStatus(status_type bit, bool v)
+  static inline status_value_type createStatus(status_enum_type bit, bool v)
   {
-    return (int)v << bit;
+    return (status_value_type)v << bit;
   }
 
-  inline void setStatusBit(status_type bit)
+  inline void setStatusBit(status_enum_type bit)
   {
-    m_status |= 1 << bit;
+    m_status |= (status_value_type)1 << bit;
   }
 
-  inline void setStatusCompID(int field) {
-    m_status |= ((intptr_t)1 << (field - ((sizeof(intptr_t) <= 4) ? 32 : 0))) &
-					 (((intptr_t)1 << has_sender_comp_id) | ((intptr_t)1 << has_target_comp_id ));
+  inline void setHeaderStatusBits(int field) {
+    // SenderCompID and TargetCompID tag values are between 32 and 64
+    status_value_type v = ((status_value_type)(field < 64) << (field - ((sizeof(status_value_type) <= 4) ? 32 : 0))) &
+			 (((status_value_type)1 << has_sender_comp_id) | ((status_value_type)1 << has_target_comp_id ));
+    m_status |= v;
   }
 
-  inline void setErrorStatusBit(status_type bit, int data)
+  inline void setErrorStatusBit(status_enum_type bit, int data)
   {
     if ( !(m_status & status_error_mask) )
     {
@@ -1148,12 +1151,12 @@ private:
     }
   }
 
-  inline void clearStatusBit(status_type bit)
+  inline void clearStatusBit(status_enum_type bit)
   {
     m_status &= ~(1 << bit);
   }
 
-  inline bool getStatusBit(status_type bit) const
+  inline bool getStatusBit(status_enum_type bit) const
   {
     return (m_status & (1 << bit)) != 0;
   }
@@ -1164,7 +1167,7 @@ private:
 protected:
   mutable Header m_header;
   mutable Trailer m_trailer;
-  intptr_t m_status;
+  status_value_type m_status;
   intptr_t m_status_data;
 
   static SmartPtr<DataDictionary> s_dataDictionary;
