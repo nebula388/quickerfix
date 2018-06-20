@@ -1155,39 +1155,6 @@ namespace FIX
         return 1 + (i > 9);
       }
 #endif
-      static inline std::size_t PURE_DECL HEAVYUSE numFractionDigits( uint64_t v )
-      {
-        if            ( v % 100000000 ) {
-          if          ( v % 10000 ) {
-            if        ( v % 100 ) {
-              if      ( v % 10 )                 return 16;
-              else                               return 15;
-            } else if ( v % 1000 )               return 14;
-              else                               return 13;
-          } else {
-            if        ( v % 1000000 ) {
-              if      ( v % 100000 )             return 12;
-              else                               return 11;
-            } else if ( v % 10000000 )           return 10;
-                 else                            return 9;
-          }
-        } else {
-          if          ( v % 1000000000000LL ) {
-            if        ( v % 10000000000LL ) {
-              if      ( v % 1000000000 )         return 8;
-              else                               return 7;
-            } else if ( v % 100000000000LL )     return 6;
-                   else                          return 5;
-          } else {
-            if        ( v % 100000000000000LL ) {
-              if      ( v % 10000000000000LL )   return 4;
-              else                               return 3;
-            } else if ( v % 1000000000000000LL ) return 2;
-                   else                          return 1;
-          }
-        }
-        return 0;
-      }
     };
 
     struct Memory
