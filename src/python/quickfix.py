@@ -106,32 +106,32 @@ def IntArray_frompointer(*args):
   return _quickfix.IntArray_frompointer(*args)
 IntArray_frompointer = _quickfix.IntArray_frompointer
 
-class Exception(Exception):
+class FIXException(Exception):
     __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, Exception, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, FIXException, name, value)
     __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, Exception, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, FIXException, name)
     __repr__ = _swig_repr
     def __init__(self, *args): 
-        this = _quickfix.new_Exception(*args)
+        this = _quickfix.new_FIXException(*args)
         try: self.this.append(this)
         except: self.this = this
-    __swig_destroy__ = _quickfix.delete_Exception
+    __swig_destroy__ = _quickfix.delete_FIXException
     __del__ = lambda self : None;
-    __swig_setmethods__["type"] = _quickfix.Exception_type_set
-    __swig_getmethods__["type"] = _quickfix.Exception_type_get
-    __swig_setmethods__["detail"] = _quickfix.Exception_detail_set
-    __swig_getmethods__["detail"] = _quickfix.Exception_detail_get
-    def __str__(self): return _quickfix.Exception___str__(self)
-Exception_swigregister = _quickfix.Exception_swigregister
-Exception_swigregister(Exception)
+    __swig_setmethods__["type"] = _quickfix.FIXException_type_set
+    __swig_getmethods__["type"] = _quickfix.FIXException_type_get
+    __swig_setmethods__["detail"] = _quickfix.FIXException_detail_set
+    __swig_getmethods__["detail"] = _quickfix.FIXException_detail_get
+    def __str__(self): return _quickfix.FIXException___str__(self)
+FIXException_swigregister = _quickfix.FIXException_swigregister
+FIXException_swigregister(FIXException)
 
-class DataDictionaryNotFound(Exception):
+class DataDictionaryNotFound(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, DataDictionaryNotFound, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, DataDictionaryNotFound, name)
     __repr__ = _swig_repr
     def __init__(self, *args): 
@@ -146,12 +146,12 @@ class DataDictionaryNotFound(Exception):
 DataDictionaryNotFound_swigregister = _quickfix.DataDictionaryNotFound_swigregister
 DataDictionaryNotFound_swigregister(DataDictionaryNotFound)
 
-class FieldNotFound(Exception):
+class FieldNotFound(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, FieldNotFound, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, FieldNotFound, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -165,12 +165,12 @@ class FieldNotFound(Exception):
 FieldNotFound_swigregister = _quickfix.FieldNotFound_swigregister
 FieldNotFound_swigregister(FieldNotFound)
 
-class FieldConvertError(Exception):
+class FieldConvertError(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, FieldConvertError, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, FieldConvertError, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -182,12 +182,12 @@ class FieldConvertError(Exception):
 FieldConvertError_swigregister = _quickfix.FieldConvertError_swigregister
 FieldConvertError_swigregister(FieldConvertError)
 
-class MessageParseError(Exception):
+class MessageParseError(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, MessageParseError, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, MessageParseError, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -199,12 +199,12 @@ class MessageParseError(Exception):
 MessageParseError_swigregister = _quickfix.MessageParseError_swigregister
 MessageParseError_swigregister(MessageParseError)
 
-class InvalidMessage(Exception):
+class InvalidMessage(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, InvalidMessage, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, InvalidMessage, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -216,12 +216,12 @@ class InvalidMessage(Exception):
 InvalidMessage_swigregister = _quickfix.InvalidMessage_swigregister
 InvalidMessage_swigregister(InvalidMessage)
 
-class ConfigError(Exception):
+class ConfigError(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, ConfigError, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, ConfigError, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -233,12 +233,12 @@ class ConfigError(Exception):
 ConfigError_swigregister = _quickfix.ConfigError_swigregister
 ConfigError_swigregister(ConfigError)
 
-class RuntimeError(Exception):
+class RuntimeError(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, RuntimeError, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, RuntimeError, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -250,12 +250,12 @@ class RuntimeError(Exception):
 RuntimeError_swigregister = _quickfix.RuntimeError_swigregister
 RuntimeError_swigregister(RuntimeError)
 
-class InvalidTagNumber(Exception):
+class InvalidTagNumber(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, InvalidTagNumber, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, InvalidTagNumber, name)
     __repr__ = _swig_repr
     def __init__(self, *args): 
@@ -269,12 +269,12 @@ class InvalidTagNumber(Exception):
 InvalidTagNumber_swigregister = _quickfix.InvalidTagNumber_swigregister
 InvalidTagNumber_swigregister(InvalidTagNumber)
 
-class RequiredTagMissing(Exception):
+class RequiredTagMissing(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, RequiredTagMissing, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, RequiredTagMissing, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -288,12 +288,12 @@ class RequiredTagMissing(Exception):
 RequiredTagMissing_swigregister = _quickfix.RequiredTagMissing_swigregister
 RequiredTagMissing_swigregister(RequiredTagMissing)
 
-class TagNotDefinedForMessage(Exception):
+class TagNotDefinedForMessage(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, TagNotDefinedForMessage, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, TagNotDefinedForMessage, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -307,12 +307,12 @@ class TagNotDefinedForMessage(Exception):
 TagNotDefinedForMessage_swigregister = _quickfix.TagNotDefinedForMessage_swigregister
 TagNotDefinedForMessage_swigregister(TagNotDefinedForMessage)
 
-class NoTagValue(Exception):
+class NoTagValue(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, NoTagValue, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, NoTagValue, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -326,12 +326,12 @@ class NoTagValue(Exception):
 NoTagValue_swigregister = _quickfix.NoTagValue_swigregister
 NoTagValue_swigregister(NoTagValue)
 
-class IncorrectTagValue(Exception):
+class IncorrectTagValue(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, IncorrectTagValue, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, IncorrectTagValue, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -345,12 +345,12 @@ class IncorrectTagValue(Exception):
 IncorrectTagValue_swigregister = _quickfix.IncorrectTagValue_swigregister
 IncorrectTagValue_swigregister(IncorrectTagValue)
 
-class IncorrectDataFormat(Exception):
+class IncorrectDataFormat(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, IncorrectDataFormat, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, IncorrectDataFormat, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -364,12 +364,12 @@ class IncorrectDataFormat(Exception):
 IncorrectDataFormat_swigregister = _quickfix.IncorrectDataFormat_swigregister
 IncorrectDataFormat_swigregister(IncorrectDataFormat)
 
-class IncorrectMessageStructure(Exception):
+class IncorrectMessageStructure(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, IncorrectMessageStructure, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, IncorrectMessageStructure, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -381,12 +381,12 @@ class IncorrectMessageStructure(Exception):
 IncorrectMessageStructure_swigregister = _quickfix.IncorrectMessageStructure_swigregister
 IncorrectMessageStructure_swigregister(IncorrectMessageStructure)
 
-class DuplicateFieldNumber(Exception):
+class DuplicateFieldNumber(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, DuplicateFieldNumber, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, DuplicateFieldNumber, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -398,12 +398,12 @@ class DuplicateFieldNumber(Exception):
 DuplicateFieldNumber_swigregister = _quickfix.DuplicateFieldNumber_swigregister
 DuplicateFieldNumber_swigregister(DuplicateFieldNumber)
 
-class InvalidMessageType(Exception):
+class InvalidMessageType(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, InvalidMessageType, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, InvalidMessageType, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -415,12 +415,12 @@ class InvalidMessageType(Exception):
 InvalidMessageType_swigregister = _quickfix.InvalidMessageType_swigregister
 InvalidMessageType_swigregister(InvalidMessageType)
 
-class UnsupportedMessageType(Exception):
+class UnsupportedMessageType(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, UnsupportedMessageType, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, UnsupportedMessageType, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -432,12 +432,12 @@ class UnsupportedMessageType(Exception):
 UnsupportedMessageType_swigregister = _quickfix.UnsupportedMessageType_swigregister
 UnsupportedMessageType_swigregister(UnsupportedMessageType)
 
-class UnsupportedVersion(Exception):
+class UnsupportedVersion(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, UnsupportedVersion, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, UnsupportedVersion, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -449,12 +449,12 @@ class UnsupportedVersion(Exception):
 UnsupportedVersion_swigregister = _quickfix.UnsupportedVersion_swigregister
 UnsupportedVersion_swigregister(UnsupportedVersion)
 
-class TagOutOfOrder(Exception):
+class TagOutOfOrder(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, TagOutOfOrder, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, TagOutOfOrder, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -469,12 +469,12 @@ class TagOutOfOrder(Exception):
 TagOutOfOrder_swigregister = _quickfix.TagOutOfOrder_swigregister
 TagOutOfOrder_swigregister(TagOutOfOrder)
 
-class RepeatedTag(Exception):
+class RepeatedTag(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, RepeatedTag, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, RepeatedTag, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -488,12 +488,12 @@ class RepeatedTag(Exception):
 RepeatedTag_swigregister = _quickfix.RepeatedTag_swigregister
 RepeatedTag_swigregister(RepeatedTag)
 
-class RepeatingGroupCountMismatch(Exception):
+class RepeatingGroupCountMismatch(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, RepeatingGroupCountMismatch, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, RepeatingGroupCountMismatch, name)
     __repr__ = _swig_repr
     def __init__(self, f=0, what=""): 
@@ -507,12 +507,12 @@ class RepeatingGroupCountMismatch(Exception):
 RepeatingGroupCountMismatch_swigregister = _quickfix.RepeatingGroupCountMismatch_swigregister
 RepeatingGroupCountMismatch_swigregister(RepeatingGroupCountMismatch)
 
-class DoNotSend(Exception):
+class DoNotSend(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, DoNotSend, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, DoNotSend, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -524,12 +524,12 @@ class DoNotSend(Exception):
 DoNotSend_swigregister = _quickfix.DoNotSend_swigregister
 DoNotSend_swigregister(DoNotSend)
 
-class RejectLogon(Exception):
+class RejectLogon(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, RejectLogon, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, RejectLogon, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -541,12 +541,12 @@ class RejectLogon(Exception):
 RejectLogon_swigregister = _quickfix.RejectLogon_swigregister
 RejectLogon_swigregister(RejectLogon)
 
-class SessionNotFound(Exception):
+class SessionNotFound(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, SessionNotFound, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, SessionNotFound, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -558,12 +558,12 @@ class SessionNotFound(Exception):
 SessionNotFound_swigregister = _quickfix.SessionNotFound_swigregister
 SessionNotFound_swigregister(SessionNotFound)
 
-class IOException(Exception):
+class IOException(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, IOException, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, IOException, name)
     __repr__ = _swig_repr
     def __init__(self, what=""): 
@@ -575,12 +575,12 @@ class IOException(Exception):
 IOException_swigregister = _quickfix.IOException_swigregister
 IOException_swigregister(IOException)
 
-class SocketException(Exception):
+class SocketException(FIXException):
     __swig_setmethods__ = {}
-    for _s in [Exception]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
+    for _s in [FIXException]: __swig_setmethods__.update(getattr(_s,'__swig_setmethods__',{}))
     __setattr__ = lambda self, name, value: _swig_setattr(self, SocketException, name, value)
     __swig_getmethods__ = {}
-    for _s in [Exception]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
+    for _s in [FIXException]: __swig_getmethods__.update(getattr(_s,'__swig_getmethods__',{}))
     __getattr__ = lambda self, name: _swig_getattr(self, SocketException, name)
     __repr__ = _swig_repr
     def __init__(self, *args): 
@@ -1054,8 +1054,6 @@ class Message(FieldMap):
     def isApp(self): return _quickfix.Message_isApp(self)
     def isEmpty(self): return _quickfix.Message_isEmpty(self)
     def clear(self): return _quickfix.Message_clear(self)
-    __swig_getmethods__["msgAdminType"] = lambda x: _quickfix.Message_msgAdminType
-    if _newclass:msgAdminType = staticmethod(_quickfix.Message_msgAdminType)
     __swig_getmethods__["isAdminMsgType"] = lambda x: _quickfix.Message_isAdminMsgType
     if _newclass:isAdminMsgType = staticmethod(_quickfix.Message_isAdminMsgType)
     __swig_getmethods__["toApplVerID"] = lambda x: _quickfix.Message_toApplVerID
@@ -1077,10 +1075,6 @@ Message_swigregister(Message)
 def Message_InitializeXML(*args):
   return _quickfix.Message_InitializeXML(*args)
 Message_InitializeXML = _quickfix.Message_InitializeXML
-
-def Message_msgAdminType(*args):
-  return _quickfix.Message_msgAdminType(*args)
-Message_msgAdminType = _quickfix.Message_msgAdminType
 
 def Message_isAdminMsgType(*args):
   return _quickfix.Message_isAdminMsgType(*args)
