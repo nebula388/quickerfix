@@ -133,7 +133,7 @@ ALIGN_DECL_DEFAULT HOTDATA const Util::NumData::DigitPair Util::NumData::m_pairs
 { {'9','0'} }, { {'9','1'} }, { {'9','2'} }, { {'9','3'} }, { {'9','4'} }, { {'9','5'} }, { {'9','6'} }, { {'9','7'} }, { {'9','8'} }, { {'9','9'} }
 };
 
-ALIGN_DECL_DEFAULT const Util::ULong::Log2 Util::ULong::m_digits[64] =
+ALIGN_DECL_DEFAULT HOTDATA const Util::ULong::Log2 Util::ULong::m_digits[64] =
 {
   { 9, 1 },
   { 9, 1 },
