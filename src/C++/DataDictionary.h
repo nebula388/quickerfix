@@ -532,7 +532,7 @@ typedef std::map < std::pair < int, std::string > ,
     return ( LIKELY(i != m_messageData.end()) ) ? &i->second : NULL;
   }
 
-  const MsgTypeData* getMessageData( const MsgType& msgType ) const
+  const MsgTypeData* getMessageData( const StringField& msgType ) const
   { return getMessageData( msgType.forString( String::Rval() ) ); }
 
   const MsgTypeData* getEmptyMessageData() const
@@ -705,19 +705,92 @@ typedef std::map < std::pair < int, std::string > ,
 
   class MsgInfo
   {
+  public:
+
+    struct Admin
+    {
+      enum Type
+      {
+        None = 0,
+        Heartbeat = '0',
+        TestRequest = '1',
+        ResendRequest = '2',
+        Reject = '3',
+        SequenceReset = '4',
+        Logout = '5',
+        Logon = 'A',
+        Unknown = -1
+      };
+
+      enum Trait
+      {
+        trait_none = 0,
+        trait_session = 1, // TestRequest, Heartbeat, Reject
+        trait_status = 2, // ResendRequest, SequenceReset, Logout
+        trait_logon = 4  // Logon
+      };
+    };
+
+  private:
     const DataDictionary* m_default_application_dictionary;
     mutable const DataDictionary* m_application_dictionary;
-    const MsgType* m_type;
+    const StringField* m_type;
     mutable const MsgTypeData* m_data;
+    mutable Admin::Type m_admin;
+
+    struct AdminSet {
+      Util::BitArray<256, uint32_t> _value;
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+      AdminSet();
+#endif // static initialization otherwise
+      bool test(char v) const { return _value.test( (unsigned char)v ); }
+    };
+
+    struct TestAdminType
+    {
+      typedef Admin::Type result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        const char* value;
+        return String::size(v) == 1 && adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::Type)value[0] : Admin::None;
+      }
+    };
+  
+    struct TestAdminMsgType {
+      typedef bool result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        return String::size(v) == 1 && adminTypeSet.test( String::data(v)[0] );
+      }
+    };
+  
+    struct TestAdminTrait
+    {
+      typedef Admin::Trait result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        if ( LIKELY(String::size(v) == 1) ) {
+          Admin::Trait traits[8] = { Admin::trait_none, Admin::trait_session,
+                                     Admin::trait_session, Admin::trait_session,
+                                     Admin::trait_status, Admin::trait_status,
+                                     Admin::trait_status, Admin::trait_logon };
+          Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
+          std::size_t pos = Util::CharBuffer::find( String::data(v)[0], b );
+          return traits[pos & 7];
+        }
+        return Admin::trait_none;
+      }
+    };
+
+    static ALIGN_DECL_DEFAULT const AdminSet adminTypeSet;
 
   public:
 
     MsgInfo( const DataDictionary& dictionary )
     : m_default_application_dictionary(&dictionary), m_application_dictionary(&dictionary),
-      m_type(NULL), m_data(NULL) {}
+      m_type(NULL), m_data(NULL), m_admin(Admin::None) {}
     MsgInfo( const DataDictionary* defaultDD, 
-             const DataDictionary* p = NULL, const MsgType* t = NULL, const MsgTypeData* d = NULL )
-    : m_default_application_dictionary(defaultDD), m_application_dictionary(p), m_type(t), m_data(d) {}
+             const DataDictionary* p = NULL, const StringField* t = NULL,
+             const MsgTypeData* d = NULL, Admin::Type a = Admin::None )
+    : m_default_application_dictionary(defaultDD), m_application_dictionary(p), m_type(t),
+      m_data(d), m_admin(a) {}
 
     const MsgTypeData* messageData() const
     {
@@ -725,21 +798,41 @@ typedef std::map < std::pair < int, std::string > ,
             (LIKELY(m_application_dictionary && m_type) ? (m_data =
                m_application_dictionary->getMessageData(*m_type)) : NULL);
     }
-    const MsgType& messageType() const
+    const StringField& messageType() const
     {
       if ( LIKELY(m_type != NULL) ) return *m_type;
       throw FieldNotFound( FIELD::MsgType );
     }
-    const MsgType& messageType( const FieldMap& header )
+
+    Admin::Type messageType( const StringField* msgType, bool setAdmin = true )
     {
-      return ( LIKELY(m_type != NULL) ) ? *m_type : *(m_type = FIELD_GET_PTR(header, MsgType));
+      m_type = msgType;
+      return setAdmin ? (m_admin = msgAdminType( *msgType )) : m_admin;
     }
 
-    void messageType( const MsgType* msgType ) { m_type = msgType; }
+    Admin::Type messageType( const FieldMap& header )
+    {
+      return ( LIKELY(m_type != NULL) )
+        ? m_admin : (m_admin = msgAdminType( *(m_type = FIELD_GET_PTR(header, MsgType)) ) );
+    }
+
+    Admin::Type adminType() const { return m_admin; }
 
     const DataDictionary* defaultApplicationDictionary() const { return m_default_application_dictionary; }
     const DataDictionary* applicationDictionary() const { return m_application_dictionary; }
     void applicationDictionary(const DataDictionary* p) { m_application_dictionary = p; }
+
+    static inline Admin::Type msgAdminType( const FieldBase& msgType )
+    { return msgType.forString( TestAdminType() ); }
+
+    static inline Admin::Trait msgAdminTrait( const FieldBase& msgType )
+    { return msgType.forString( TestAdminTrait() ); }
+
+    static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
+    { return msgType.forString( TestAdminMsgType() ); }
+
+    static inline bool NOTHROW isAdminMsgType( const MsgType::Pack& msgType )
+    { return msgType.m_length == 1 && adminTypeSet.test(msgType.m_data[0]); }
   };
 
   /// Validate a message.

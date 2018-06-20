@@ -8,6 +8,7 @@ AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_sso.m4])
 m4_include([m4/ax_throw_decl.m4])
 m4_include([m4/ax_fieldorder.m4])
+m4_include([m4/ax_emx.m4])
 m4_include([m4/ax_lib_mysql.m4])
 m4_include([m4/ax_lib_postgresql.m4])
 m4_include([m4/ax_lib_boost.m4])
@@ -37,6 +38,7 @@ AX_FIELDMAP()
 AX_SSO()
 AX_THROW_DECL()
 AX_FIELD_ORDER()
+AX_EMX()
 AX_LIB_MYSQL()
 AX_LIB_POSTGRESQL()
 AX_LIB_BOOST()
@@ -272,6 +274,9 @@ AX_THROW_DECL_CHECK()
 
 # check for dictionary field order
 AX_FIELD_ORDER_CHECK()
+
+# check for EMX header extension
+AX_EMX_CHECK()
 
 # check for tbb
 AX_LIB_TBB_CHECK()

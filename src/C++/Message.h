@@ -28,6 +28,7 @@
 
 #include "FieldMap.h"
 #include "FixFields.h"
+#include "FixExtensions.h"
 #include "Group.h"
 #include "SessionID.h"
 #include "DataDictionary.h"
@@ -137,21 +138,6 @@ class Message : public FieldMap
 {
 public:
 
-  struct Admin
-  {
-    enum AdminType
-    {
-      None = 0,
-      Heartbeat = '0',
-      TestRequest = '1',
-      ResendRequest = '2',
-      Reject = '3',
-      SequenceReset = '4',
-      Logout = '5',
-      Logon = 'A'   
-    };
-  };
-
   enum SerializationHint
   {
     KeepFieldChecksum,
@@ -176,19 +162,10 @@ private:
   friend class DataDictionary;
   friend class Session;
 
-  struct AdminSet {
-    Util::BitArray<256, uint32_t> _value;
-#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
-    AdminSet();
-#endif // static initialization otherwise
-    bool test(char v) const { return _value.test( (unsigned char)v ); }
-  };
-  static ALIGN_DECL_DEFAULT const AdminSet adminTypeSet;
-
   struct HeaderFieldSet
   {
     Util::BitArray<1280, uint32_t> _value;
-#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__) || defined(HAVE_EMX)
     HeaderFieldSet();
 #endif // static initialization otherwise
     void static spec( DataDictionary& dict );
@@ -210,23 +187,19 @@ private:
 
 	has_external_allocator,
 
+#ifdef HAVE_EMX
+	emx_compatible,
+#endif
+
 	has_sender_comp_id = FIELD::SenderCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 49/17
 	has_target_comp_id = FIELD::TargetCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 56/24
-	serialized_once    = (sizeof(status_value_tupe) * 8) - 1
+	serialized_once    = (sizeof(status_value_type) * 8) - 1
   };
   static const intptr_t status_error_mask =  (1 << tag_out_of_order) |
                                              (1 << invalid_tag_format) |
                                              (1 << incorrect_data_format);
 
   enum field_type { header, body, trailer };
-
-  enum admin_trait
-  {
-    admin_none = 0,
-    admin_session = 1, // TestRequest, Heartbeat, Reject
-    admin_status = 2, // ResendRequest, SequenceReset, Logout
-    admin_logon = 4  // Logon
-  };
 
   class FieldReader : public Sequence {
 
@@ -411,20 +384,6 @@ private:
 
   };
 
-  static inline bool isAdminMsg( const char* msg, std::size_t size )
-  {
-    if ( size > 5 )
-    {
-      Util::CharBuffer::Fixed<4> const v = { { '\001', '3', '5', '=' } };
-      const char* p = Util::CharBuffer::find( v, msg, size );
-      return p && p[5] == '\001' && adminTypeSet.test( p[4] );
-    }
-    throw InvalidMessage();
-  }
-
-  static inline bool isAdminMsg( const std::string& msg )
-  { return isAdminMsg( String::data(msg), String::size(msg) ); }
-
   // parses header up to MsgType and returns pointer to the BodyLength field
   const BodyLength* readSpecHeader( FieldReader& reader, const MsgType*& msgType )
   {
@@ -553,8 +512,9 @@ private:
         {
           const DataDictionary* applicationDictionary = msgInfo.defaultApplicationDictionary(); 
           MsgType::Pack t = identifyType( String::data(s), String::size(s) );
-          resetOrder( t, *sessionDataDictionary, ( !isAdminMsgType(t) && applicationDictionary)
-                                                   ? *applicationDictionary : *sessionDataDictionary );
+          resetOrder( t, *sessionDataDictionary,
+                    (!DataDictionary::MsgInfo::isAdminMsgType(t) && applicationDictionary)
+                                            ? *applicationDictionary : *sessionDataDictionary );
         }
 #endif
       }
@@ -628,38 +588,6 @@ private:
 
   void HEAVYUSE setGroup( Message::FieldReader& reader, FieldMap& section,
                  const DataDictionary& messageDD, int group, int delim, const DataDictionary& groupDD);
-
-  struct TestAdminType
-  {
-    typedef Admin::AdminType result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      const char* value;
-      return String::size(v) == 1 && adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::AdminType)value[0] : Admin::None;
-    }
-  };
-
-  struct TestAdminMsgType {
-    typedef bool result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      return String::size(v) == 1 && adminTypeSet.test( String::data(v)[0] );
-    }
-  };
-
-  struct TestAdminTrait
-  {
-    typedef admin_trait result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      if ( LIKELY(String::size(v) == 1) ) {
-        admin_trait traits[8] = { admin_none, admin_session, admin_session, admin_session,
-                                  admin_status, admin_status, admin_status, admin_logon };
-        Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
-        std::size_t pos = Util::CharBuffer::find( String::data(v)[0], b );
-        return traits[pos & 7];
-      }
-      return admin_none;
-    }
-  };
-
 protected:
   /// Constructor for derived classes
   template <typename Packed>
@@ -970,7 +898,7 @@ public:
     if( m_header.isSetField(FIELD::MsgType) )
     {
       const MsgType& msgType = FIELD_GET_REF( m_header, MsgType );
-      return isAdminMsgType( msgType );
+      return DataDictionary::MsgInfo::isAdminMsgType( msgType );
     }
     return false;
   }
@@ -980,7 +908,7 @@ public:
     if( m_header.isSetField(FIELD::MsgType) )
     {
       const MsgType& msgType = FIELD_GET_REF( m_header, MsgType );
-      return !isAdminMsgType( msgType );
+      return !DataDictionary::MsgInfo::isAdminMsgType( msgType );
     }
     return false;
   }
@@ -1009,14 +937,8 @@ public:
     }
   }
 
-  static inline Admin::AdminType msgAdminType( const MsgType& msgType )
-  { return msgType.forString( TestAdminType() ); }
-
   static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
-  { return msgType.forString( TestAdminMsgType() ); }
-
-  static inline bool NOTHROW isAdminMsgType( const MsgType::Pack& msgType )
-  { return msgType.m_length == 1 && adminTypeSet.test(msgType.m_data[0]); }
+  { return DataDictionary::MsgInfo::isAdminMsgType( msgType ); }
 
   static ApplVerID toApplVerID(const BeginString& value)
   {
@@ -1096,6 +1018,18 @@ public:
   /// Sets the session ID of the intended recipient
   void setSessionID( const SessionID& sessionID );
 
+#ifdef HAVE_EMX
+  void setSubMessageType(const std::string & subMsgType)
+  {
+    m_header.setField(EMX::MsgType::Pack(subMsgType));
+    setStatusBit(emx_compatible);
+  }
+
+  const std::string & getSubMessageType() const { 
+    return getStatusBit(emx_compatible) ? m_header.getField(FIELD::EMX::MsgType) : m_emx_none;
+  }
+#endif
+
 private:
 
   HEAVYUSE bool extractFieldDataLength( FieldReader& reader, const FieldMap& section, int field )
@@ -1135,6 +1069,18 @@ private:
     m_status |= (status_value_type)1 << bit;
   }
 
+#ifdef HAVE_EMX
+  inline bool verifyEMX(int field, bool isAppMessage = true) {
+    if (field == FIELD::EMX::MsgType || !isAppMessage) 
+    {
+      m_status |= createStatus(emx_compatible, true);
+      return isAppMessage;
+    }
+    return false;
+  }
+  static const std::string m_emx_none;
+#endif
+
   inline void setHeaderStatusBits(int field) {
     // SenderCompID and TargetCompID tag values are between 32 and 64
     status_value_type v = ((status_value_type)(field < 64) << (field - ((sizeof(status_value_type) <= 4) ? 32 : 0))) &
@@ -1160,9 +1106,6 @@ private:
   {
     return (m_status & (1 << bit)) != 0;
   }
-
-  static inline admin_trait msgAdminTrait( const FieldBase& msgType ) 
-  { return msgType.forString( TestAdminTrait() ); }
 
 protected:
   mutable Header m_header;

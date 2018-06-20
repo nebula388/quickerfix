@@ -180,8 +180,7 @@ Message::readString( Message::FieldReader& reader, bool doValidation,
   {
     const BodyLength* pBodyLength = readSpecHeader( reader, msgType );
      
-    msgInfo.messageType( msgType );
-    if ( UNLIKELY(isAdminMsgType( *msgType )) )
+    if ( UNLIKELY(msgInfo.messageType( msgType ) != DataDictionary::MsgInfo::Admin::None) )
       msgInfo.applicationDictionary( dict[ DataDictionary::FieldProperties::Body ] =
                                      pApplicationDictionary = &sessionDataDictionary );
     while ( reader ) {
@@ -223,7 +222,12 @@ vdict:
             if ( UNLIKELY(props.hasData()) ) extractFieldDataLength( reader, *section[location], field );
             if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
             {
-              setStatusCompID( field );
+              setHeaderStatusBits( field );
+#ifdef HAVE_EMX
+              if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+                msgInfo.messageType( (const StringField*)reader.flushHeaderField( m_header ), false );
+              else
+#endif
               reader.flushHeaderField( m_header );
             }
             else
@@ -305,15 +309,21 @@ ndict:
               if ( UNLIKELY(props.hasData()) ) extractFieldDataLength( reader, *section[location], field );
               if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
               {
-                setStatusCompID( field );
+                setHeaderStatusBits( field );
                 const FieldBase* stored = reader.flushHeaderField( m_header );
                 if ( UNLIKELY(field == FIELD::MsgType) )
                 {
                   msgType = (MsgType*)stored;
-                  msgInfo.messageType( msgType );
-                  if ( UNLIKELY(isAdminMsgType( *msgType )) )
+                  if ( UNLIKELY(msgInfo.messageType( msgType ) != DataDictionary::MsgInfo::Admin::None) )
                     msgInfo.applicationDictionary( dict[ DataDictionary::FieldProperties::Body ] =
                                                    pApplicationDictionary = &sessionDataDictionary );
+#ifdef HAVE_EMX
+                }
+                else
+                {
+                  if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+                    msgInfo.messageType( (const StringField*)stored, false );
+#endif
                 }
               }
               else
@@ -392,7 +402,12 @@ Message::readString( Message::FieldReader& reader, bool doValidation,
         {
           if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
           {
-            setStatusCompID( field );
+            setHeaderStatusBits( field );
+#ifdef HAVE_EMX
+            if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+              msgInfo.messageType( (const StringField*)reader.flushHeaderField( m_header ), false ); 
+            else
+#endif
             reader.flushHeaderField( m_header );
           }
           else
@@ -423,7 +438,6 @@ Message::readString( Message::FieldReader& reader, bool doValidation,
   }
   else
   {
-    msgType = NULL;
     if ( LIKELY(readSpecHeaderField( reader, FIELD::BeginString ) &&
                 readSpecHeaderField( reader, FIELD::BodyLength )) )
     {
@@ -450,9 +464,19 @@ rest:
           {
             if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
             {
-              setStatusCompID( field );
+              setHeaderStatusBits( field );
               const FieldBase* stored = reader.flushHeaderField( m_header );
-	      if( field == FIELD::MsgType ) msgInfo.messageType( msgType = (MsgType*)stored );
+	      if( field == FIELD::MsgType )
+              {
+                msgInfo.messageType( (const MsgType*)stored );
+#ifdef HAVE_EMX
+              }
+              else
+              {
+                if ( verifyEMX(field) && msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None )
+                  msgInfo.messageType( (const StringField*)stored, false );
+#endif
+              }
             }
             else
             {
@@ -503,8 +527,11 @@ Message::readString( Message::FieldReader& reader, bool doValidation )
         if ( isHeaderField( field ) )
         {
           if ( UNLIKELY(type != header) ) setErrorStatusBit( tag_out_of_order, field );
-          setStatusCompID( field );
+          setHeaderStatusBits( field );
           reader.flushHeaderField( m_header );
+#ifdef HAVE_EMX
+          verifyEMX(field);
+#endif
         }
         else if ( LIKELY(!isTrailerField( field )) )
         {
@@ -539,9 +566,12 @@ rest:
           if ( isHeaderField( field ) )
           {
             if ( UNLIKELY(type != header) ) setErrorStatusBit( tag_out_of_order, field );
-  	    setStatusCompID( field );
+  	    setHeaderStatusBits( field );
 	    const FieldBase* f = reader.flushHeaderField( m_header );
 	    msgType = (field == FIELD::MsgType) ? (const MsgType*)f : msgType;
+#ifdef HAVE_EMX
+            verifyEMX(field);
+#endif
  	  }
           else if ( LIKELY(!isTrailerField( field )) )
           {
@@ -700,6 +730,10 @@ void Message::validate(const BodyLength* pBodyLength)
   }
   else
     throw InvalidMessage("BodyLength missing");
+#ifdef HAVE_EMX
+  if (!getStatusBit(emx_compatible))
+    throw InvalidMessage("EMX message type (9426) not found");
+#endif
 }
 
 static ALIGN_DECL_DEFAULT const int s_HeaderFieldList[] =
@@ -733,6 +767,9 @@ FIELD::OnBehalfOfSendingTime,
 FIELD::ApplVerID,
 FIELD::CstmApplVerID,
 FIELD::NoHops,
+#ifdef HAVE_EMX
+FIELD::EMX::MsgType,
+#endif
 0
 };
 
@@ -744,9 +781,11 @@ FIELD::SignatureLength,
 0
 };
 
-#if defined(__BYTE_ORDER__)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-ALIGN_DECL_DEFAULT HOTDATA const Message::AdminSet Message::adminTypeSet = 
-  { { { 0, 4128768, 2, 0, 0, 0, 0, 0 } } };
+#ifdef HAVE_EMX
+const std::string Message::m_emx_none;
+#endif
+
+#if defined(__BYTE_ORDER__)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && !defined(HAVE_EMX)
 ALIGN_DECL_DEFAULT HOTDATA const Message::HeaderFieldSet Message::headerFieldSet =
   { { { 768, 51775500, 67108864, 68681730, 245763, 0, 3145728, 0,
         0, 0, 134217728, 393216, 0, 0, 0, 0,
@@ -754,7 +793,6 @@ ALIGN_DECL_DEFAULT HOTDATA const Message::HeaderFieldSet Message::headerFieldSet
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 768, 0, 0, 0, 0 } } };
 #else // construct on load
-ALIGN_DECL_DEFAULT const Message::AdminSet Message::adminTypeSet;
 ALIGN_DECL_DEFAULT const Message::HeaderFieldSet Message::headerFieldSet;
 
 COLDSECTION Message::HeaderFieldSet::HeaderFieldSet()
@@ -762,16 +800,6 @@ COLDSECTION Message::HeaderFieldSet::HeaderFieldSet()
   for(const int* p = s_HeaderFieldList; *p; p++)
     if ((unsigned)*p < size()) _value.set(*p); 
 }
-COLDSECTION Message::AdminSet::AdminSet()
-{
-  _value.set('0');
-  _value.set('1');
-  _value.set('2');
-  _value.set('3');
-  _value.set('4');
-  _value.set('5');
-  _value.set('A');
-};
 #endif
 
 void COLDSECTION Message::HeaderFieldSet::spec( DataDictionary& dict )

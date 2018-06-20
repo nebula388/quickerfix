@@ -39,9 +39,26 @@
 namespace FIX
 {
 
-ALIGN_DECL_DEFAULT HOTDATA const DataDictionary::group_key_holder DataDictionary::GroupKey =
+ALIGN_DECL_DEFAULT const DataDictionary::group_key_holder DataDictionary::GroupKey =
        { DataDictionary::string_type("_header_"),
          DataDictionary::string_type("_trailer_") };
+#if defined(__BYTE_ORDER__)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+ALIGN_DECL_DEFAULT HOTDATA const DataDictionary::MsgInfo::AdminSet DataDictionary::MsgInfo::adminTypeSet =
+  { { { 0, 4128768, 2, 0, 0, 0, 0, 0 } } };
+#else // construct on load
+ALIGN_DECL_DEFAULT const DataDictionary::MsgInfo::AdminSet DataDictionary::MsgInfo::adminTypeSet;
+
+COLDSECTION DataDictionary::MsgInfo::AdminSet::AdminSet()
+{
+  _value.set('0');
+  _value.set('1');
+  _value.set('2');
+  _value.set('3');
+  _value.set('4');
+  _value.set('5');
+  _value.set('A');
+};
+#endif
 
 DataDictionary::FieldToProps DataDictionary::m_noProps;
 DataDictionary::FieldToGroup DataDictionary::m_noGroups;

@@ -294,7 +294,7 @@ private:
   }
 
   void fill( Header&, UtcTimeStamp now = UtcTimeStamp()  );
-  Message::admin_trait fill( Header&, int num, UtcTimeStamp now = UtcTimeStamp() );
+  DataDictionary::MsgInfo::Admin::Trait fill( Header&, int num, UtcTimeStamp now = UtcTimeStamp() );
 
   inline bool isGoodTime( const SendingTime& sendingTime,
                           const UtcTimeStamp& now )
@@ -323,8 +323,8 @@ private:
   bool shouldSendReset();
 
   bool validLogonState( const MsgType& msgType );
-  bool validLogonState( Message::Admin::AdminType adminType );
-  void fromCallback( Message::Admin::AdminType adminType, const Message& msg,
+  bool validLogonState( DataDictionary::MsgInfo::Admin::Type adminType );
+  void fromCallback( DataDictionary::MsgInfo::Admin::Type adminType, const Message& msg,
                      const SessionID& sessionID );
 
   void doBadTime( const Message& msg );
@@ -368,7 +368,7 @@ private:
   void populateRejectReason( Message&, int field, const std::string& );
   void populateRejectReason( Message&, const std::string& );
 
-  bool verify( const Message& msg, Message::Admin::AdminType adminType,
+  bool verify( const Message& msg, DataDictionary::MsgInfo::Admin::Type adminType,
 				   const UtcTimeStamp& now,
                                    const Header& header,
                                    bool  checkTooHigh, bool checkTooLow );
@@ -377,10 +377,11 @@ private:
   {
     const Header&  header = msg.getHeader();
     const MsgType* pType = FIELD_GET_PTR( header, MsgType );
-    return verify( msg, pType ? Message::msgAdminType(*pType) : Message::Admin::None,
+    return verify( msg,
+                   pType ? DataDictionary::MsgInfo::msgAdminType(*pType) : DataDictionary::MsgInfo::Admin::None,
                    UtcTimeStamp(), header, checkTooHigh, checkTooLow );
   }
-  bool verify( const Message& msg, Message::Admin::AdminType adminType,
+  bool verify( const Message& msg, DataDictionary::MsgInfo::Admin::Type adminType,
                bool checkTooHigh = true, bool checkTooLow = true )
   {
     return verify( msg, adminType, UtcTimeStamp(), msg.getHeader(),
