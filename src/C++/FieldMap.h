@@ -888,7 +888,7 @@ public:
 
 protected:
   static inline
-  allocator_type create_allocator(std::size_t n = ItemAllocatorTraits::DefaultCapacity)
+  allocator_type create_allocator(unsigned n = ItemAllocatorTraits::DefaultCapacity)
   {
     allocator_type a( allocator_type::buffer_type::create(n) );
 #ifdef ENABLE_FLAT_FIELDMAP

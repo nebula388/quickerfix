@@ -1,21 +1,30 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\config_windows.h" />
-    <ClInclude Include="..\stdafx.h" />
     <ClInclude Include="Acceptor.h" />
+    <ClInclude Include="Allocator.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="AtomicCount.h" />
+    <ClInclude Include="Container.h" />
     <ClInclude Include="DatabaseConnectionID.h" />
     <ClInclude Include="DatabaseConnectionPool.h" />
     <ClInclude Include="DataDictionary.h" />
@@ -34,10 +43,12 @@
     <ClInclude Include="FileStore.h" />
     <ClInclude Include="fix40\Advertisement.h" />
     <ClInclude Include="fix40\Allocation.h" />
+    <ClInclude Include="fix40\AllocationInstructionAck.h" />
     <ClInclude Include="fix40\DontKnowTrade.h" />
     <ClInclude Include="fix40\Email.h" />
     <ClInclude Include="fix40\ExecutionReport.h" />
     <ClInclude Include="fix40\Heartbeat.h" />
+    <ClInclude Include="fix40\IOI.h" />
     <ClInclude Include="fix40\ListCancelRequest.h" />
     <ClInclude Include="fix40\ListExecute.h" />
     <ClInclude Include="fix40\ListStatus.h" />
@@ -61,10 +72,12 @@
     <ClInclude Include="fix40\TestRequest.h" />
     <ClInclude Include="fix41\Advertisement.h" />
     <ClInclude Include="fix41\Allocation.h" />
+    <ClInclude Include="fix41\AllocationInstructionAck.h" />
     <ClInclude Include="fix41\DontKnowTrade.h" />
     <ClInclude Include="fix41\Email.h" />
     <ClInclude Include="fix41\ExecutionReport.h" />
     <ClInclude Include="fix41\Heartbeat.h" />
+    <ClInclude Include="fix41\IOI.h" />
     <ClInclude Include="fix41\ListCancelRequest.h" />
     <ClInclude Include="fix41\ListExecute.h" />
     <ClInclude Include="fix41\ListStatus.h" />
@@ -89,6 +102,7 @@
     <ClInclude Include="fix41\TestRequest.h" />
     <ClInclude Include="fix42\Advertisement.h" />
     <ClInclude Include="fix42\Allocation.h" />
+    <ClInclude Include="fix42\AllocationInstructionAck.h" />
     <ClInclude Include="fix42\BidRequest.h" />
     <ClInclude Include="fix42\BidResponse.h" />
     <ClInclude Include="fix42\BusinessMessageReject.h" />
@@ -96,6 +110,7 @@
     <ClInclude Include="fix42\Email.h" />
     <ClInclude Include="fix42\ExecutionReport.h" />
     <ClInclude Include="fix42\Heartbeat.h" />
+    <ClInclude Include="fix42\IOI.h" />
     <ClInclude Include="fix42\ListCancelRequest.h" />
     <ClInclude Include="fix42\ListExecute.h" />
     <ClInclude Include="fix42\ListStatus.h" />
@@ -202,6 +217,7 @@
     <ClInclude Include="fix43\TradeCaptureReportRequest.h" />
     <ClInclude Include="fix43\TradingSessionStatus.h" />
     <ClInclude Include="fix43\TradingSessionStatusRequest.h" />
+    <ClInclude Include="fix43\XMLnonFIX.h" />
     <ClInclude Include="fix44\Advertisement.h" />
     <ClInclude Include="fix44\AllocationInstruction.h" />
     <ClInclude Include="fix44\AllocationInstructionAck.h" />
@@ -296,6 +312,7 @@
     <ClInclude Include="fix44\TradingSessionStatusRequest.h" />
     <ClInclude Include="fix44\UserRequest.h" />
     <ClInclude Include="fix44\UserResponse.h" />
+    <ClInclude Include="fix44\XMLnonFIX.h" />
     <ClInclude Include="fix50sp1\AdjustedPositionReport.h" />
     <ClInclude Include="fix50sp1\Advertisement.h" />
     <ClInclude Include="fix50sp1\AllocationInstruction.h" />
@@ -608,6 +625,7 @@
     <ClInclude Include="fix50\TradingSessionStatusRequest.h" />
     <ClInclude Include="fix50\UserRequest.h" />
     <ClInclude Include="fix50\UserResponse.h" />
+    <ClInclude Include="FixExtensions.h" />
     <ClInclude Include="FixFieldNumbers.h" />
     <ClInclude Include="FixFields.h" />
     <ClInclude Include="fixt11\Heartbeat.h" />
@@ -622,11 +640,13 @@
     <ClInclude Include="FixValues.h" />
     <ClInclude Include="FlexLexer.h" />
     <ClInclude Include="Group.h" />
+    <ClInclude Include="HtmlBuilder.h" />
     <ClInclude Include="HttpConnection.h" />
     <ClInclude Include="HttpMessage.h" />
     <ClInclude Include="HttpParser.h" />
     <ClInclude Include="HttpServer.h" />
     <ClInclude Include="Initiator.h" />
+    <ClInclude Include="ItemAllocator.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="MessageCracker.h" />
@@ -662,12 +682,20 @@
     <ClInclude Include="SocketInitiator.h" />
     <ClInclude Include="SocketMonitor.h" />
     <ClInclude Include="SocketServer.h" />
+    <ClInclude Include="SSLSocketAcceptor.h" />
+    <ClInclude Include="SSLSocketConnection.h" />
+    <ClInclude Include="SSLSocketInitiator.h" />
+    <ClInclude Include="stdafx.h" />
     <ClInclude Include="strptime.h" />
     <ClInclude Include="ThreadedSocketAcceptor.h" />
     <ClInclude Include="ThreadedSocketConnection.h" />
     <ClInclude Include="ThreadedSocketInitiator.h" />
+    <ClInclude Include="ThreadedSSLSocketAcceptor.h" />
+    <ClInclude Include="ThreadedSSLSocketConnection.h" />
+    <ClInclude Include="ThreadedSSLSocketInitiator.h" />
     <ClInclude Include="TimeRange.h" />
     <ClInclude Include="Utility.h" />
+    <ClInclude Include="UtilitySSL.h" />
     <ClInclude Include="Values.h" />
   </ItemGroup>
   <ItemGroup>
@@ -710,72 +738,128 @@
     <ClCompile Include="SocketInitiator.cpp" />
     <ClCompile Include="SocketMonitor.cpp" />
     <ClCompile Include="SocketServer.cpp" />
-    <ClCompile Include="strptime.c" />
+    <ClCompile Include="SSLSocketAcceptor.cpp" />
+    <ClCompile Include="SSLSocketConnection.cpp" />
+    <ClCompile Include="SSLSocketInitiator.cpp" />
+    <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="ThreadedSocketAcceptor.cpp" />
     <ClCompile Include="ThreadedSocketConnection.cpp" />
     <ClCompile Include="ThreadedSocketInitiator.cpp" />
+    <ClCompile Include="ThreadedSSLSocketAcceptor.cpp" />
+    <ClCompile Include="ThreadedSSLSocketConnection.cpp" />
+    <ClCompile Include="ThreadedSSLSocketInitiator.cpp" />
     <ClCompile Include="TimeRange.cpp" />
     <ClCompile Include="Utility.cpp" />
+    <ClCompile Include="UtilitySSL.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>quickfix</ProjectName>
     <ProjectGuid>{D5D558EA-BBAC-4862-A946-D3881BACE3B7}</ProjectGuid>
-    <RootNamespace>quickfix_vc12</RootNamespace>
+    <RootNamespace>quickfix_vs14</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\VSSettings.props" />
+    <Import Project="..\..\VSSettings_x64.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\VSSettings.props" />
+    <Import Project="..\..\VSSettings_x86.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\VSSettings.props" />
+    <Import Project="..\..\VSSettings_x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+    <Import Project="..\..\VSSettings.props" />
+    <Import Project="..\..\VSSettings_x86.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.21006.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)lib\debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\vs12\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)lib\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\vs12\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">quickfix</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">quickfix</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">quickfix</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">quickfix</TargetName>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <OutDir>$(SolutionDir)\lib\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
+    <OutDir>$(SolutionDir)\lib\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <OutDir>$(SolutionDir)\lib\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
+    <OutDir>$(SolutionDir)\lib\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(SolutionDir)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Debug/quickfix.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -795,12 +879,51 @@ del /F EXCLUDE
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(UniversalCRT_IncludePath);$(SolutionDir)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetFileName)</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+    <PostBuildEvent>
+      <Command>echo test\ &gt; EXCLUDE
+echo stdafx.h &gt;&gt; EXCLUDE
+echo release\ &gt;&gt; EXCLUDE
+echo debug\ &gt;&gt; EXCLUDE
+xcopy *.h /S/Y/E/I /EXCLUDE:EXCLUDE ..\..\include\quickfix
+del /F EXCLUDE
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>$(SolutionDir)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -808,12 +931,18 @@ del /F EXCLUDE
       <PrecompiledHeader>
       </PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>.\Release/quickfix.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <EnableEnhancedInstructionSet>
+      </EnableEnhancedInstructionSet>
+      <Optimization>Full</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -823,6 +952,52 @@ del /F EXCLUDE
       <OutputFile>$(OutDir)$(TargetFileName)</OutputFile>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
+    </Lib>
+    <PostBuildEvent>
+      <Command>echo test\ &gt; EXCLUDE
+echo stdafx.h &gt;&gt; EXCLUDE
+echo release\ &gt;&gt; EXCLUDE
+echo debug\ &gt;&gt; EXCLUDE
+xcopy *.h /S/Y/E/I /EXCLUDE:EXCLUDE ..\..\include\quickfix
+del /F EXCLUDE
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <Optimization>Full</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(TargetFileName)</OutputFile>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <LinkTimeCodeGeneration>true</LinkTimeCodeGeneration>
     </Lib>
     <PostBuildEvent>
       <Command>echo test\ &gt; EXCLUDE

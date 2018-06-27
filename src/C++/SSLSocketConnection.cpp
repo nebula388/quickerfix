@@ -129,7 +129,7 @@
 
 namespace FIX
 {
-SSLSocketConnection::SSLSocketConnection(int s, SSL *ssl, Sessions sessions,
+SSLSocketConnection::SSLSocketConnection(sys_socket_t s, SSL *ssl, Sessions sessions,
                                     SocketMonitor* pMonitor )
 : m_socket( s ), m_ssl(ssl), m_sendLength( 0 ),
   m_sessions(sessions), m_pSession( 0 ), m_pMonitor( pMonitor )
@@ -139,7 +139,7 @@ SSLSocketConnection::SSLSocketConnection(int s, SSL *ssl, Sessions sessions,
 }
 
 SSLSocketConnection::SSLSocketConnection(SSLSocketInitiator &i,
-                                    const SessionID& sessionID, int s, SSL * ssl,
+                                    const SessionID& sessionID, sys_socket_t s, SSL * ssl,
                                     SocketMonitor* pMonitor )
 : m_socket( s ), m_ssl(ssl), m_sendLength( 0 ),
   m_pSession( i.getSession( sessionID, *this ) ),
@@ -199,7 +199,7 @@ bool SSLSocketConnection::processQueue()
     // Cannot do concurrent SSL write and read as ssl context has to be
     // protected. Done above.
     {
-      sent = SSL_write(m_ssl, msg.c_str() + m_sendLength,  msg.length() - m_sendLength);
+      sent = SSL_write(m_ssl, msg.c_str() + m_sendLength,  (int)(msg.length() - m_sendLength));
       if (sent <= 0)
         errCodeSSL = SSL_get_error(m_ssl, sent);
     }
@@ -270,7 +270,7 @@ bool SSLSocketConnection::read(SSLSocketAcceptor &a, SocketServer& s )
 
       while( !readMessage( msg ) )
       {
-        int result = select( 1 + m_socket, &readset, 0, 0, &timeout );
+        int result = select( (int)(1 + m_socket), &readset, 0, 0, &timeout );
         if( result > 0 )
           readFromSocket();
         else if( result == 0 )

@@ -257,9 +257,9 @@ public:
     static bool isHeader(location_type l) { return l & Header; }
     bool isHeader() const { return location() & Header; }
     bool isUserHeader() const { return UserLocation & Header; }
-    static bool isTrailer(location_type l) { return l & Trailer; }
-    bool isTrailer() const { return location() & Trailer; }
-    bool isUserTrailer() const { return UserLocation & Trailer; }
+    static bool isTrailer(location_type l) { return (l & Trailer) != 0; }
+    bool isTrailer() const { return (location() & Trailer) != 0; }
+    bool isUserTrailer() const { return (UserLocation & Trailer) != 0; }
     static bool isBody(location_type l) { return l == Body; }
     bool isBody() const { return location() == Body; }
 

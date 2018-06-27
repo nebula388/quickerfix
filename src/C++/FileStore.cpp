@@ -147,7 +147,7 @@ COLDSECTION void FileStore::populateCache()
     size_t size;
     while ( FILE_FSCANF( headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%" SIZE_T_TYPE_MOD "u ",
                         &num, FILE_OFFSET_TYPE_ADDR(offset), &size ) == 3 )
-      m_offsets[ num ] = std::make_pair( offset, size );
+      m_offsets[ num ] = std::make_pair( offset, (int)size );
     fclose( headerFile );
   }
 
@@ -211,7 +211,7 @@ THROW_DECL( IOException )
   if ( FILE_OFFSET_TYPE_VALUE(offset) < 0 ) 
     throw IOException( "Unable to get file pointer position from " +
                        m_msgFileName );
-  int size = msg.size();
+  int size = (int)msg.size();
 
   if ( fprintf( m_headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%d ",
                 msgSeqNum, FILE_OFFSET_TYPE_VALUE(offset), size ) < 0 )
@@ -233,7 +233,7 @@ bool FileStore::set( int msgSeqNum, Sg::sg_buf_ptr b, int n )
   offset = file_handle_seek( m_msgFileHandle, offset, FILE_POSITION_END );
   if ( FILE_OFFSET_TYPE_VALUE(offset) < 0 ) 
     throw IOException( "Unable to get file pointer position from " + m_msgFileName );
-  int size = Sg::size(b, n);
+  int size = (int)Sg::size(b, n);
 
   if ( fprintf( m_headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%d ",
                 msgSeqNum, FILE_OFFSET_TYPE_VALUE(offset), size ) < 0 )

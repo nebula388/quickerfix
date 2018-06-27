@@ -266,7 +266,7 @@ private:
   {
     if (!m_calculated)
     {
-      m_length = String::size(m_string) ;
+      m_length = (int)String::size(m_string) ;
       m_total = m_tagChecksum +
         Util::CharBuffer::checkSum(String::data(m_string), m_length) +
         (int)'\001';

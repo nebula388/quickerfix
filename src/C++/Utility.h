@@ -263,6 +263,12 @@ typedef int ssize_t;
 
 namespace FIX
 {
+#ifdef _MSC_VER
+	typedef SOCKET sys_socket_t;
+#else
+	typedef int sys_socket_t;
+#endif
+
   void string_replace( const std::string& oldValue,
                        const std::string& newValue,
                        std::string& value );
@@ -273,34 +279,34 @@ namespace FIX
 
   void socket_init();
   void socket_term();
-  int socket_bind( int socket, const char* hostname, int port );
-  int socket_createAcceptor( int port, bool reuse = false );
-  int socket_createConnector();
-  int socket_connect( int s, const char* address, int port );
-  int socket_accept( int s );
-  ssize_t socket_send( int s, const char* msg, size_t length );
-  void socket_close( int s );
-  bool socket_fionread( int s, int& bytes );
-  bool socket_disconnected( int s );
-  int socket_setsockopt( int s, int opt );
-  int socket_setsockopt( int s, int opt, int optval );
-  int socket_getsockopt( int s, int opt, int& optval );
+  int socket_bind(sys_socket_t socket, const char* hostname, int port );
+  sys_socket_t socket_createAcceptor( int port, bool reuse = false );
+  sys_socket_t socket_createConnector();
+  int socket_connect(sys_socket_t s, const char* address, int port );
+  int socket_accept(sys_socket_t s );
+  ssize_t socket_send(sys_socket_t s, const char* msg, size_t length );
+  void socket_close(sys_socket_t s );
+  bool socket_fionread(sys_socket_t s, int& bytes );
+  bool socket_disconnected(sys_socket_t s );
+  int socket_setsockopt(sys_socket_t s, int opt );
+  int socket_setsockopt(sys_socket_t s, int opt, int optval );
+  int socket_getsockopt(sys_socket_t s, int opt, int& optval );
 #ifndef _MSC_VER
-  int socket_fcntl( int s, int opt, int arg );
-  int socket_getfcntlflag( int s, int arg );
-  int socket_setfcntlflag( int s, int arg );
+  int socket_fcntl(sys_socket_t s, int opt, int arg );
+  int socket_getfcntlflag(sys_socket_t s, int arg );
+  int socket_setfcntlflag(sys_socket_t s, int arg );
 #endif
-  void socket_setnonblock( int s );
-  bool socket_isValid( int socket );
+  void socket_setnonblock(sys_socket_t s );
+  bool socket_isValid(sys_socket_t socket );
 #ifndef _MSC_VER
-  bool socket_isBad( int s );
+  bool socket_isBad(sys_socket_t s );
 #endif
-  void socket_invalidate( int& socket );
-  short socket_hostport( int socket );
-  const char* socket_hostname( int socket );
+  void socket_invalidate(sys_socket_t& socket );
+  short socket_hostport(sys_socket_t socket );
+  const char* socket_hostname(sys_socket_t socket );
   const char* socket_hostname( const char* name );
-  const char* socket_peername( int socket );
-  std::pair<int, int> socket_createpair();
+  const char* socket_peername(sys_socket_t socket );
+  std::pair<sys_socket_t, sys_socket_t> socket_createpair();
 
   tm time_gmtime( const time_t* t );
   tm time_localtime( const time_t* t );
@@ -321,9 +327,9 @@ namespace FIX
 #define ALIGNED_ALLOC(p, sz, alignment) (p = (CHAR*)_aligned_malloc(sz, alignment))
 #define ALIGNED_FREE(p) _aligned_free(p)
 
-  typedef unsigned int (_stdcall THREAD_START_ROUTINE)(void *);
-#define  THREAD_PROC unsigned int _stdcall
-  typedef unsigned thread_id;
+  typedef unsigned int (__stdcall THREAD_START_ROUTINE)(void *);
+#define  THREAD_PROC unsigned int __stdcall
+  typedef uintptr_t thread_id;
 
   typedef HANDLE   FILE_HANDLE_TYPE;
 #define INVALID_FILE_HANDLE_VALUE (INVALID_HANDLE_VALUE)
@@ -1113,7 +1119,7 @@ namespace FIX
 #elif defined __i386__
         log2 = log2 ? __builtin_clzll(log2) : 0;
 #elif defined _M_X64
-        log2 = _BitScanReverse64(&log2, log2) ? log2 : 0;
+        log2 = _BitScanReverse64((unsigned long*)&log2, log2) ? (unsigned long)log2 : 0;
 #else // _M_IX86
         uint32_t v;
         log2 = _BitScanReverse( (DWORD*)&v, (unsigned long)(log2 >> 32)) ? v + 32
@@ -1453,9 +1459,9 @@ namespace FIX
       };
 
 #ifdef __SSSE3__
-      static ALIGN_DECL_DEFAULT const unsigned char s_vmask[32];
       static ALIGN_DECL_DEFAULT const unsigned char s_vshift[32];
 #endif
+	  static ALIGN_DECL_DEFAULT const unsigned char s_vmask[32];
       static ALIGN_DECL_DEFAULT const Fixed<16> s_uint_charset;
     }; // CharBuffer
 
@@ -1507,23 +1513,37 @@ namespace FIX
         std::size_t gap = 16 - lessthan16;
         shift = (shift <= gap) ? shift : 0; // if data spans two 16-bit blocks, load from p, otherwise load from (p & ~15)
 #ifdef __SSSE3__
-	return _mm_and_si128( _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
+	    return _mm_and_si128( _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
                                                 _mm_loadu_si128( (__m128i*)(s_vshift + shift) ) ),
                               _mm_loadu_si128( (__m128i*)(s_vmask + gap) ) );
+#elif defined(_MSC_VER) || defined(__i386__)
+		__m128i v = _mm_loadu_si128((__m128i*)(p - shift));
+		switch (shift)
+		{
+		  case 1: v = _mm_srli_si128(v, 1); break;
+		  case 2: v = _mm_srli_si128(v, 2); break;
+		  case 3: v = _mm_srli_si128(v, 3); break;
+		  case 4: v = _mm_srli_si128(v, 4); break;
+		  case 5: v = _mm_srli_si128(v, 5); break;
+		  case 6: v = _mm_srli_si128(v, 6); break;
+		  case 7: v = _mm_srli_si128(v, 7); break;
+		  case 8: v = _mm_srli_si128(v, 8); break;
+		  case 9: v = _mm_srli_si128(v, 9); break;
+		  case 10: v = _mm_srli_si128(v, 10); break;
+		  case 11: v = _mm_srli_si128(v, 11); break;
+		  case 12: v = _mm_srli_si128(v, 12); break;
+		  case 13: v = _mm_srli_si128(v, 13); break;
+		  case 14: v = _mm_srli_si128(v, 14); break;
+		  case 15: v = _mm_srli_si128(v, 15); break;
+		}
+		return _mm_and_si128( v, _mm_loadu_si128((__m128i*)(s_vmask + gap)) );
 #else
         uint64_t lo, hi;
-	lo = *(uint64_t*)(p -= shift);
-	hi = *((uint64_t*)p + 1);
+        lo = *(uint64_t*)(p -= shift);
+        hi = *((uint64_t*)p + 1);
         bool swap = shift >= 8;
         shift <<= 3; // no need to mask, x86 takes only lower 6 bits when shifting
-#ifdef _MSC_VER
-        lo >>= shift;
-        _rotr64(hi, shift);
-        lo |= hi & ~((uint64_t)-1 >> shift);
-        hi &= (uint64_t)-1 >> shift;
-#else
         __asm__ ( "shrdq %1, %0	\n\tshrq %%cl, %1" : "+r"(lo), "+r"(hi) : "c"(shift) : "cc");
-#endif
         uint64_t losel = (uint64_t)swap - 1;
         gap <<= 3;
         bool half = gap >= 64;
@@ -1532,8 +1552,12 @@ namespace FIX
         lo &= half ? sel : losel;
         lo |= hi & (~losel >> gap);
         hi &= hisel;
+#if defined(__x86_64__) || defined(_M_X64)
         return _mm_unpacklo_epi64( _mm_cvtsi64_si128(lo), _mm_cvtsi64_si128(hi) );
+#else
+		return _mm_castpd_si128(_mm_loadh_pd(_mm_load_sd((double*)&lo), (double*)&hi));
 #endif
+#endif // __SSSE3__
       }
     };
 
@@ -1557,7 +1581,7 @@ namespace FIX
         if ( LIKELY(r != 0) )
         {
 #ifdef _MSC_VER
-          _BitScanForward(&r, r);
+          _BitScanForward((unsigned long*)&r, r);
 #else
           __asm__ ( "bsf %0, %0" : "+r"(r) : : "cc" );
 #endif
@@ -1568,7 +1592,7 @@ namespace FIX
       {
         uint32_t r = _mm_movemask_epi8( _mm_cmpeq_epi8( Fixed<16>::loadu_si128_partial( p, size ), v ) ) | (1 << size);
 #ifdef _MSC_VER
-        _BitScanForward(&r, r);
+        _BitScanForward((unsigned long*)&r, r);
 #else
         __asm__ ( "bsf %0, %0" : "+r"(r) : : "cc" );
 #endif
@@ -1657,9 +1681,15 @@ namespace FIX
     inline std::size_t PURE_DECL CharBuffer::find<8>(char v, const CharBuffer::Fixed<8>& f)
     {
       // bits 8-15 will be set
+#if defined(__x86_64__) || defined(_M_X64)
       uint32_t at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_cvtsi64_si128( (uint64_t)v * 0x101010101010101UL ), _mm_cvtsi64_si128(f.value) ) );
+#else
+	  __m128i mask = _mm_cvtsi32_si128((uint32_t)v * 0x01010101);
+	  uint32_t at = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_unpacklo_epi32(mask, mask), _mm_castpd_si128(_mm_load_sd((double*)&f.value))));
+#endif
+
 #ifdef _MSC_VER
-      _BitScanForward(&at, at);
+      _BitScanForward((unsigned long*)&at, at);
 #else
      __asm__ ( "bsf %0, %0" : "+r"(at) : : "cc" ); // returns 8 if no match
 #endif
@@ -1671,7 +1701,7 @@ namespace FIX
     {
       uint32_t at = _mm_movemask_epi8( _mm_cmpeq_epi8( _mm_set1_epi8(v), _mm_loadu_si128(&f.value) ) ) | (1 << 16);
 #ifdef _MSC_VER
-      _BitScanForward(&at, at);
+      _BitScanForward((unsigned long*)&at, at);
 #else
      __asm__ ( "bsf %0, %0" : "+r"(at) : : "cc" ); // returns 16 if no match
 #endif
@@ -1964,7 +1994,7 @@ namespace FIX
 
       static inline char NOTHROW length(int field)
       {
-        return Util::UInt::numDigits((unsigned)field) + 1;
+        return (char)Util::UInt::numDigits((unsigned)field) + 1;
       }
 
       static inline short NOTHROW checkSum(int field)
@@ -1986,7 +2016,7 @@ namespace FIX
 
       std::size_t size() const { return N; }
 
-      void NOTHROW set( int bit )
+      void NOTHROW set( std::size_t bit )
       {
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
         __asm__ __volatile__ (
@@ -1995,13 +2025,13 @@ namespace FIX
                 : "Ir" (bit)
                 : "cc", "memory");   
 #elif defined(_MSC_VER)
-        _bittestandset( (long*)m_bits, bit );
+        _bittestandset( (long*)m_bits, (long)bit );
 #else
         m_bits[bit >> word_shift] |= ((word_type)1 << (bit & (word_size - 1)));
 #endif
       }
 
-      bool NOTHROW test( int bit ) const
+      bool NOTHROW test( std::size_t bit ) const
       {
         unsigned char v;
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
@@ -2013,7 +2043,7 @@ namespace FIX
                 : "cc");
         return v;
 #elif defined(_MSC_VER)
-        v = _bittest( (long*)m_bits, bit );
+        v = _bittest( (long*)m_bits, (long)bit );
         return v != 0;
 #else
         v = (m_bits[bit >> word_shift] &
@@ -2022,7 +2052,7 @@ namespace FIX
 #endif
       }
 
-      void NOTHROW reset( int bit )
+      void NOTHROW reset( std::size_t bit )
       {
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
  	    __asm__ __volatile__ (
@@ -2031,7 +2061,7 @@ namespace FIX
                 : "Ir" (bit)
                 : "cc", "memory");   
 #elif defined(_MSC_VER)
-        _bittestandreset( (long*)m_bits, bit );
+        _bittestandreset( (long*)m_bits, (long)bit );
 #else
         m_bits[bit >> word_shift] &= ~((base_type::word_type)1 << (bit & (word_size - 1)));
 #endif
@@ -2202,12 +2232,12 @@ namespace FIX
 
       inline int NOTHROW _Find_first()
       {
-        return detail::bit_scan(m_bits);
+        return (int)detail::bit_scan(m_bits);
       }
 
       int _Find_next( int b )
       {
-        return detail::bit_scan(m_bits, ++b);
+        return (int)detail::bit_scan(m_bits, ++b);
       }
 
       inline BitSet NOTHROW_PRE & NOTHROW_POST operator <<=(int n) { m_bits <<= n; return *this; }
@@ -2471,7 +2501,7 @@ namespace FIX
     typedef WSABUF   sg_buf_t;
     typedef LPWSABUF sg_buf_ptr;
     typedef CHAR*    sg_ptr_t;
-
+	typedef ULONG    sg_size_t;
 #define IOV_BUF_INITIALIZER(ptr, len) { (ULONG)(len), (CHAR*)(ptr) } 
 #define IOV_BUF(b) ((b).buf)
 #define IOV_LEN(b) ((b).len)
@@ -2479,7 +2509,7 @@ namespace FIX
     static inline void NOTHROW append(sg_buf_t& buf, const char* s, std::size_t len)
     {
       char* pc = (char*)IOV_BUF(buf) + IOV_LEN(buf);
-      IOV_LEN(buf) += len;
+      IOV_LEN(buf) += (ULONG)len;
       while(len--) *pc++ = *s++;
     }
 
@@ -2513,7 +2543,7 @@ namespace FIX
     typedef struct iovec  sg_buf_t;
     typedef struct iovec* sg_buf_ptr;
     typedef void*         sg_ptr_t;
-
+	typedef size_t        sg_size_t;
 #define IOV_BUF_INITIALIZER(ptr, len) { (void*)(ptr), (size_t)(len) } 
 #define IOV_BUF(b) ((b).iov_base)
 #define IOV_LEN(b) ((b).iov_len)
@@ -2597,9 +2627,9 @@ namespace FIX
     {
       char* pe = (char*)IOV_BUF(by) + IOV_LEN(by);
       IOV_BUF(by) = IOV_BUF(buf);
-      IOV_LEN(buf) -= pe - (char*)IOV_BUF(buf);
+      IOV_LEN(buf) -= (Sg::sg_size_t)(pe - (char*)IOV_BUF(buf));
       IOV_BUF(buf) = pe;
-      IOV_LEN(by) = pe - (char*)IOV_BUF(by);
+      IOV_LEN(by) = (Sg::sg_size_t)(pe - (char*)IOV_BUF(by));
       return by;
     }
 

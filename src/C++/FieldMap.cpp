@@ -143,7 +143,7 @@ int COLDSECTION FieldMap::calculateLength( int beginStringField,
                                int bodyLengthField,
                                int checkSumField ) const
 {
-  int result = 0;
+  std::size_t result = 0;
   Fields::const_iterator i, fe = f_end();
   for ( i = f_begin(); i != fe; ++i )
   {
@@ -161,7 +161,7 @@ int COLDSECTION FieldMap::calculateLength( int beginStringField,
     for ( k = j->second.begin(); k != ke; ++k )
       result += ( *k ) ->calculateLength();
   }
-  return result;
+  return (int)result;
 }
 
 int HEAVYUSE HOTSECTION FieldMap::calculateTotal( int checkSumField ) const
@@ -191,7 +191,7 @@ void HOTSECTION FieldMap::addGroupPtr( int field, FieldMap * group, bool setCoun
   vec.push_back( group );
 
   if( setCount )
-      setField( IntField::Pack( field, vec.size() ) );
+      setField( IntField::Pack( field, (int)vec.size() ) );
 }
 
 }

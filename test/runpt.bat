@@ -1,34 +1,25 @@
 echo off
 if "%1" == "" goto usage
 if "%2" == "" goto usage
+if "%3" == "" goto usage
 
 if "%1" == "debug" goto debug:
 if "%1" == "release" goto release:
-if "%1" == "debug.boost" goto debug.boost:
-if "%1" == "release.boost" goto release.boost:
 goto usage
 
 :debug
-set DIR=debug\pt
-goto start
-
-:debug.boost
-set DIR=debug.boost\pt
+set DIR=%2\Debug
 goto start
 
 :release
-set DIR=release\pt
-goto start
-
-:release.boost
-set DIR=release.boost\pt
+set DIR=%2\Release
 goto start
 
 :start
-%DIR%\pt.exe -p %2 -c 500000
+%DIR%\pt.exe -p %3 -c 500000
 goto quit
 
 :usage
-echo "Usage: runpt [release | debug | release.boost | debug.boost ] [port]"
+echo "Usage: runpt [release|debug] [Win32|x64] [port]"
 
 :quit

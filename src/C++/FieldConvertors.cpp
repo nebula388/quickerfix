@@ -68,8 +68,8 @@ static inline std::size_t HEAVYUSE test10(uint32_t v)
 // 0 < v < 10^16
 static inline std::size_t HEAVYUSE numFractionDigits( uint64_t v )
 {
-  uint32_t h = v / 100000000;
-  uint32_t r = v - h * 100000000;
+  uint32_t h = (uint32_t)(v / 100000000); 
+  uint32_t r = (uint32_t)(v - h * 100000000);
   std::size_t n;
   h = ((r == 0) ? (n = 1, r = h) : (n = 9, r)) / 10000;
   r -= h * 10000;

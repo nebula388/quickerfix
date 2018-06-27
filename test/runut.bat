@@ -1,34 +1,25 @@
 echo off
 if "%1" == "" goto usage
 if "%2" == "" goto usage
+if "%3" == "" goto usage
 
 if "%1" == "debug" goto debug:
 if "%1" == "release" goto release:
-if "%1" == "debug.boost" goto debug.boost:
-if "%1" == "release.boost" goto release.boost:
 goto usage
 
 :debug
-set DIR=debug\ut
+set DIR=%2\Debug
 goto start
 
 :release
-set DIR=release\ut
-goto start
-
-:debug.boost
-set DIR=debug.boost\ut
-goto start
-
-:release.boost
-set DIR=release.boost\ut
+set DIR=%2\Release
 goto start
 
 :start
-%DIR%\ut.exe -p %2 -f cfg\ut.cfg
+%DIR%\ut.exe -p %3 -f cfg\ut.cfg
 goto quit
 
 :usage
-echo "Usage: runut [release | debug | release.boost | debug.boost] [port]"
+echo "Usage: runut [release|debug] [Win32|x64] [port]"
 
 :quit

@@ -129,7 +129,7 @@
 namespace FIX
 {
 COLDSECTION
-ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(int s, SSL *ssl,
+ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(sys_socket_t s, SSL *ssl,
                                                          Sessions sessions,
                                                          Log *pLog)
     : m_socket(s), m_ssl(ssl), m_pLog(pLog), m_sessions(sessions),
@@ -141,7 +141,7 @@ ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(int s, SSL *ssl,
 
 COLDSECTION
 ThreadedSSLSocketConnection::ThreadedSSLSocketConnection(
-    const SessionID &sessionID, int s, SSL *ssl, const std::string &address,
+    const SessionID &sessionID, sys_socket_t s, SSL *ssl, const std::string &address,
     short port, Log *pLog)
     : m_socket(s), m_ssl(ssl), m_address(address), m_port(port), m_pLog(pLog),
       m_pSession(Session::lookupSession(sessionID)), m_disconnect(false)
@@ -173,7 +173,7 @@ bool ThreadedSSLSocketConnection::send_buffer(const char* buffer, std::size_t le
     int sent = 0;
     ERR_clear_error();
 
-    sent = SSL_write(m_ssl, buffer + totalSent, length - totalSent);
+    sent = SSL_write(m_ssl, buffer + totalSent, (int)(length - totalSent));
     if (sent <= 0)
       errCodeSSL = SSL_get_error(m_ssl, sent);
 
@@ -242,7 +242,7 @@ bool ThreadedSSLSocketConnection::read()
   try
   {
     // Wait for input (1 second timeout)
-    int result = select(1 + m_socket, &readset, 0, 0, &timeout);
+    int result = select((int)(1 + m_socket), &readset, 0, 0, &timeout);
 
     if (result > 0) // Something to read
     {

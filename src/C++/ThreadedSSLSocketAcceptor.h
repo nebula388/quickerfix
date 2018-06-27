@@ -151,14 +151,14 @@ public:
 private:
   struct AcceptorThreadInfo
   {
-    AcceptorThreadInfo(ThreadedSSLSocketAcceptor *pAcceptor, int socket,
+    AcceptorThreadInfo(ThreadedSSLSocketAcceptor *pAcceptor, sys_socket_t socket,
                        int port)
         : m_pAcceptor(pAcceptor), m_socket(socket), m_port(port)
     {
     }
 
     ThreadedSSLSocketAcceptor *m_pAcceptor;
-    int m_socket;
+	sys_socket_t m_socket;
     int m_port;
   };
 
@@ -176,11 +176,11 @@ private:
 
   bool readSettings(const SessionSettings &);
 
-  typedef std::set< int > Sockets;
+  typedef std::set< sys_socket_t > Sockets;
   typedef std::set< SessionID > Sessions;
   typedef std::map< int, Sessions > PortToSessions;
-  typedef std::map< int, int > SocketToPort;
-  typedef std::pair< int, SSL * > SocketKey;
+  typedef std::map< sys_socket_t, int > SocketToPort;
+  typedef std::pair< sys_socket_t, SSL * > SocketKey;
   typedef std::map< SocketKey, thread_id > SocketToThread;
 
   void onConfigure(const SessionSettings &) THROW_DECL( ConfigError );

@@ -15,11 +15,6 @@
 #include <stdio.h>
 #include "config_windows.h"
 
-// TODO: reference additional headers your program requires here
-
-#import <msxml3.dll> raw_interfaces_only
-using namespace MSXML2;
-
 //{{AFX_INSERT_LOCATION}}
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 

@@ -156,7 +156,7 @@ struct message_order
         {
            int* p = storage::allocate( largest, 1 );
            for( std::size_t i = 0; i < largest; i++ )
-             p[ i ] = i; // >= 0 by default
+             p[ i ] = (int) i; // >= 0 by default
            return p;
         }
         return NULL;

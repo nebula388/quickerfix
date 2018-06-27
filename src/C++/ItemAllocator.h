@@ -56,7 +56,8 @@ namespace FIX
       {
           typedef typename Options<T, HeaderBytes, HeaderAlignment, ItemAlignment>::Entry Entry;
           class Segment {
-              unsigned m_count, m_num;
+			  unsigned m_count;
+			  const unsigned m_num;
               Segment* m_next;
             public:
               Segment(unsigned num, Segment* next) : m_count(0), m_num(num), m_next(next) {}
@@ -69,6 +70,7 @@ namespace FIX
               Segment* PURE_DECL next() const { return m_next; }
               Segment* next(Segment* p) { return m_next = p; }
 
+			  unsigned PURE_DECL capacity() const { return m_num; }
               bool PURE_DECL space() const { return m_count < m_num; }
               T* reserve() { return start() + m_count++; }
               Segment* extend()
@@ -91,7 +93,11 @@ namespace FIX
             for (Buffer::Segment* n,* s = top(); s != &m_seg; s = n)
             {
               n = s->next();
-              ALLOCATOR<unsigned char>().deallocate((unsigned char*)s, 0);
+#ifdef __GNUC__
+			  ALLOCATOR<unsigned char>().deallocate((unsigned char*)s, 0);
+#else
+              ALLOCATOR<unsigned char>().deallocate((unsigned char*)s, s->capacity() * sizeof(Entry) + sizeof(Segment));
+#endif
             }
           }
 
@@ -114,7 +120,7 @@ namespace FIX
           {
             unsigned char* p = ALLOCATOR<unsigned char>().allocate(Eval<Buffer>::Padding + num * sizeof(Entry));
             Buffer* h = (Buffer*) ((((uintptr_t)p + Eval<Buffer>::Padding) & ~(uintptr_t)(ItemAlignment - 1)) - sizeof(Buffer));
-            return new (h) Buffer(num, referenced, (uintptr_t)h - (uintptr_t)p);
+            return new (h) Buffer(num, referenced, (unsigned)((uintptr_t)h - (uintptr_t)p));
           }
 
           bool verify(T* p)
@@ -154,7 +160,12 @@ namespace FIX
           static void destroy(Buffer* p)
           {
             p->free_segments();
-            ALLOCATOR<unsigned char>().deallocate((unsigned char*)p - p->m_pad, 0);
+#ifdef __GNUC__
+			ALLOCATOR<unsigned char>().deallocate((unsigned char*)p - p->m_pad, 0);
+#else
+			ALLOCATOR<unsigned char>().deallocate((unsigned char*)p - p->m_pad,
+				                                   Eval<Buffer>::Padding + p->m_seg.capacity() * sizeof(Entry));
+#endif
           }
       };
 

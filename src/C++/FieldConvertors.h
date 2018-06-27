@@ -116,9 +116,9 @@ struct IntConvertor
           std::size_t len = Util::UInt::numDigits(v);
           Util::UInt::generate(buf += neg, v, len);
 #ifndef ENABLE_SSO_NOZERO
-	  buf[len] = '\0';
+		  buf[len] = '\0';
 #endif
-          return len + neg;
+          return (unsigned)len + neg;
         }
 
 	template <typename S> S convert_to() const
@@ -275,9 +275,9 @@ struct PositiveIntConvertor
           std::size_t len = Util::UInt::numDigits(value);
           Util::UInt::generate(buf, value, len);
 #ifndef ENABLE_SSO_NOZERO
-	  buf[len] = '\0';
+          buf[len] = '\0';
 #endif
-          return len;
+          return (unsigned)len;
         }
 
 	template <typename S> S convert_to() const
@@ -551,7 +551,7 @@ struct DoubleConvertor
     if( ++b < e )
     {
       double scale = 1.0;
-      unsigned exp = e - b;
+      std::size_t exp = e - b;
       if( UNLIKELY(exp > 308) )
       {
         exp = 308;
@@ -996,7 +996,7 @@ struct UtcConvertorBase {
   }
 
   // precision here is in multiples of 3, valid values currently are 0, 3, 6 or 9
-  static inline bool parse_fraction(const unsigned char*& p, int& fraction, int precision)
+  static inline bool parse_fraction(const unsigned char*& p, int& fraction, std::size_t precision)
   {
     unsigned char v;
     bool valid = ( *p++ == '.' );
@@ -1111,7 +1111,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   static inline bool parse( const char* str, const char* end, UtcTimeStamp& utc )
   {
     std::size_t sz = end - str;
-    int precision = 0;
+    std::size_t precision = 0;
     bool haveFraction = sz > 17;
     if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
@@ -1127,7 +1127,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
         valid = valid && parse_fraction(p, fraction, precision);
 
       utc = UtcTimeStamp (hour, min, sec, fraction,
-                          mday, mon, year, precision );
+                          mday, mon, year, (int)precision );
       return valid;
     }
     return false;
@@ -1168,7 +1168,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   {
     std::size_t sz = String::size(value);
     bool haveFraction = sz > 17;
-    int precision = 0;
+    std::size_t precision = 0;
     if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
       const unsigned char* p = (const unsigned char*)String::data(value);
@@ -1260,7 +1260,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   {
     std::size_t sz = end - str;
     bool haveFraction = sz > 8;
-    int precision = 0;
+    std::size_t precision = 0;
     if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)str;
@@ -1270,7 +1270,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
       if ( haveFraction )
         valid = valid && parse_fraction(p, fraction, precision);
 
-      utc = UtcTimeOnly( hour, min, sec, fraction, precision );
+      utc = UtcTimeOnly( hour, min, sec, fraction, (int)precision );
       return valid;
     }
     return false;
@@ -1311,7 +1311,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   {
     std::size_t sz = String::size(value);
     bool haveFraction = sz > 8;
-    int precision = 0;
+    std::size_t precision = 0;
     if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)String::data(value);

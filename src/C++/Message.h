@@ -577,7 +577,7 @@ private:
   {
     FieldCounter c( *this );
     int bodyLength = c.getBodyLength() + c.getBeginStringLength() + 
-	  Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, c.getBodyLength()))->second.getLength();
+	  (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, c.getBodyLength()))->second.getLength();
     return m_trailer.serializeTo(
              FieldMap::serializeTo(
                m_header.serializeTo(
@@ -867,7 +867,7 @@ public:
   {
     if( getStatusBit(tag_out_of_order) )
     {
-      field = m_status_data;
+      field = (int)m_status_data;
       return false;
     }
     return true;
@@ -1088,23 +1088,23 @@ private:
     m_status |= v;
   }
 
-  inline void setErrorStatusBit(status_enum_type bit, int data)
+  inline void setErrorStatusBit(status_enum_type bit, intptr_t data)
   {
     if ( !(m_status & status_error_mask) )
     {
       m_status_data = data;
-      m_status |= 1 << bit;
+      m_status |= (status_value_type)1 << bit;
     }
   }
 
   inline void clearStatusBit(status_enum_type bit)
   {
-    m_status &= ~(1 << bit);
+    m_status &= ~((status_value_type)1 << bit);
   }
 
   inline bool getStatusBit(status_enum_type bit) const
   {
-    return (m_status & (1 << bit)) != 0;
+    return (m_status & ((status_value_type)1 << bit)) != 0;
   }
 
 protected:
@@ -1120,10 +1120,10 @@ protected:
 inline const char* Message::FieldReader::scan()
 {
   const char* b = m_start + m_pos;
-  const char* p = Util::Tag::delimit(b, m_end - b);
+  const char* p = Util::Tag::delimit(b, (unsigned)(m_end - b));
   if ( LIKELY(p != NULL) )
   {
-    m_length = p - b;
+    m_length = (int)(p - b);
     if ( LIKELY(Util::Tag::parse(b, p, m_field, m_csum)) )
     {
       p++;
@@ -1131,7 +1131,7 @@ inline const char* Message::FieldReader::scan()
       if ( LIKELY(b != NULL) )
       {
         m_start = p;
-        m_pos = b - p;
+        m_pos = (int)(b - p);
         return NULL;
       }
       else
@@ -1154,7 +1154,7 @@ inline void Message::FieldReader::skip()
   if ( LIKELY(p != NULL) )
   {
     m_start = b;
-    m_pos = p - b + 1;
+    m_pos = (int)(p - b + 1);
     return;
   }
 
@@ -1172,7 +1172,7 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
   {
     if( LIKELY(it->first == FIELD::BeginString) )
     {
-      m_prefix = it->second.getLength();
+      m_prefix = (int)it->second.getLength();
       if( LIKELY(++it != end) )
         if( LIKELY(it->first == FIELD::BodyLength) )
           ++it;
@@ -1184,7 +1184,7 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
     }
     for( ; it != end; ++it )
     {
-      m_length += it->second.getLength();
+      m_length += (int)it->second.getLength();
     }
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
@@ -1202,9 +1202,9 @@ Message::FieldCounter::countHeader( int beginStringField,
     if ( LIKELY(tag != bodyLengthField) )
     {
       if( LIKELY(tag != beginStringField) )
-        m_length += it->second.getLength();
+        m_length += (int)it->second.getLength();
       else
-        m_prefix += it->second.getLength();
+        m_prefix += (int)it->second.getLength();
     }
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
@@ -1218,7 +1218,7 @@ Message::FieldCounter::countBody(const FieldMap& fields)
   for( FieldMap::const_iterator it = fields.begin();
        LIKELY(it != end); ++it )
   {
-    result += it->second.getLength();
+    result += (int)it->second.getLength();
   }
   return result + countGroups(fields.g_begin(), fields.g_end());
 }
@@ -1231,7 +1231,7 @@ Message::FieldCounter::countTrailer(const FieldMap& fields)
         it != end; ++it )
   {
     if ( it->first != checkSumTag )
-      m_length += it->second.getLength();
+      m_length += (int)it->second.getLength();
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
 }

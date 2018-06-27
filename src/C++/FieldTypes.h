@@ -135,7 +135,7 @@ struct DateTime
   /// Return the hour portion of the time (0-23)
   inline int getHour() const 
   {
-    return m_time / NANOS_PER_HOUR;
+    return (int)(m_time / NANOS_PER_HOUR);
   }
 
   /// Return the minute portion of the time (0-59)

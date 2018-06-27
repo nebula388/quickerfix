@@ -505,7 +505,7 @@ private:
 #else
 				::memcpy((char*)IOV_BUF(*e) + IOV_LEN(*e), src, l);
 #endif
-				IOV_LEN(*e) += l;	
+				IOV_LEN(*e) += (Sg::sg_size_t)l;	
 				return *this;
 			}
 			SgBuffer& HEAVYUSE append(int field, int sz, const char* s, std::size_t l) {

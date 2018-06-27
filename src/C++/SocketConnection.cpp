@@ -32,7 +32,7 @@
 
 namespace FIX
 {
-SocketConnection::SocketConnection( int s, Sessions sessions,
+SocketConnection::SocketConnection( sys_socket_t s, Sessions sessions,
                                     SocketMonitor* pMonitor )
 : m_socket( s ), m_pollspin( 0 ), m_sendLength( 0 ),
   m_sessions(sessions), m_pSession( 0 ), m_pMonitor( pMonitor )
@@ -42,7 +42,7 @@ SocketConnection::SocketConnection( int s, Sessions sessions,
 }
 
 SocketConnection::SocketConnection( SocketInitiator& i,
-                                    const SessionID& sessionID, int s,
+                                    const SessionID& sessionID, sys_socket_t s,
                                     SocketMonitor* pMonitor )
 : m_socket( s ), m_pollspin( 0 ), m_sendLength( 0 ),
   m_pSession( i.getSession( sessionID, *this ) ),
@@ -78,7 +78,7 @@ bool SocketConnection::send( Sg::sg_buf_ptr bufs, int n )
     {
       struct timeval timeout = { 0, 0 };
       fd_set writeset = m_fds;
-      if( select( 1 + m_socket, 0, &writeset, 0, &timeout ) > 0 )
+      if( select( (int)(1 + m_socket), 0, &writeset, 0, &timeout ) > 0 )
       {
         std::size_t sent = Sg::send(m_socket, bufs, n);
         for (int i = 0; i < n; i++ )
@@ -108,7 +108,7 @@ bool HEAVYUSE HOTSECTION SocketConnection::processQueue()
 
   struct timeval timeout = { 0, 0 };
   fd_set writeset = m_fds;
-  if( select( 1 + m_socket, 0, &writeset, 0, &timeout ) <= 0 )
+  if( select( (int)(1 + m_socket), 0, &writeset, 0, &timeout ) <= 0 )
     return false;
     
   const std::string& msg = m_sendQueue.front();
@@ -118,7 +118,7 @@ bool HEAVYUSE HOTSECTION SocketConnection::processQueue()
 
   if( result > 0 )
   {
-    m_sendLength += result;
+    m_sendLength += (unsigned)result;
   }
 
   if( m_sendLength == String::length(msg) )
@@ -229,10 +229,10 @@ THROW_DECL( SocketRecvFailed )
   if ( busy ) {
     struct timeval timeout = { 0, 0 };
     fd_set readset;
-    FD_CLR( &readset );
+    FD_ZERO( &readset );
     do {
       FD_SET( m_socket, &readset );
-    } while( busy-- > 0 && select( 1 + m_socket, &readset, 0, 0, &timeout ) == 0 );
+    } while( busy-- > 0 && select( (int)(1 + m_socket), &readset, 0, 0, &timeout ) == 0 );
   }
   size = recv( m_socket, IOV_BUF(buf), IOV_LEN(buf), 0);
 #endif

@@ -302,7 +302,7 @@ void ThreadedSSLSocketInitiator::doConnect(const SessionID &s,
     short port = 0;
     getHost(s, d, address, port);
 
-    int socket = socket_createConnector();
+	sys_socket_t socket = socket_createConnector();
     if (m_noDelay)
       socket_setsockopt(socket, TCP_NODELAY);
     if (m_sendBufSize)
@@ -380,7 +380,7 @@ THREAD_PROC ThreadedSSLSocketInitiator::socketThread(void *p)
   ThreadedSSLSocketConnection *pConnection = pair->second;
   FIX::SessionID sessionID = pConnection->getSession()->getSessionID();
   FIX::Session *pSession = FIX::Session::lookupSession(sessionID);
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
   delete pair;
 
   pInitiator->lock();
@@ -467,7 +467,7 @@ int ThreadedSSLSocketInitiator::passwordHandleCallback(char *buf, size_t bufsize
     return -1;
 
   std::strcpy(buf, m_password.c_str());
-  return m_password.length();
+  return (int)m_password.length();
 }
 }
 

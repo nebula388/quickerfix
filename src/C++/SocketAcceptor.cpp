@@ -165,7 +165,7 @@ void SocketAcceptor::onStop()
 {
 }
 
-void SocketAcceptor::onConnect( SocketServer& server, int a, int s )
+void SocketAcceptor::onConnect( SocketServer& server, sys_socket_t a, sys_socket_t s )
 {
   if ( !socket_isValid( s ) ) return;
   SocketConnections::iterator i = m_connections.find( s );
@@ -181,7 +181,7 @@ void SocketAcceptor::onConnect( SocketServer& server, int a, int s )
     getLog()->onEvent( stream.str() );
 }
 
-void HOTSECTION SocketAcceptor::onWrite( SocketServer& server, int s )
+void HOTSECTION SocketAcceptor::onWrite( SocketServer& server, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;
@@ -190,7 +190,7 @@ void HOTSECTION SocketAcceptor::onWrite( SocketServer& server, int s )
     pSocketConnection->unsignal();
 }
 
-bool HOTSECTION SocketAcceptor::onData( SocketServer& server, int s )
+bool HOTSECTION SocketAcceptor::onData( SocketServer& server, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return false;
@@ -198,7 +198,7 @@ bool HOTSECTION SocketAcceptor::onData( SocketServer& server, int s )
   return pSocketConnection->read( *this, server );
 }
 
-void SocketAcceptor::onDisconnect( SocketServer&, int s )
+void SocketAcceptor::onDisconnect( SocketServer&, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;

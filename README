@@ -75,22 +75,36 @@ OPTIONAL DEPENDENCIES FOR EXTRA PERFORMANCE
 
     WINDOWS
 
-        Configure Boost and TBB settings by changing User Macros
-        defined in OptionalSettings_vs9.vsprops for Visual Studio 2008 or 
-        OptionalSettings_vs11.props for Visual Studio 2012 via Property Manager
-        or manually. 
+        Configure Boost, TBB and OpenSSL settings by changing User Macros for 
+        header locations defined in VSSettings.vsprops and for architecture-specific
+        library locations defined in VSSettings_x86.props for Win32 builds or 
+        VSSettings_x64.props for x64 builds. This can be done inside Visual Studio 
+        via Property Manager tab of the Solution Explorer or by direct editing
+        of the XML property files.
 
         Example:
 
-        BOOST_INCLUDE      C:\boost
-        TBB_INCLUDE        C:\tbb42_20130725oss\include
-        BOOST_LIB          C:\boost\lib32-msvc-11.0
-        TBB_LIB            C:\tbb42_20130725oss\lib\ia32\vc11
-        TBB_DEPS           tbb.lib;tbbmalloc.lib
-        WITH_BOOST         HAVE_BOOST=1
-        WITH_TBB           HAVE_TBB=1
+        VSSettings_x64.props
 
-        Then continue with the build using DebugBoost or ReleaseBoost build targets.
+        BOOST_LIB   E:\Dev\boost_1_67_0\lib64-msvc-14.0
+        TBB_LIB     E:\Dev\tbb2018_20180618oss\lib\intel64\vc14
+        TBB_DEPS    tbb.lib;tbbmalloc.lib
+        TBB_BIN     E:\Dev\tbb2018_20180618oss\bin\intel64\vc14
+        SSL_LIB     E:\Dev\OpenSSL-Win64\lib
+        SSL_DEPS    libssl.lib;libcrypto.lib;openssl.lib
+        SSL_BIN     E:\Dev\OpenSSL-Win64\bin
+
+        VSSettings.props
+
+        BOOST_INCLUDE E:\Dev\boost_1_67_0
+        TBB_INCLUDE   E:\Dev\tbb2018_20180618oss\include
+        SSL_INCLUDE   E:\Dev\OpenSSL-Win32\include
+        WITH_BOOST    HAVE_BOOST=1
+        WITH_TBB      HAVE_TBB=1
+        WITH_SSL      HAVE_SSL=1
+
+        Then continue with the build using Debug or Release build targets
+        for the selected architecture.
 
 PLATFORM-SPECIFIC NOTES
 

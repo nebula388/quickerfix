@@ -44,23 +44,23 @@ public:
 : m_connector( connector ), m_strategy( strategy ) {}
 
 private:
-  void onConnect( SocketMonitor&, int socket )
+  void onConnect( SocketMonitor&, sys_socket_t socket )
   {
     m_strategy.onConnect( m_connector, socket );
   }
 
-  void onWrite( SocketMonitor&, int socket )
+  void onWrite( SocketMonitor&, sys_socket_t socket )
   {
     m_strategy.onWrite( m_connector, socket );
   }
 
-  void onEvent( SocketMonitor&, int socket )
+  void onEvent( SocketMonitor&, sys_socket_t socket )
   {
     if( !m_strategy.onData( m_connector, socket ) )
       m_strategy.onDisconnect( m_connector, socket );
   }
 
-  void onError( SocketMonitor&, int socket )
+  void onError( SocketMonitor&, sys_socket_t socket )
   {
     m_strategy.onDisconnect( m_connector, socket );
   }
@@ -82,11 +82,11 @@ private:
 SocketConnector::SocketConnector( int timeout )
 : m_monitor( timeout ) {}
 
-int SocketConnector::connect( const std::string& address, int port, bool noDelay,
+sys_socket_t SocketConnector::connect( const std::string& address, int port, bool noDelay,
                               int sendBufSize, int rcvBufSize,
                               const std::string& sourceAddress, int sourcePort)
 {
-  int socket = socket_createConnector();
+  sys_socket_t socket = socket_createConnector();
 
   if ( socket != -1 )
   {
@@ -104,10 +104,10 @@ int SocketConnector::connect( const std::string& address, int port, bool noDelay
   return socket;
 }
 
-int SocketConnector::connect( const std::string& address, int port, bool noDelay, 
+sys_socket_t SocketConnector::connect( const std::string& address, int port, bool noDelay,
                               int sendBufSize, int rcvBufSize, Strategy& strategy )
 {
-  int socket = connect( address, port, noDelay, sendBufSize, rcvBufSize, "", 0);
+  sys_socket_t socket = connect( address, port, noDelay, sendBufSize, rcvBufSize, "", 0);
   return socket;
 }
 

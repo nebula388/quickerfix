@@ -165,14 +165,14 @@ void ThreadedSocketAcceptor::onStop()
     thread_join( i->second );
 }
 
-void ThreadedSocketAcceptor::addThread( int s, thread_id t )
+void ThreadedSocketAcceptor::addThread(sys_socket_t s, thread_id t )
 {
   Locker l(m_mutex);
 
   m_threads[ s ] = t;
 }
 
-void ThreadedSocketAcceptor::removeThread( int s )
+void ThreadedSocketAcceptor::removeThread(sys_socket_t s )
 {
   Locker l(m_mutex);
   SocketToThread::iterator i = m_threads.find( s );
@@ -188,7 +188,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   AcceptorThreadInfo * info = reinterpret_cast < AcceptorThreadInfo* > ( p );
 
   ThreadedSocketAcceptor* pAcceptor = info->m_pAcceptor;
-  int s = info->m_socket;
+  sys_socket_t s = info->m_socket;
   int port = info->m_port;
   delete info;
 
@@ -199,7 +199,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   socket_getsockopt( s, SO_SNDBUF, sendBufSize );
   socket_getsockopt( s, SO_RCVBUF, rcvBufSize );
 
-  int socket = 0;
+  sys_socket_t socket = 0;
   while ( ( !pAcceptor->isStopped() && ( socket = socket_accept( s ) ) >= 0 ) )
   {
     if( noDelay )
@@ -251,7 +251,7 @@ THREAD_PROC HOTSECTION ThreadedSocketAcceptor::socketConnectionThread( void* p )
   ThreadedSocketConnection* pConnection = info->m_pConnection;
   delete info;
 
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
 
   while ( pConnection->read() ) {}
   delete pConnection;

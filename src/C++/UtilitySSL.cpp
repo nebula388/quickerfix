@@ -415,7 +415,7 @@ static void locking_callback(int mode, int type, const char *file, int line)
 static unsigned long thread_id_func()
 {
 #ifdef _MSC_VER
-  return (unsigned)GetCurrentThread();
+  return (unsigned)GetCurrentThreadId();
 #else
   return (unsigned long)pthread_self();
 #endif
@@ -864,13 +864,20 @@ X509_STORE *createX509Store(const char *cpFile, const char *cpPath)
   }
   return pStore;
 }
-X509 *readX509(FILE *fp, X509 **x509, passPhraseHandleCallbackType cb)
+X509 *readX509(const char* cpFile, FILE *fp, X509 **x509, passPhraseHandleCallbackType cb)
 {
-  X509 *rc;
+  X509 *rc = 0;
   BIO *bioS;
   BIO *bioF;
 
+#ifndef _MSC_VER 
   rc = PEM_read_X509(fp, x509, cb, 0);
+#else // avoid OPENSSL_Applink
+  if ((bioS = BIO_new_file(cpFile, "r")) == 0)
+	  return 0;
+  rc = PEM_read_bio_X509(bioS, x509, cb, 0);
+  BIO_free(bioS);
+#endif
   if (rc == 0)
   {
     /* 2. try DER+Base64 */
@@ -906,14 +913,21 @@ X509 *readX509(FILE *fp, X509 **x509, passPhraseHandleCallbackType cb)
   return rc;
 }
 
-EVP_PKEY *readPrivateKey(FILE *fp, EVP_PKEY **key,
+EVP_PKEY *readPrivateKey(const char* kpFile, FILE *fp, EVP_PKEY **key,
                          passPhraseHandleCallbackType cb)
 {
   EVP_PKEY *rc;
   BIO *bioS;
   BIO *bioF;
 
+#ifndef _MSC_VER
   rc = PEM_read_PrivateKey(fp, key, cb, 0);
+#else
+  if ((bioS = BIO_new_file(kpFile, "r")) == 0)
+	  return 0;
+  rc = PEM_read_bio_PrivateKey(bioS, key, cb, 0);
+  BIO_free(bioS);
+#endif
   if (rc == 0)
   {
     /* 2. try DER+Base64 */
@@ -962,9 +976,9 @@ char *strCat(const char *a, ...)
 
   va_start(adummy, a);
 
-  len = strlen(a);
+  len = (int)strlen(a);
   while ((cp = va_arg(adummy, char *)) != 0)
-    len += strlen(cp);
+    len += (int)strlen(cp);
 
   va_end(adummy);
 
@@ -1312,7 +1326,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     return false;
   }
 
-  X509 *X509Cert = readX509(fp, 0, 0);
+  X509 *X509Cert = readX509(cert.c_str(), fp, 0, 0);
 
   fclose(fp);
 
@@ -1360,7 +1374,7 @@ bool loadSSLCert(SSL_CTX *ctx, bool server, const SessionSettings &settings,
     return false;
   }
 
-  EVP_PKEY *privateKey = readPrivateKey(fp, 0, cb);
+  EVP_PKEY *privateKey = readPrivateKey(key.c_str(), fp, 0, cb);
 
   fclose(fp);
 

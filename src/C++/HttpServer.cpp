@@ -133,7 +133,7 @@ void HttpServer::onStop()
 {
 }
 
-void HttpServer::onConnect( SocketServer& server, int a, int s )
+void HttpServer::onConnect( SocketServer& server, sys_socket_t a, sys_socket_t s )
 {
   if ( !socket_isValid( s ) ) return;
   HttpConnection connection( s );
@@ -141,16 +141,16 @@ void HttpServer::onConnect( SocketServer& server, int a, int s )
   m_pServer->getMonitor().drop( s );
 }
 
-void HttpServer::onWrite( SocketServer& server, int s )
+void HttpServer::onWrite( SocketServer& server, sys_socket_t s )
 {
 }
 
-bool HttpServer::onData( SocketServer& server, int s )
+bool HttpServer::onData( SocketServer& server, sys_socket_t s )
 {
   return true;
 }
 
-void HttpServer::onDisconnect( SocketServer&, int s )
+void HttpServer::onDisconnect( SocketServer&, sys_socket_t s )
 {
 }
 

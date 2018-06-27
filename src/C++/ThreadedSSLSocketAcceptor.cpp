@@ -257,7 +257,7 @@ THROW_DECL( RuntimeError )
                                ? settings.getInt(SOCKET_RECEIVE_BUFFER_SIZE)
                                : 0;
 
-    int socket = socket_createAcceptor(port, reuseAddress);
+	sys_socket_t socket = socket_createAcceptor(port, reuseAddress);
     if (socket < 0)
     {
       SocketException e;
@@ -351,7 +351,7 @@ THREAD_PROC ThreadedSSLSocketAcceptor::socketAcceptorThread(void *p)
   AcceptorThreadInfo *info = reinterpret_cast< AcceptorThreadInfo * >(p);
 
   ThreadedSSLSocketAcceptor *pAcceptor = info->m_pAcceptor;
-  int s = info->m_socket;
+  sys_socket_t s = info->m_socket;
   int port = info->m_port;
   delete info;
 
@@ -362,7 +362,7 @@ THREAD_PROC ThreadedSSLSocketAcceptor::socketAcceptorThread(void *p)
   socket_getsockopt(s, SO_SNDBUF, sendBufSize);
   socket_getsockopt(s, SO_RCVBUF, rcvBufSize);
 
-  int socket = 0;
+  sys_socket_t socket = 0;
   while ((!pAcceptor->isStopped() && (socket = socket_accept(s)) >= 0))
   {
     if (noDelay)
@@ -423,7 +423,7 @@ THREAD_PROC ThreadedSSLSocketAcceptor::socketConnectionThread(void *p)
   ThreadedSSLSocketConnection *pConnection = info->m_pConnection;
   delete info;
 
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
 
   if (acceptSSLConnection(pConnection->getSocket(), pConnection->sslObject(), pAcceptor->getLog(), pAcceptor->m_verify) != 0)
   {
@@ -453,7 +453,7 @@ int ThreadedSSLSocketAcceptor::passwordHandleCallback(char *buf, size_t bufsize,
     return -1;
 
   std::strcpy(buf, m_password.c_str());
-  return m_password.length();
+  return (int)m_password.length();
 }
 }
 

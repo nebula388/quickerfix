@@ -83,7 +83,7 @@ public:
       else
       {
         ::memcpy( IOV_BUF(buf), p, sz );
-        advance( sz );
+        advance( (int)sz );
         break;
       }
     }
@@ -126,7 +126,7 @@ public:
                                       m_buffer + cursor, m_pos - cursor );
           if( LIKELY(NULL != p) )
           {
-            m_begin = p - m_buffer;
+            m_begin = (int)(p - m_buffer);
             cursor = m_begin + 2;
             m_state = HAVE_BEGIN_STRING;
           }
@@ -149,7 +149,7 @@ public:
                                       m_buffer + cursor, m_pos - cursor );
           if( LIKELY(NULL != p ) )
           {
-            cursor = p - m_buffer + 3;
+            cursor = (int)(p - m_buffer + 3);
             m_state = HAVE_BODY_LENGTH;
           }
           else
@@ -201,12 +201,12 @@ public:
                                       m_buffer + cursor, m_pos - cursor);
           if( LIKELY(NULL != p) && LIKELY((p - m_buffer) == cursor) )
           {
-            cursor = p - m_buffer + 4;
+            cursor = (int)(p - m_buffer + 4);
             m_state = HAVE_CHECKSUM;
           }
           else
           {
-            m_cursor = p ? p - m_buffer + 4 : cursor;
+            m_cursor = p ? (int)(p - m_buffer + 4) : cursor;
             m_state = RTR;
             throw MessageParseError( "BodyLength mismatch" );
           }
@@ -220,7 +220,7 @@ public:
             LIKELY(NULL != (p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'),
                                                         m_buffer + cursor, m_pos - cursor )) ) )
         {
-          cursor = p - m_buffer + 1;
+          cursor = (int)(p - m_buffer + 1);
           m_state = HAVE_MESSAGE;
         }
         else
@@ -295,7 +295,7 @@ public:
       if ( LIKELY(NULL != e) )
       {
         IOV_BUF(msg) = (char*)IOV_BUF(msg) + offset;
-        IOV_LEN(msg) = e - b;
+        IOV_LEN(msg) = (Sg::sg_size_t)(e - b);
         return msg;
       }
     }

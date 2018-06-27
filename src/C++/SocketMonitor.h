@@ -37,6 +37,7 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #endif
 
+#include "Utility.h"
 #include <set>
 #include <queue>
 #include <time.h>
@@ -52,20 +53,20 @@ public:
   SocketMonitor( int timeout = 0 );
   virtual ~SocketMonitor();
 
-  bool addConnect( int socket );
-  bool addRead( int socket );
-  bool addWrite( int socket );
-  bool drop( int socket );
-  void signal( int socket );
-  void unsignal( int socket );
+  bool addConnect(sys_socket_t socket );
+  bool addRead(sys_socket_t socket );
+  bool addWrite(sys_socket_t socket );
+  bool drop(sys_socket_t socket );
+  void signal(sys_socket_t socket );
+  void unsignal(sys_socket_t socket );
   void block( Strategy& strategy, bool poll = 0, double timeout = 0.0 );
 
   size_t numSockets() 
   { return m_readSockets.size() - 1; }
 
 private:
-  typedef std::set < int > Sockets;
-  typedef std::queue < int > Queue;
+  typedef std::set < sys_socket_t > Sockets;
+  typedef std::queue < sys_socket_t > Queue;
 
   void setsockopt();
   bool bind();
@@ -84,8 +85,8 @@ private:
   clock_t m_ticks;
 #endif
 
-  int m_signal;
-  int m_interrupt;
+  sys_socket_t m_signal;
+  sys_socket_t m_interrupt;
   Sockets m_connectSockets;
   Sockets m_readSockets;
   Sockets m_writeSockets;
@@ -97,10 +98,10 @@ public:
   public:
     virtual ~Strategy()
     {}
-    virtual void onConnect( SocketMonitor&, int socket ) = 0;
-    virtual void onEvent( SocketMonitor&, int socket ) = 0;
-    virtual void onWrite( SocketMonitor&, int socket ) = 0;
-    virtual void onError( SocketMonitor&, int socket ) = 0;
+    virtual void onConnect( SocketMonitor&, sys_socket_t socket ) = 0;
+    virtual void onEvent( SocketMonitor&, sys_socket_t socket ) = 0;
+    virtual void onWrite( SocketMonitor&, sys_socket_t socket ) = 0;
+    virtual void onError( SocketMonitor&, sys_socket_t socket ) = 0;
     virtual void onError( SocketMonitor& ) = 0;
     virtual void onTimeout( SocketMonitor& )
   {}}

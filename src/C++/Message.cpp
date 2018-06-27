@@ -78,7 +78,7 @@ namespace detail {
 			char* data() const {
 				return Sg::data<char*>(buf_);
 			}
-			int size() const {
+			std::size_t size() const {
 				return Sg::size(buf_);
 			}
 	};
@@ -91,10 +91,10 @@ Message::toString( const FieldCounter& c, std::string& str ) const
   const int checkSumField = c.getCheckSumTag();
   const int bodyLengthField = c.getBodyLengthTag();
   const int csumPayloadLength = CheckSumConvertor::MaxValueSize + 1;
-  const unsigned csumTagLength = Util::UInt::numDigits(checkSumField) + 1;
+  const unsigned csumTagLength = (unsigned)Util::UInt::numDigits(checkSumField) + 1;
 
   int l = c.getBodyLength();
-  l += Sequence::set_in_ordered(m_header, PositiveIntField::Pack(bodyLengthField, l))->second.getLength()
+  l += (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(bodyLengthField, l))->second.getLength()
        + csumTagLength + csumPayloadLength + c.getBeginStringLength();
 
   str.clear();

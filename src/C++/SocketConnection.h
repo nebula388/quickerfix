@@ -47,11 +47,11 @@ class SocketConnection : Responder
 public:
   typedef std::set<SessionID> Sessions;
 
-  SocketConnection( int s, Sessions sessions, SocketMonitor* pMonitor );
-  SocketConnection( SocketInitiator&, const SessionID&, int, SocketMonitor* );
+  SocketConnection(sys_socket_t s, Sessions sessions, SocketMonitor* pMonitor );
+  SocketConnection( SocketInitiator&, const SessionID&, sys_socket_t, SocketMonitor* );
   virtual ~SocketConnection();
 
-  int getSocket() const { return m_socket; }
+  sys_socket_t getSocket() const { return m_socket; }
   Session* getSession() const { return m_pSession; }
 
   bool read( SocketConnector& s );
@@ -88,7 +88,7 @@ private:
 
   void disconnect();
 
-  int m_socket;
+  sys_socket_t m_socket;
   int m_pollspin;
   char m_buffer[4 * BUFSIZ];
 

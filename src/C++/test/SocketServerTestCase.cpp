@@ -42,24 +42,24 @@ public:
     dataSocket( 0 ), disconnectSocket( 0 ),
     bufLen( 0 ) {}
 
-  void onConnect( SocketServer&, int accept, int socket )
+  void onConnect( SocketServer&, sys_socket_t accept, sys_socket_t socket )
   { connect++; connectSocket = socket; }
-  void onWrite( SocketServer&, int socket )
+  void onWrite( SocketServer&, sys_socket_t socket )
   { write++; writeSocket = socket; }
-  bool onData( SocketServer& server, int socket )
+  bool onData( SocketServer& server, sys_socket_t socket )
   {
     data++; dataSocket = socket;
     bufLen = recv( socket, buf, 1, 0 );
     return bufLen > 0;
   }
-  void onDisconnect( SocketServer&, int socket )
+  void onDisconnect( SocketServer&, sys_socket_t socket )
   { disconnect++; disconnectSocket = socket; }
   void onError( SocketServer& )
   {}
 
-  int connect, write, data, disconnect;
-  int connectSocket, writeSocket;
-  int dataSocket, disconnectSocket;
+  sys_socket_t connect, write, data, disconnect;
+  sys_socket_t connectSocket, writeSocket;
+  sys_socket_t dataSocket, disconnectSocket;
   char buf[ 1 ]; std::size_t bufLen;
 };
 

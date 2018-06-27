@@ -149,7 +149,7 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
     short sourcePort = 0;
     getHost( s, d, address, port, sourceAddress, sourcePort );
 
-    int socket = socket_createConnector();
+	sys_socket_t socket = socket_createConnector();
     if( m_noDelay )
       socket_setsockopt( socket, TCP_NODELAY );
     if( m_sendBufSize )
@@ -184,14 +184,14 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
   catch ( std::exception& ) {}
 }
 
-void ThreadedSocketInitiator::addThread( int s, thread_id t )
+void ThreadedSocketInitiator::addThread( sys_socket_t s, thread_id t )
 {
   Locker l(m_mutex);
 
   m_threads[ s ] = t;
 }
 
-void ThreadedSocketInitiator::removeThread( int s )
+void ThreadedSocketInitiator::removeThread( sys_socket_t s )
 {
   Locker l(m_mutex);
   SocketToThread::iterator i = m_threads.find( s );
@@ -211,7 +211,7 @@ THREAD_PROC ThreadedSocketInitiator::socketThread( void* p )
   ThreadedSocketConnection* pConnection = pair->second;
   FIX::SessionID sessionID = pConnection->getSession()->getSessionID();
   FIX::Session* pSession = FIX::Session::lookupSession( sessionID );
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
   delete pair;
 
   pInitiator->lock();

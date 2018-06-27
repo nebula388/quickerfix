@@ -33,14 +33,14 @@
 namespace FIX
 {
 ThreadedSocketConnection::ThreadedSocketConnection
-( int s, Sessions sessions, Log* pLog )
+(sys_socket_t s, Sessions sessions, Log* pLog )
 : m_socket( s ), m_pLog( pLog ),
   m_sessions( sessions ), m_pSession( 0 ),
   m_disconnect( false ), m_pollspin( 0 )
 {}
 
 ThreadedSocketConnection::ThreadedSocketConnection
-( const SessionID& sessionID, int s,
+( const SessionID& sessionID, sys_socket_t s,
   const std::string& address, short port, 
   Log* pLog,
   const std::string& sourceAddress, short sourcePort )
@@ -150,7 +150,7 @@ bool HEAVYUSE HOTSECTION ThreadedSocketConnection::read()
       struct pollfd pfd = { m_socket, POLLIN | POLLPRI, 0 };
       result = poll(&pfd, 1, timeout);
 #else
-      struct pollfd pfd = { m_socket, POLLIN, 0 };
+      struct pollfd pfd = { (SOCKET)m_socket, POLLIN, 0 };
       result = WSAPoll(&pfd, 1, timeout);
 #endif
     } while( result == 0 && timeout == 0 );

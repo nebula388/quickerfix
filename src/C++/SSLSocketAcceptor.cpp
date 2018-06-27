@@ -319,7 +319,7 @@ void SSLSocketAcceptor::onStop()
 {
 }
 
-void SSLSocketAcceptor::onConnect( SocketServer& server, int a, int s )
+void SSLSocketAcceptor::onConnect( SocketServer& server, sys_socket_t a, sys_socket_t s )
 {
   if ( !socket_isValid( s ) ) return;
   SocketConnections::iterator i = m_connections.find( s );
@@ -357,7 +357,7 @@ void SSLSocketAcceptor::onConnect( SocketServer& server, int a, int s )
     getLog()->onEvent( stream.str() );
 }
 
-void SSLSocketAcceptor::onWrite( SocketServer& server, int s )
+void SSLSocketAcceptor::onWrite( SocketServer& server, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;
@@ -366,7 +366,7 @@ void SSLSocketAcceptor::onWrite( SocketServer& server, int s )
     pSocketConnection->unsignal();
 }
 
-bool SSLSocketAcceptor::onData( SocketServer& server, int s )
+bool SSLSocketAcceptor::onData( SocketServer& server, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return false;
@@ -374,7 +374,7 @@ bool SSLSocketAcceptor::onData( SocketServer& server, int s )
   return pSocketConnection->read( *this, server );
 }
 
-void SSLSocketAcceptor::onDisconnect( SocketServer&, int s )
+void SSLSocketAcceptor::onDisconnect( SocketServer&, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;
@@ -405,7 +405,7 @@ int SSLSocketAcceptor::passwordHandleCallback(char *buf, size_t bufsize,
     return -1;
 
   std::strcpy(buf, m_password.c_str());
-  return m_password.length();
+  return (int)m_password.length();
 }
 }
 
