@@ -51,12 +51,11 @@ static inline std::size_t HEAVYUSE test10(uint32_t v)
      "shr %0;                \n\t"
      "mov %0, %k1;           \n\t"
      "setnc %b0;             \n\t"
-     //  "mov $1162219258676256, %2;  \n\t"
      "shl %b1, %q0;          \n\t"
-     "and %q0, %2;           \n\t"
+     "and %2, %q0;           \n\t"
      "setz %b1;              \n\t"
-     : "+r"(v), "=&c"(r), "+r"(bits) // gcc workaround
-     :
+     : "+r"(v), "=&c"(r)
+     : "r"(bits)
      : "cc"
   );
 #else
