@@ -7,7 +7,7 @@ target_include_directories(ordermatch_ut PRIVATE
 
 
 target_link_libraries(ordermatch_ut ${PROJECT_NAME} UnitTest++)
-
-
-
+if (HAVE_BOOST)
+  target_link_libraries(ordermatch_ut boost_system)
+endif()
 

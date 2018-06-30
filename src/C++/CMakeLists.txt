@@ -73,7 +73,9 @@ endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src/C++)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${quickfix_VERSION} SOVERSION ${quickfix_VERSION_MAJOR} )
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${quickfix_VERSION} SOVERSION ${quickfix_VERSION_MAJOR})
+
+include(QuickfixPrebuildSetup)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/C++/ DESTINATION include/quickfix

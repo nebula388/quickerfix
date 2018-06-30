@@ -7,7 +7,10 @@ add_executable(tradeclient Application.cpp tradeclient.cpp ${applink_SOURCE})
 target_include_directories(tradeclient PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/quickfix ${CMAKE_SOURCE_DIR})
 
 
-target_link_libraries(tradeclient ${PROJECT_NAME})
+target_link_libraries(tradeclient ${PROJECT_NAME} ${RT_LIBS})
+if(HAVE_BOOST)
+  target_link_libraries(tradeclient boost_system boost_thread)
+endif()
 
 if (NOT WIN32)
 ADD_CUSTOM_TARGET(tradeclient_target ALL

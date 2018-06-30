@@ -7,7 +7,10 @@ add_executable(ordermatch Application.cpp Market.cpp ordermatch.cpp ${applink_SO
 target_include_directories(ordermatch PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/quickfix ${CMAKE_SOURCE_DIR})
 
 
-target_link_libraries(ordermatch ${PROJECT_NAME})
+target_link_libraries(ordermatch ${PROJECT_NAME} ${RT_LIBS})
+if(HAVE_BOOST)
+  target_link_libraries(ordermatch boost_system)
+endif()
 
 if (NOT WIN32)
 ADD_CUSTOM_TARGET(ordermatch_target ALL

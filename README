@@ -106,6 +106,7 @@ OPTIONAL DEPENDENCIES FOR EXTRA PERFORMANCE
         Then continue with the build using Debug or Release build targets
         for the selected architecture.
 
+
 PLATFORM-SPECIFIC NOTES
 
         Use --with-sso configure option to enable short string optimization on platforms
@@ -118,8 +119,32 @@ PLATFORM-SPECIFIC NOTES
 		 "-O3 -flto -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16"
 	if AVX support is available.
 
+  
         Visual Studio builds need to use /Ox optimization level for best performance.
 
+CMAKE
+        Build can be configured with Cmake (version 3 and above). Use the following cmake
+        arguments to select  of Boost, TBB, SSL, short-string optimization, etc support.
+
+        -DCMAKE_BUILD_TYPE=[DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL]
+        -DCMAKE_CXX_STANDARD=[98|0x|11|14|17]
+        -DENABLE_THROW_DECL=[ON|OFF]
+        -DENABLE_SSO=[ON|OFF]
+        -DHAVE_BOOST=[ON|OFF] -DBOOST_ROOT=<location>
+        -DHAVE_SSL=[ON|OFF]
+        -DHAVE_TBB=[ON|OFF]
+        -DHAVE_EMX=[ON|OFF] -DENABLE_DICTIONARY_FIELD_ORDER=[ON|OFF]
+        -DWITH_ALLOCATOR=[DEBUG|NEW|BOOST_POOL|BOOST_FAST_POOL|POOL|MT|BITMAP|TBB]
+        -DHAVE_PYTHON=[ON|OFF] -DHAVE_PYTHON2=[ON|OFF] -DHAVE_PYTHON3=[ON|OFF]
+        -DHAVE_MYSQL=[ON|OFF] -DHAVE_POSTGRESQL=[ON|OFF]
+
+	Example:
+
+        cmake -DCMAKE_BUILD_TYPE=RELWITHDEBINFO -DCMAKE_CXX_STANDARD=98
+              -DENABLE_SSO=ON -DHAVE_EMX=ON -DENABLE_DICTIONARY_FIELD_ORDER=ON
+              -DHAVE_BOOST=ON -DHAVE_TBB=ON -DBOOST_ROOT=<path> -DTBB_ROOT=<path>
+              <build location>
+   
 BENCHMARKS
 
 System: Intel(R) Xeon(R) CPU E5-2690 0 @ 2.90GHz, CentOS 6.6,

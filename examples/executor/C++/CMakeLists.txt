@@ -11,7 +11,10 @@ add_executable(${executor_NAME} Application.cpp executor.cpp ${applink_SOURCE})
 
 target_include_directories(${executor_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/quickfix ${CMAKE_SOURCE_DIR})
 
-target_link_libraries(${executor_NAME} ${PROJECT_NAME})
+target_link_libraries(${executor_NAME} ${PROJECT_NAME} ${RT_LIBS})
+if(HAVE_BOOST)
+  target_link_libraries(${executor_NAME} boost_system)
+endif()
 
 if (NOT WIN32)
 ADD_CUSTOM_TARGET(${executor_NAME}_target ALL
