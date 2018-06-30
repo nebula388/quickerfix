@@ -144,16 +144,20 @@ libquickfix_la_SOURCES += $(libquickfix_la_ssl_SOURCES)
 
 BUILT_SOURCES = Config.h
 CLEANFILES = Config.h
+# record settings that have an impact on header file definitions
 Config.h: Makefile $(top_builddir)/config.h
 	grep "_ALLOCATOR" $(top_builddir)/config.h >$@
+	grep "_SHARED_PTR" $(top_builddir)/config.h >>$@
 	grep "HAVE_BOOST" $(top_builddir)/config.h >>$@
 	grep "HAVE_TBB" $(top_builddir)/config.h >>$@
 	grep "HAVE_SSL" $(top_builddir)/config.h >>$@
+	grep "HAVE_EMX" $(top_builddir)/config.h >>$@
 	grep "HAVE_STD_UNIQUE_PTR" $(top_builddir)/config.h >>$@
 	grep "ENABLE_SSO" $(top_builddir)/config.h >>$@
 	grep "ENABLE_THROW_DECL" $(top_builddir)/config.h >>$@
 	grep "ENABLE_FLAT_FIELDMAP" $(top_builddir)/config.h >>$@
 	grep "ENABLE_RELAXED_ORDERING" $(top_builddir)/config.h >>$@
+	grep "ENABLE_DICTIONARY_FIELD_ORDER" $(top_builddir)/config.h >>$@
 
 all-local:
 	rm -rf $(top_builddir)/lib/libquickfix.a

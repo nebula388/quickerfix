@@ -100,10 +100,6 @@ AC_CHECK_LIB(c,shutdown,true,AC_CHECK_LIB(socket,shutdown))
 AC_CHECK_LIB(c,inet_addr,true,AC_CHECK_LIB(nsl,inet_addr))
 AC_CHECK_LIB(c,nanosleep,true,AC_CHECK_LIB(rt,nanosleep))
 AC_CHECK_LIB(compat,ftime)
-AC_CHECK_FUNC([clock_gettime], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-                               [Define if clock_gettime exists.])])
-AC_CHECK_FUNC([clock_get_time], [AC_DEFINE([__MACH__], [1],
-                               [Define if clock_get_time exists.])])
 
 AC_MSG_CHECKING([which threading environment to use])
 # each host OS needs special threading flags
@@ -291,11 +287,7 @@ AC_DEFINE(_REENTRANT, 1, enable reentrant system calls)
 # Checks for library functions.
 AC_LANG_RESTORE
 
-AC_CHECK_LIB(iberty, cplus_demangle,    
-  AC_DEFINE(HAVE_CPLUS_DEMANGLE,1,whether or not we have to demangle names)
-  LIBS="$LIBS -liberty")
-
-AC_CHECK_LIB(rt, clock_gettime, RT_LIBS="-lrt")
+AC_CHECK_LIB([rt], [clock_gettime], [RT_LIBS="-lrt"])
 AC_SUBST([RT_LIBS])
 
 # Checks for runtime behavior
@@ -323,6 +315,7 @@ AC_MSG_RESULT(unable to determine, assuming no...))
 AC_CONFIG_FILES([
     quickfix.pc
     Makefile
+    UnitTest++/Makefile
     src/Makefile
     src/C++/Makefile
     src/C++/test/Makefile
