@@ -224,9 +224,15 @@ typedef int ssize_t;
   #define NOTHROW __attribute__ ((nothrow))
   #define NOTHROW_PRE
   #define NOTHROW_POST __attribute__ ((nothrow))
+#ifdef __MACH__
+  #define HOTDATA __attribute__((used,section("__DATA,data_likely")))
+  #define HOTSECTION __attribute__((used,section("__TEXT,text_likely")))
+  #define COLDSECTION __attribute__((used,section("__TEXT,text_unlikely")))
+#else
   #define HOTDATA __attribute__((section(".data_likely")))
   #define HOTSECTION __attribute__((section(".text_likely")))
   #define COLDSECTION __attribute__((section(".text_unlikely")))
+#endif
   #define HEAVYUSE __attribute__((hot))
   #define LIGHTUSE __attribute__((cold)) 
   #define PREFETCH(addr, rw, longevity) __builtin_prefetch(addr, rw, longevity)
@@ -1643,7 +1649,7 @@ namespace FIX
                                            const char* p, std::size_t size)
     {
       std::size_t r;
-      __m128i v = _mm_cvtsi32_si128( f.value && ((uint32_t)-1 >> 8));
+      __m128i v = _mm_cvtsi32_si128( f.value & ((uint32_t)-1 >> 8));
       for (; size >= 16; size -= r, p += r)
       {
         r = _mm_cmpistri( v, _mm_loadu_si128( (__m128i*)p ), _SIDD_UBYTE_OPS | _SIDD_CMP_EQUAL_ORDERED );
