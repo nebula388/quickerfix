@@ -124,7 +124,7 @@ PLATFORM-SPECIFIC NOTES
 
 CMAKE
         Build can be configured with Cmake (version 3 and above). Use the following cmake
-        arguments to select  of Boost, TBB, SSL, short-string optimization, etc support.
+        arguments to select Boost, TBB, SSL, short-string optimization, etc support.
 
         -DCMAKE_BUILD_TYPE=[DEBUG|RELEASE|RELWITHDEBINFO|MINSIZEREL]
         -DCMAKE_CXX_STANDARD=[98|0x|11|14|17]
