@@ -173,10 +173,10 @@ CODEC:	Measures encoding and decoding performance for a NewOrderSingle message.
 	Results (usec per message, lower is better):
 
 		FIX8		Quickfix 	Quickfix 	quickerfix
-		1.3.2		1.13.3		1.15.1		20180611
+		1.3.2		1.13.3		1.15.1		20180703
 
-to string	2.25516		8.17674		4.16642		0.797276
-from string	7.6158		25.7686		7.21911		1.84118
+to string	2.25516		8.17674		4.16642		0.788265
+from string	7.6158		25.7686		7.21911		1.86776
 
 
 PT:	Measures performance of various QuickFix subsystems
@@ -188,101 +188,101 @@ PT:	Measures performance of various QuickFix subsystems
 	Results (average of 10, operations per second, higher is better):
 
 				Quickfix 	Quickfix 	quickerfix 
-				1.13.3		1.15.1		20180611
+				1.13.3		1.15.1		20180703
 
-Converting integers to strings:	2.17391e+07	2.30972e+07	2.53413e+07
+Converting integers to strings:	2.17391e+07	2.30972e+07	2.48549e+07
 
-Converting strings to integers:	1.66667e+08	2.4e+08		3.10991e+08
+Converting strings to integers:	1.66667e+08	2.4e+08		3.10515e+08
 
-Converting doubles to strings:	1.10375e+06	2.22079e+06	9.19689e+06
+Converting doubles to strings:	1.10375e+06	2.22079e+06	9.15982e+06
 
-Converting strings to doubles:	4.6729e+06	1.22004e+07	8.0849e+07
+Converting strings to doubles:	4.6729e+06	1.22004e+07	7.7846e+07
 
-Creating Heartbeat messages:	1.00604e+06	1.61747e+06	4.05621e+06
+Creating Heartbeat messages:	1.00604e+06	1.61747e+06	4.0782e+06
 
-Identifying message types:	6.99301e+06	7.66758e+06	3.94824e+07
-
-Serializing Heartbeat messages
-to strings:			847458		1.64637e+06	3.43063e+06
+Identifying message types:	6.99301e+06	7.66758e+06	3.95847e+07
 
 Serializing Heartbeat messages
-from strings:			392003		813028		3.33006e+06
+to strings:			847458		1.64637e+06	3.47016e+06
 
 Serializing Heartbeat messages
-from strings and validation:	-		747152		2.57019e+06
+from strings:			392003		813028		3.25794e+06
+
+Serializing Heartbeat messages
+from strings and validation:	-		747152		2.5445e+06
 
 Creating NewOrderSingle
-messages:			331785		479870		1.58731e+06
- (packed):			-		-		1.82762e+06
+messages:			331785		479870		1.61099e+06
+ (packed):			-		-		1.85191e+06
 
 Serializing NewOrderSingle
-messages to strings:		652316		1.31906e+06	2.69414e+06
+messages to strings:		652316		1.31906e+06	2.66755e+06
 
 Serializing NewOrderSingle
-messages from strings:		152346		376396		1.68191e+06
+messages from strings:		152346		376396		1.64552e+06
 
 Serializing NewOrderSingle
 messages from strings
-and validation:			-		358043		1.34246e+06
+and validation:			-		358043		1.33757e+06
 
 Creating QuoteRequest
-messages:			13621.9		19086.8		57714.8
- (packed):			-		-		82644.3
- (packed, in place):		-		-		140506
+messages:			13621.9		19086.8		57620
+ (packed):			-		-		82552.9
+ (packed, in place):		-		-		139591
 
 Serializing QuoteRequest
-messages to strings:		174490		359842		558147
+messages to strings:		174490		359842		552410
 
 Serializing QuoteRequest
-messages from strings:		16942.8		59188.7		139316
+messages from strings:		16942.8		59188.7		135476
 
 Serializing QuoteRequest
 messages from strings
-and validation:			-		56900.8		121510
+and validation:			-		56900.8		118895
 
 Reading fields
-from QuoteRequest message:	28681.2		127245		126850
+from QuoteRequest message:	28681.2		127245		124755
 
 Storing NewOrderSingle
-messages:			299670		267331		325388
+messages:			299670		267331		317420
 
 Validating NewOrderSingle
 messages without
-data dictionary:		5.64972e+06	1.11361e+07	1.2633e+07
+data dictionary:		5.64972e+06	1.11361e+07	1.3114e+07
 
 Validating NewOrderSingle
-messages with data dictionary:	345901		508688		1.71617e+06
+messages with data dictionary:	345901		508688		1.71173e+06
 
 Validating QuoteRequest
 messages without
-data dictionary:		9.80392e+06	1.7987e+07	1.84857e+07
+data dictionary:		9.80392e+06	1.7987e+07	1.85664e+07
 
 Validating QuoteRequest
-messages with data dictionary:	478240		693746		1.68103e+06
+messages with data dictionary:	478240		693746		1.64347e+06
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket			59883.8		104712		345053
-(low latency profile)		-		106351		346286
+on Socket			59883.8		104712		354004
+(low latency profile)		-		106351		353930
 
 Sending/Receiving
 NewOrderSingle/ExecutionReport
-on ThreadedSocket		59862.3		107162		432154
-(low latency profile)		-		110967		446551
+on ThreadedSocket		59862.3		107162		457729
+(low latency profile)		-		110967		489194
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on Socket with data dictionary	-		80872.2		304980
-(low latency profile)		-		81855.7		348562
+on Socket with data dictionary	-		80872.2		317909
+(low latency profile)		-		81855.7		353807
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
 on ThreadedSocket
-with data dictionary		-		82162.3		302659
-(low latency profile)		-		83803.6		435598
+with data dictionary		-		82162.3		317307
+(low latency profile)		-		83803.6		466997
 
 Sending/Receiving
 NewOrderSingle/ExecutionReports
-on ThreadedSSLSocket		-		61060.4		102127
-with data dictionary		-		50959.2		89600.3
+on ThreadedSSLSocket		-		61060.4		102029
+with data dictionary		-		50959.2		89607.8
 
