@@ -52,7 +52,7 @@ static inline std::size_t HEAVYUSE test10(uint32_t v)
      "mov %0, %k1;           \n\t"
      "setnc %b0;             \n\t"
      "shl %b1, %q0;          \n\t"
-     "and %2, %q0;           \n\t"
+     "test %q0, %2;          \n\t"
      "setz %b1;              \n\t"
      : "+r"(v), "=&c"(r)
      : "r"(bits)
