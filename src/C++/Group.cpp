@@ -27,7 +27,7 @@
 
 namespace FIX
 {
-FieldMap& Group::addGroup( const FIX::Group& group )
+FieldMap& HOTSECTION Group::addGroup( const FIX::Group& group )
 {
   return FieldMap::addGroup( group.field(), group );
 }
@@ -37,7 +37,7 @@ bool Group::replaceGroup( unsigned num, const FIX::Group& group )
   return FieldMap::replaceGroup( num, group.field(), group ); 
 }
 
-Group& Group::getGroup( unsigned num, FIX::Group& group ) const throw( FieldNotFound )
+Group& HOTSECTION Group::getGroup( unsigned num, FIX::Group& group ) const THROW_DECL( FieldNotFound )
 {
   return static_cast < Group& > ( FieldMap::getGroup( num, group.field(), group ) );
 }
@@ -52,12 +52,12 @@ void Group::removeGroup( const FIX::Group& group )
   FieldMap::removeGroup( group.field() );
 }
 
-bool Group::hasGroup( unsigned num, const FIX::Group& group )
+bool HOTSECTION Group::hasGroup( unsigned num, const FIX::Group& group )
 {
   return FieldMap::hasGroup( num, group.field() );
 }
 
-bool Group::hasGroup( const FIX::Group& group )
+bool HOTSECTION Group::hasGroup( const FIX::Group& group )
 {
   return FieldMap::hasGroup( group.field() );
 }

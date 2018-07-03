@@ -8,8 +8,9 @@ namespace FIX42
 
   class OrderCancelReplaceRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("G"); }
   public:
-    OrderCancelReplaceRequest() : Message(MsgType()) {}
+    OrderCancelReplaceRequest() : Message(PackedType()) {}
     OrderCancelReplaceRequest(const FIX::Message& m) : Message(m) {}
     OrderCancelReplaceRequest(const Message& m) : Message(m) {}
     OrderCancelReplaceRequest(const OrderCancelReplaceRequest& m) : Message(m) {}
@@ -23,15 +24,36 @@ namespace FIX42
       const FIX::Side& aSide,
       const FIX::TransactTime& aTransactTime,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrigClOrdID);
-      set(aClOrdID);
-      set(aHandlInst);
-      set(aSymbol);
-      set(aSide);
-      set(aTransactTime);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aOrigClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aTransactTime);
+    }
+
+    OrderCancelReplaceRequest(
+      const FIX::OrigClOrdID::Pack& aOrigClOrdID,
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::HandlInst::Pack& aHandlInst,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aOrigClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aTransactTime);
     }
 
     FIELD_SET(*this, FIX::OrderID);

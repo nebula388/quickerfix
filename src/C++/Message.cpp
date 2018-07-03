@@ -33,8 +33,7 @@ namespace FIX
 const char* Message::FieldReader::ErrDelimiter = "Equal sign not found in field";
 const char* Message::FieldReader::ErrSOH = "SOH not found at end of field";
 
-ALIGN_DECL_DEFAULT Message::AdminSet Message::s_adminTypeSet;
-std::auto_ptr<DataDictionary> Message::s_dataDictionary;
+SmartPtr<DataDictionary> Message::s_dataDictionary;
 
 int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
                                const FieldMap::g_const_iterator& gend)
@@ -79,23 +78,23 @@ namespace detail {
 			char* data() const {
 				return Sg::data<char*>(buf_);
 			}
-			int size() const {
+			std::size_t size() const {
 				return Sg::size(buf_);
 			}
 	};
 }
 
-std::string& HEAVYUSE
+std::string& HEAVYUSE HOTSECTION
 Message::toString( const FieldCounter& c, std::string& str ) const
 {
   char* p;
   const int checkSumField = c.getCheckSumTag();
   const int bodyLengthField = c.getBodyLengthTag();
   const int csumPayloadLength = CheckSumConvertor::MaxValueSize + 1;
-  const unsigned csumTagLength = Util::UInt::numDigits(checkSumField) + 1;
+  const unsigned csumTagLength = (unsigned)Util::UInt::numDigits(checkSumField) + 1;
 
   int l = c.getBodyLength();
-  l += Sequence::set_in_ordered(m_header, PositiveIntField::Pack(bodyLengthField, l))->second.getLength()
+  l += (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(bodyLengthField, l))->second.getLength()
        + csumTagLength + csumPayloadLength + c.getBeginStringLength();
 
   str.clear();
@@ -146,8 +145,10 @@ bool Message::extractField ( Message::FieldReader& reader,
     int field = reader.getField();
     return (LIKELY(!pSessionDD || !pSessionDD->isDataField(field)) &&
             LIKELY(!pAppDD || pAppDD == pSessionDD || !pAppDD->isDataField(field))) ||
-            extractFieldDataLength( reader, pGroup ? static_cast<const FieldMap&>(*pGroup)
-                                                   : (isHeaderField(field) ? m_header : *this), field );
+            extractFieldDataLength( reader,
+                                    pGroup ? static_cast<const FieldMap&>(*pGroup)
+                                           : (isHeaderField(field) ? static_cast<const FieldMap&>(m_header)
+                                                                   : static_cast<const FieldMap&>(*this)), field );
   }
 
   setErrorStatusBit( invalid_tag_format, (intptr_t)errpos );
@@ -156,12 +157,11 @@ bool Message::extractField ( Message::FieldReader& reader,
 }
 
 // FIXT deserialization with separate session and application dictionaries
-void HEAVYUSE
+void HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation,
                     DataDictionary::MsgInfo& msgInfo,
                     const DataDictionary& sessionDataDictionary,
                     DataDictionaryProvider& dictionaryProvider )
-throw( InvalidMessage )
 {
   const DataDictionary* pApplicationDictionary = msgInfo.applicationDictionary();
 
@@ -180,8 +180,7 @@ throw( InvalidMessage )
   {
     const BodyLength* pBodyLength = readSpecHeader( reader, msgType );
      
-    msgInfo.messageType( msgType );
-    if ( UNLIKELY(isAdminMsgType( *msgType )) )
+    if ( UNLIKELY(msgInfo.messageType( msgType ) != DataDictionary::MsgInfo::Admin::None) )
       msgInfo.applicationDictionary( dict[ DataDictionary::FieldProperties::Body ] =
                                      pApplicationDictionary = &sessionDataDictionary );
     while ( reader ) {
@@ -223,7 +222,12 @@ vdict:
             if ( UNLIKELY(props.hasData()) ) extractFieldDataLength( reader, *section[location], field );
             if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
             {
-              setStatusCompID( field );
+              setHeaderStatusBits( field );
+#ifdef HAVE_EMX
+              if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+                msgInfo.messageType( (const StringField*)reader.flushHeaderField( m_header ), false );
+              else
+#endif
               reader.flushHeaderField( m_header );
             }
             else
@@ -305,15 +309,21 @@ ndict:
               if ( UNLIKELY(props.hasData()) ) extractFieldDataLength( reader, *section[location], field );
               if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
               {
-                setStatusCompID( field );
+                setHeaderStatusBits( field );
                 const FieldBase* stored = reader.flushHeaderField( m_header );
                 if ( UNLIKELY(field == FIELD::MsgType) )
                 {
                   msgType = (MsgType*)stored;
-                  msgInfo.messageType( msgType );
-                  if ( UNLIKELY(isAdminMsgType( *msgType )) )
+                  if ( UNLIKELY(msgInfo.messageType( msgType ) != DataDictionary::MsgInfo::Admin::None) )
                     msgInfo.applicationDictionary( dict[ DataDictionary::FieldProperties::Body ] =
                                                    pApplicationDictionary = &sessionDataDictionary );
+#ifdef HAVE_EMX
+                }
+                else
+                {
+                  if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+                    msgInfo.messageType( (const StringField*)stored, false );
+#endif
                 }
               }
               else
@@ -352,10 +362,9 @@ ndict:
 }
 
 // standard deserializatrion with a single dictionary only
-void HEAVYUSE
+void HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation,
                      DataDictionary::MsgInfo& msgInfo, const DataDictionary& dataDictionary )
-throw( InvalidMessage )
 {
   FieldMap* section[3] = { this, &m_header, &m_trailer };
   const DataDictionary::FieldToGroup* groupFields[3] = { NULL, &dataDictionary.headerGroups(),
@@ -393,7 +402,12 @@ throw( InvalidMessage )
         {
           if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
           {
-            setStatusCompID( field );
+            setHeaderStatusBits( field );
+#ifdef HAVE_EMX
+            if ( verifyEMX(field, msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None) )
+              msgInfo.messageType( (const StringField*)reader.flushHeaderField( m_header ), false ); 
+            else
+#endif
             reader.flushHeaderField( m_header );
           }
           else
@@ -424,7 +438,6 @@ throw( InvalidMessage )
   }
   else
   {
-    msgType = NULL;
     if ( LIKELY(readSpecHeaderField( reader, FIELD::BeginString ) &&
                 readSpecHeaderField( reader, FIELD::BodyLength )) )
     {
@@ -451,9 +464,19 @@ rest:
           {
             if ( LIKELY(DataDictionary::FieldProperties::isHeader( location )) )
             {
-              setStatusCompID( field );
+              setHeaderStatusBits( field );
               const FieldBase* stored = reader.flushHeaderField( m_header );
-	      if( field == FIELD::MsgType ) msgInfo.messageType( msgType = (MsgType*)stored );
+	      if( field == FIELD::MsgType )
+              {
+                msgInfo.messageType( (const MsgType*)stored );
+#ifdef HAVE_EMX
+              }
+              else
+              {
+                if ( verifyEMX(field) && msgInfo.adminType() == DataDictionary::MsgInfo::Admin::None )
+                  msgInfo.messageType( (const StringField*)stored, false );
+#endif
+              }
             }
             else
             {
@@ -485,9 +508,8 @@ rest:
 }
 
 // generic case without a dictionary
-const MsgType* HEAVYUSE
+const MsgType* HEAVYUSE HOTSECTION
 Message::readString( Message::FieldReader& reader, bool doValidation )
-throw( InvalidMessage )
 {
   int field;
   field_type type = header;
@@ -505,8 +527,11 @@ throw( InvalidMessage )
         if ( isHeaderField( field ) )
         {
           if ( UNLIKELY(type != header) ) setErrorStatusBit( tag_out_of_order, field );
-          setStatusCompID( field );
+          setHeaderStatusBits( field );
           reader.flushHeaderField( m_header );
+#ifdef HAVE_EMX
+          verifyEMX(field);
+#endif
         }
         else if ( LIKELY(!isTrailerField( field )) )
         {
@@ -541,9 +566,12 @@ rest:
           if ( isHeaderField( field ) )
           {
             if ( UNLIKELY(type != header) ) setErrorStatusBit( tag_out_of_order, field );
-  	    setStatusCompID( field );
+  	    setHeaderStatusBits( field );
 	    const FieldBase* f = reader.flushHeaderField( m_header );
 	    msgType = (field == FIELD::MsgType) ? (const MsgType*)f : msgType;
+#ifdef HAVE_EMX
+            verifyEMX(field);
+#endif
  	  }
           else if ( LIKELY(!isTrailerField( field )) )
           {
@@ -587,13 +615,13 @@ void LIGHTUSE Message::setGroup( const std::string& msg,
   pos = reader.pos() - String::data(str);
 }
 
-void HEAVYUSE Message::setGroup( Message::FieldReader& reader,
+void HEAVYUSE HOTSECTION Message::setGroup( Message::FieldReader& reader,
 			FieldMap& fields,
                         const DataDictionary& dataDictionary,
                         int group, int delim,
                         const DataDictionary& groupDD )
 {
-  std::auto_ptr<Group> pGroup;
+  SmartPtr<Group> pGroup;
   while ( reader )
   {
     const char* pos = reader.pos();
@@ -702,11 +730,13 @@ void Message::validate(const BodyLength* pBodyLength)
   }
   else
     throw InvalidMessage("BodyLength missing");
+#ifdef HAVE_EMX
+  if (!getStatusBit(emx_compatible))
+    throw InvalidMessage("EMX message type (9426) not found");
+#endif
 }
 
-ALIGN_DECL_DEFAULT Message::HeaderFieldSet Message::headerFieldSet;
-
-ALIGN_DECL_DEFAULT const int Message::HeaderFieldSet::m_fields[] =
+static ALIGN_DECL_DEFAULT const int s_HeaderFieldList[] =
 {
 FIELD::BeginString,
 FIELD::BodyLength,
@@ -737,10 +767,13 @@ FIELD::OnBehalfOfSendingTime,
 FIELD::ApplVerID,
 FIELD::CstmApplVerID,
 FIELD::NoHops,
+#ifdef HAVE_EMX
+FIELD::EMX::MsgType,
+#endif
 0
 };
 
-ALIGN_DECL_DEFAULT const int Message::TrailerFieldSet::m_fields[] =
+static ALIGN_DECL_DEFAULT const int s_TrailerFieldList[] =
 {
 FIELD::CheckSum, // should be first
 FIELD::Signature,
@@ -748,16 +781,39 @@ FIELD::SignatureLength,
 0
 };
 
-Message::AdminSet::AdminSet()
+#ifdef HAVE_EMX
+const std::string Message::m_emx_none;
+#endif
+
+#if defined(__BYTE_ORDER__)  && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && !defined(HAVE_EMX)
+ALIGN_DECL_DEFAULT HOTDATA const Message::HeaderFieldSet Message::headerFieldSet =
+  { { { 768, 51775500, 67108864, 68681730, 245763, 0, 3145728, 0,
+        0, 0, 134217728, 393216, 0, 0, 0, 0,
+        0, 0, 0, 524288, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 768, 0, 0, 0, 0 } } };
+#else // construct on load
+ALIGN_DECL_DEFAULT const Message::HeaderFieldSet Message::headerFieldSet;
+
+COLDSECTION Message::HeaderFieldSet::HeaderFieldSet()
 {
-  _value.set('0');
-  _value.set('1');
-  _value.set('2');
-  _value.set('3');
-  _value.set('4');
-  _value.set('5');
-  _value.set('A');
-};
+  for(const int* p = s_HeaderFieldList; *p; p++)
+    if ((unsigned)*p < size()) _value.set(*p); 
+}
+#endif
+
+void COLDSECTION Message::HeaderFieldSet::spec( DataDictionary& dict )
+{
+  for(int i = 0; s_HeaderFieldList[i]; i++)
+    dict.addSpecHeaderField( s_HeaderFieldList[i] );
+}
+
+void COLDSECTION Message::TrailerFieldSet::spec( DataDictionary& dict )
+{
+  for(int i = 0; s_TrailerFieldList[i]; i++)
+    dict.addSpecTrailerField( s_TrailerFieldList[i] );
+}
+
 
 void Message::reverseRoute( const Header& header )
 {
@@ -845,13 +901,11 @@ void Message::reverseRoute( const Header& header )
   }
 }
 
-bool Message::InitializeXML( const std::string& url )
+bool COLDSECTION Message::InitializeXML( const std::string& url )
 {
   try
   {
-    std::auto_ptr<DataDictionary> p =
-      std::auto_ptr<DataDictionary>(new DataDictionary(url));
-    s_dataDictionary = p;
+    s_dataDictionary.reset( new DataDictionary(url) );
     return true;
   }
   catch( ConfigError& )

@@ -37,16 +37,14 @@ void MemoryStoreFactory::destroy( MessageStore* pStore )
   delete pStore;
 }
 
-bool MemoryStore::set( int msgSeqNum, const std::string& msg )
-throw( IOException )
+bool HOTSECTION MemoryStore::set( int msgSeqNum, const std::string& msg ) THROW_DECL( IOException )
 {
   m_messages[ msgSeqNum ] = msg;
   return true;
 }
 
 void MemoryStore::get( int begin, int end,
-                       std::vector < std::string > & messages ) const
-throw( IOException )
+                       std::vector < std::string > & messages ) const THROW_DECL( IOException )
 {
   messages.clear();
   Messages::const_iterator find = m_messages.find( begin );

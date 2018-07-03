@@ -29,18 +29,18 @@
 
 namespace FIX
 {
-ThreadedSocketAcceptor::ThreadedSocketAcceptor(
+COLDSECTION ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
-  const SessionSettings& settings ) throw( ConfigError )
+  const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings )
 { socket_init(); }
 
-ThreadedSocketAcceptor::ThreadedSocketAcceptor(
+COLDSECTION ThreadedSocketAcceptor::ThreadedSocketAcceptor(
   Application& application,
   MessageStoreFactory& factory,
   const SessionSettings& settings,
-  LogFactory& logFactory ) throw( ConfigError )
+  LogFactory& logFactory ) THROW_DECL( ConfigError )
 : Acceptor( application, factory, settings, logFactory )
 { 
   socket_init(); 
@@ -51,8 +51,8 @@ ThreadedSocketAcceptor::~ThreadedSocketAcceptor()
   socket_term(); 
 }
 
-void ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
-throw ( ConfigError )
+void COLDSECTION ThreadedSocketAcceptor::onConfigure( const SessionSettings& s )
+THROW_DECL( ConfigError )
 {
   std::set<SessionID> sessions = s.getSessions();
   std::set<SessionID>::iterator i;
@@ -67,8 +67,8 @@ throw ( ConfigError )
   }
 }
 
-void ThreadedSocketAcceptor::onInitialize( const SessionSettings& s )
-throw ( RuntimeError )
+void COLDSECTION ThreadedSocketAcceptor::onInitialize( const SessionSettings& s )
+THROW_DECL( RuntimeError )
 {
   short port = 0;
   std::set<int> ports;
@@ -118,7 +118,7 @@ throw ( RuntimeError )
   }    
 }
 
-void ThreadedSocketAcceptor::onStart()
+void COLDSECTION ThreadedSocketAcceptor::onStart()
 {
   Sockets::iterator i;
   for( i = m_sockets.begin(); i != m_sockets.end(); ++i )
@@ -165,14 +165,14 @@ void ThreadedSocketAcceptor::onStop()
     thread_join( i->second );
 }
 
-void ThreadedSocketAcceptor::addThread( int s, thread_id t )
+void ThreadedSocketAcceptor::addThread(sys_socket_t s, thread_id t )
 {
   Locker l(m_mutex);
 
   m_threads[ s ] = t;
 }
 
-void ThreadedSocketAcceptor::removeThread( int s )
+void ThreadedSocketAcceptor::removeThread(sys_socket_t s )
 {
   Locker l(m_mutex);
   SocketToThread::iterator i = m_threads.find( s );
@@ -188,7 +188,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   AcceptorThreadInfo * info = reinterpret_cast < AcceptorThreadInfo* > ( p );
 
   ThreadedSocketAcceptor* pAcceptor = info->m_pAcceptor;
-  int s = info->m_socket;
+  sys_socket_t s = info->m_socket;
   int port = info->m_port;
   delete info;
 
@@ -199,7 +199,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   socket_getsockopt( s, SO_SNDBUF, sendBufSize );
   socket_getsockopt( s, SO_RCVBUF, rcvBufSize );
 
-  int socket = 0;
+  sys_socket_t socket = 0;
   while ( ( !pAcceptor->isStopped() && ( socket = socket_accept( s ) ) >= 0 ) )
   {
     if( noDelay )
@@ -228,8 +228,12 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
 
       thread_id thread;
       if ( !thread_spawn( &socketConnectionThread, info, thread ) )
+      {
         delete info;
-      pAcceptor->addThread( socket, thread );
+        delete pConnection;
+      }
+      else
+        pAcceptor->addThread( socket, thread );
     }
   }
 
@@ -239,7 +243,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketAcceptorThread( void* p )
   return 0;
 }
 
-THREAD_PROC ThreadedSocketAcceptor::socketConnectionThread( void* p )
+THREAD_PROC HOTSECTION ThreadedSocketAcceptor::socketConnectionThread( void* p )
 {
   ConnectionThreadInfo * info = reinterpret_cast < ConnectionThreadInfo* > ( p );
 
@@ -247,7 +251,7 @@ THREAD_PROC ThreadedSocketAcceptor::socketConnectionThread( void* p )
   ThreadedSocketConnection* pConnection = info->m_pConnection;
   delete info;
 
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
 
   while ( pConnection->read() ) {}
   delete pConnection;

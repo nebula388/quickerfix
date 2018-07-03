@@ -53,7 +53,6 @@ namespace FIX42
     : FIX::Message(
       FIX::BeginString::Pack("FIX.4.2"), msgtype )
      {} 
-
   public:
     Message( const FIX::MsgType& msgtype )
     : FIX::Message(

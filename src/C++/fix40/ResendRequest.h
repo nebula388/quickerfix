@@ -8,8 +8,9 @@ namespace FIX40
 
   class ResendRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("2"); }
   public:
-    ResendRequest() : Message(MsgType()) {}
+    ResendRequest() : Message(PackedType()) {}
     ResendRequest(const FIX::Message& m) : Message(m) {}
     ResendRequest(const Message& m) : Message(m) {}
     ResendRequest(const ResendRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX40
     ResendRequest(
       const FIX::BeginSeqNo& aBeginSeqNo,
       const FIX::EndSeqNo& aEndSeqNo )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aBeginSeqNo);
-      set(aEndSeqNo);
+      // must be in this order
+      Sequence::push_back_to(*this, aBeginSeqNo);
+      Sequence::push_back_to(*this, aEndSeqNo);
+    }
+
+    ResendRequest(
+      const FIX::BeginSeqNo::Pack& aBeginSeqNo,
+      const FIX::EndSeqNo::Pack& aEndSeqNo )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aBeginSeqNo);
+      Sequence::push_back_to(*this, aEndSeqNo);
     }
 
     FIELD_SET(*this, FIX::BeginSeqNo);

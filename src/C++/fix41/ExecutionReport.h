@@ -32,6 +32,7 @@ namespace FIX41
       const FIX::AvgPx& aAvgPx )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aAvgPx);
       Sequence::push_back_to(*this, aCumQty);
       Sequence::push_back_to(*this, aExecID);
@@ -63,6 +64,7 @@ namespace FIX41
       const FIX::AvgPx::Pack& aAvgPx )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aAvgPx);
       Sequence::push_back_to(*this, aCumQty);
       Sequence::push_back_to(*this, aExecID);

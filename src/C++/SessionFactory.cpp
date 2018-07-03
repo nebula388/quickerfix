@@ -34,12 +34,12 @@
 
 namespace FIX
 {
-SessionFactory::~SessionFactory()
+COLDSECTION SessionFactory::~SessionFactory()
 {
 }
 
-Session* SessionFactory::create( const SessionID& sessionID,
-                                 const Dictionary& settings ) throw( ConfigError )
+Session* COLDSECTION SessionFactory::create( const SessionID& sessionID,
+                                 const Dictionary& settings ) THROW_DECL( ConfigError )
 {
   std::string connectionType = settings.getString( CONNECTION_TYPE );
   if ( connectionType != "acceptor" && connectionType != "initiator" )
@@ -192,6 +192,8 @@ Session* SessionFactory::create( const SessionID& sessionID,
     pSession->setRefreshOnLogon( settings.getBool( REFRESH_ON_LOGON ) );
   if ( settings.has( MILLISECONDS_IN_TIMESTAMP ) )
     pSession->setMillisecondsInTimeStamp( settings.getBool( MILLISECONDS_IN_TIMESTAMP ) );
+  if ( settings.has( TIMESTAMP_PRECISION ) )
+    pSession->setTimestampPrecision(settings.getInt( TIMESTAMP_PRECISION ) );
   if ( settings.has( PERSIST_MESSAGES ) )
     pSession->setPersistMessages( settings.getBool( PERSIST_MESSAGES ) );
   if ( settings.has( VALIDATE_LENGTH_AND_CHECKSUM ) )
@@ -205,9 +207,9 @@ void SessionFactory::destroy( Session* pSession )
   delete pSession;
 }
 
-ptr::shared_ptr<DataDictionary> SessionFactory::createDataDictionary(const SessionID& sessionID, 
+ptr::shared_ptr<DataDictionary> COLDSECTION SessionFactory::createDataDictionary(const SessionID& sessionID, 
                                                                      const Dictionary& settings, 
-                                                                     const std::string& settingsKey) throw(ConfigError)
+                                                                     const std::string& settingsKey) THROW_DECL( ConfigError )
 {
   ptr::shared_ptr<DataDictionary> pDD;
   std::string path = settings.getString( settingsKey );
@@ -218,7 +220,10 @@ ptr::shared_ptr<DataDictionary> SessionFactory::createDataDictionary(const Sessi
   }
   else
   {
-    pDD = ptr::shared_ptr<DataDictionary>(new DataDictionary( path ));
+    bool preserveMsgFldsOrder = false;
+    if( settings.has( PRESERVE_MESSAGE_FIELDS_ORDER ) )
+      preserveMsgFldsOrder = settings.getBool( PRESERVE_MESSAGE_FIELDS_ORDER );
+    pDD = ptr::shared_ptr<DataDictionary>(new DataDictionary( path, preserveMsgFldsOrder ));
     m_dictionaries[ path ] = pDD;
   }
 
@@ -258,9 +263,9 @@ ptr::shared_ptr<DataDictionary> SessionFactory::createDataDictionary(const Sessi
   return pCopyOfDD;    
 }
 
-void SessionFactory::processFixtDataDictionaries(const SessionID& sessionID, 
+void COLDSECTION SessionFactory::processFixtDataDictionaries(const SessionID& sessionID, 
                                                  const Dictionary& settings, 
-                                                 DataDictionaryProvider& provider) throw(ConfigError)
+                                                 DataDictionaryProvider& provider) THROW_DECL( ConfigError )
 {
   ptr::shared_ptr<DataDictionary> pDataDictionary = createDataDictionary(sessionID, settings, TRANSPORT_DATA_DICTIONARY);
   provider.addTransportDataDictionary(sessionID.getBeginString(), pDataDictionary);
@@ -289,9 +294,9 @@ void SessionFactory::processFixtDataDictionaries(const SessionID& sessionID,
   }
 }
 
-void SessionFactory::processFixDataDictionary(const SessionID& sessionID, 
+void COLDSECTION SessionFactory::processFixDataDictionary(const SessionID& sessionID, 
                                               const Dictionary& settings, 
-                                              DataDictionaryProvider& provider) throw(ConfigError)
+                                              DataDictionaryProvider& provider) THROW_DECL( ConfigError )
 {
   ptr::shared_ptr<DataDictionary> pDataDictionary = createDataDictionary(sessionID, settings, DATA_DICTIONARY);
   provider.addTransportDataDictionary(sessionID.getBeginString(), pDataDictionary);

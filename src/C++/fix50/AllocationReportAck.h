@@ -8,8 +8,9 @@ namespace FIX50
 
   class AllocationReportAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AT"); }
   public:
-    AllocationReportAck() : Message(MsgType()) {}
+    AllocationReportAck() : Message(PackedType()) {}
     AllocationReportAck(const FIX::Message& m) : Message(m) {}
     AllocationReportAck(const Message& m) : Message(m) {}
     AllocationReportAck(const AllocationReportAck& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50
     AllocationReportAck(
       const FIX::AllocReportID& aAllocReportID,
       const FIX::AllocID& aAllocID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAllocReportID);
-      set(aAllocID);
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocReportID);
+    }
+
+    AllocationReportAck(
+      const FIX::AllocReportID::Pack& aAllocReportID,
+      const FIX::AllocID::Pack& aAllocID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocReportID);
     }
 
     FIELD_SET(*this, FIX::AllocReportID);

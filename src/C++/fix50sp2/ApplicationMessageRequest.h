@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class ApplicationMessageRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BW"); }
   public:
-    ApplicationMessageRequest() : Message(MsgType()) {}
+    ApplicationMessageRequest() : Message(PackedType()) {}
     ApplicationMessageRequest(const FIX::Message& m) : Message(m) {}
     ApplicationMessageRequest(const Message& m) : Message(m) {}
     ApplicationMessageRequest(const ApplicationMessageRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP2
     ApplicationMessageRequest(
       const FIX::ApplReqID& aApplReqID,
       const FIX::ApplReqType& aApplReqType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aApplReqID);
-      set(aApplReqType);
+      // must be in this order
+      Sequence::push_back_to(*this, aApplReqID);
+      Sequence::push_back_to(*this, aApplReqType);
+    }
+
+    ApplicationMessageRequest(
+      const FIX::ApplReqID::Pack& aApplReqID,
+      const FIX::ApplReqType::Pack& aApplReqType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aApplReqID);
+      Sequence::push_back_to(*this, aApplReqType);
     }
 
     FIELD_SET(*this, FIX::ApplReqID);

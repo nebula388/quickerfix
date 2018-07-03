@@ -8,8 +8,9 @@ namespace FIX43
 
   class TestRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("1"); }
   public:
-    TestRequest() : Message(MsgType()) {}
+    TestRequest() : Message(PackedType()) {}
     TestRequest(const FIX::Message& m) : Message(m) {}
     TestRequest(const Message& m) : Message(m) {}
     TestRequest(const TestRequest& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX43
 
     TestRequest(
       const FIX::TestReqID& aTestReqID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTestReqID);
+      // must be in this order
+      Sequence::push_back_to(*this, aTestReqID);
+    }
+
+    TestRequest(
+      const FIX::TestReqID::Pack& aTestReqID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTestReqID);
     }
 
     FIELD_SET(*this, FIX::TestReqID);

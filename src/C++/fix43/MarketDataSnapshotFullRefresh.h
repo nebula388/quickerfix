@@ -8,8 +8,9 @@ namespace FIX43
 
   class MarketDataSnapshotFullRefresh : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("W"); }
   public:
-    MarketDataSnapshotFullRefresh() : Message(MsgType()) {}
+    MarketDataSnapshotFullRefresh() : Message(PackedType()) {}
     MarketDataSnapshotFullRefresh(const FIX::Message& m) : Message(m) {}
     MarketDataSnapshotFullRefresh(const Message& m) : Message(m) {}
     MarketDataSnapshotFullRefresh(const MarketDataSnapshotFullRefresh& m) : Message(m) {}

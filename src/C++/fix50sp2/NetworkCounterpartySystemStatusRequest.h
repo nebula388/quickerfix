@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class NetworkCounterpartySystemStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BC"); }
   public:
-    NetworkCounterpartySystemStatusRequest() : Message(MsgType()) {}
+    NetworkCounterpartySystemStatusRequest() : Message(PackedType()) {}
     NetworkCounterpartySystemStatusRequest(const FIX::Message& m) : Message(m) {}
     NetworkCounterpartySystemStatusRequest(const Message& m) : Message(m) {}
     NetworkCounterpartySystemStatusRequest(const NetworkCounterpartySystemStatusRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP2
     NetworkCounterpartySystemStatusRequest(
       const FIX::NetworkRequestType& aNetworkRequestType,
       const FIX::NetworkRequestID& aNetworkRequestID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aNetworkRequestType);
-      set(aNetworkRequestID);
+      // must be in this order
+      Sequence::push_back_to(*this, aNetworkRequestID);
+      Sequence::push_back_to(*this, aNetworkRequestType);
+    }
+
+    NetworkCounterpartySystemStatusRequest(
+      const FIX::NetworkRequestType::Pack& aNetworkRequestType,
+      const FIX::NetworkRequestID::Pack& aNetworkRequestID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aNetworkRequestID);
+      Sequence::push_back_to(*this, aNetworkRequestType);
     }
 
     FIELD_SET(*this, FIX::NetworkRequestType);

@@ -24,14 +24,14 @@
 #endif
 
 #include "Application.h"
-#include "quickfix/Session.h"
+#include "Session.h"
 
-#include "quickfix/fix40/ExecutionReport.h"
-#include "quickfix/fix41/ExecutionReport.h"
-#include "quickfix/fix42/ExecutionReport.h"
-#include "quickfix/fix43/ExecutionReport.h"
-#include "quickfix/fix44/ExecutionReport.h"
-#include "quickfix/fix50/ExecutionReport.h"
+#include "fix40/ExecutionReport.h"
+#include "fix41/ExecutionReport.h"
+#include "fix42/ExecutionReport.h"
+#include "fix43/ExecutionReport.h"
+#include "fix44/ExecutionReport.h"
+#include "fix50/ExecutionReport.h"
 
 void Application::onCreate( const FIX::SessionID& sessionID ) {}
 void Application::onLogon( const FIX::SessionID& sessionID ) {}
@@ -40,15 +40,15 @@ void Application::toAdmin( FIX::Message& message,
                            const FIX::SessionID& sessionID ) {}
 void Application::toApp( FIX::Message& message,
                          const FIX::SessionID& sessionID )
-throw( FIX::DoNotSend ) {}
+THROW_DECL( FIX::DoNotSend ) {}
 
 void Application::fromAdmin( const FIX::Message& message,
                              const FIX::SessionID& sessionID )
-throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
 
 void Application::fromApp( const FIX::Message& message,
                            const FIX::SessionID& sessionID )
-throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
 { crack( message, sessionID ); }
 
 void Application::onMessage( const FIX40::NewOrderSingle& message,

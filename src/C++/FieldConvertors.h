@@ -100,8 +100,6 @@ struct IntConvertor
   static const std::size_t BufferSize = MaxValueSize >= 16 ? MaxValueSize : 16;
   static std::size_t RequiredSize(value_type v = 0) { return MaxValueSize; }
 
-  ALIGN_DECL_DEFAULT static const Util::CharBuffer::Fixed<16> m_charset;
-
   class Proxy {
 	value_type m_value;
 
@@ -117,8 +115,10 @@ struct IntConvertor
 	      unsigned_value_type v = neg ? unsigned(~value) + 1 : value;
           std::size_t len = Util::UInt::numDigits(v);
           Util::UInt::generate(buf += neg, v, len);
-	  buf[len] = '\0';
-          return len + neg;
+#ifndef ENABLE_SSO_NOZERO
+		  buf[len] = '\0';
+#endif
+          return (unsigned)len + neg;
         }
 
 	template <typename S> S convert_to() const
@@ -204,7 +204,7 @@ struct IntConvertor
   }
 
   static inline int convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     int result = 0;
     if( parse( value, result ) )
@@ -217,7 +217,7 @@ struct IntConvertor
     const char* s = String::data(value);
     std::size_t l = String::size(value);
     int negative = s[0] == '-';
-    return l > 0 && Util::CharBuffer::match(m_charset, s + negative, l - negative);
+    return l > 0 && Util::CharBuffer::match(Util::CharBuffer::s_uint_charset, s + negative, l - negative);
   }
 };
 
@@ -274,8 +274,10 @@ struct PositiveIntConvertor
           value_type value = m_value;
           std::size_t len = Util::UInt::numDigits(value);
           Util::UInt::generate(buf, value, len);
-	  buf[len] = '\0';
-          return len;
+#ifndef ENABLE_SSO_NOZERO
+          buf[len] = '\0';
+#endif
+          return (unsigned)len;
         }
 
 	template <typename S> S convert_to() const
@@ -443,13 +445,12 @@ struct CheckSumConvertor
   }
 
   static std::string convert( int value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     return convert<std::string>(value);
   }
 
   template <typename S> static S convert( int value )
-  throw( FieldConvertError )
   {
     unsigned char n, v = (unsigned char)value;
     if ( (value - v) == 0 )
@@ -468,7 +469,7 @@ struct CheckSumConvertor
   }
 
   static inline int convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     int result = 0;
     if( PositiveIntConvertor::parse( value, result ) )
@@ -480,14 +481,13 @@ struct CheckSumConvertor
   {
     const char* s = String::data(value);
     std::size_t l = String::size(value);
-    return l == 3 && Util::CharBuffer::match(IntConvertor::m_charset, s, 3) && s[0] < '3';
+    return l == 3 && Util::CharBuffer::match(Util::CharBuffer::s_uint_charset, s, 3) && s[0] < '3';
   }
 };
 
 #if defined(ENABLE_SSO)
 template <> inline String::short_string_type HEAVYUSE
 CheckSumConvertor::convert<String::short_string_type>( int value )
-throw ( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<uint32_t>(), Proxy(value));
 }
@@ -521,16 +521,38 @@ struct DoubleConvertor
 
     PREFETCH((const char*)m_mul1, 0, 0);
 
-    while( b < pdot )
+    //significand
+/*
+    uint64_t c, x = 0;
+    switch( (std::size_t)(pdot - b) )
     {
-      value = value * 10. + (*b++ - '0');
+      default:
+      case 15: c = *b++ - '0';  x = c * 100000000000000ULL;
+      case 14: c = *b++ - '0';  x += c * 10000000000000ULL;
+      case 13: c = *b++ - '0';  x += c * 1000000000000ULL;
+      case 12: c = *b++ - '0';  x += c * 100000000000ULL;
+      case 11: c = *b++ - '0';  x += c * 10000000000ULL;
+      case 10: c = *b++ - '0';  x += c * 1000000000;
+      case  9: c = *b++ - '0';  x += c * 100000000;
+      case  8: c = *b++ - '0';  x += c * 10000000;
+      case  7: c = *b++ - '0';  x += c * 1000000;
+      case  6: c = *b++ - '0';  x += c * 100000;
+      case  5: c = *b++ - '0';  x += c * 10000;
+      case  4: c = *b++ - '0';  x += c * 1000;
+      case  3: c = *b++ - '0';  x += c * 100;
+      case  2: c = *b++ - '0';  x += c * 10;
+      case  1: c = *b++ - '0';  x += c;
+      case  0: value = x;
     }
+*/
+    while ( b < pdot ) value = value * 10. + (*b++ - '0');
 
+    //mantissa
     if( ++b < e )
     {
       double scale = 1.0;
-      unsigned exp = e - b;
-      if( exp > 308 )
+      std::size_t exp = e - b;
+      if( UNLIKELY(exp > 308) )
       {
         exp = 308;
         e = b + 308;
@@ -540,7 +562,7 @@ struct DoubleConvertor
         value = value * 10. + (*b - '0');
       } while (++b < e);
 
-      if( exp <= 8 )
+      if( LIKELY(exp <= 8) )
       {
         scale *= m_mul1[exp - 1];
       }
@@ -607,7 +629,9 @@ struct DoubleConvertor
 		buf[i++] = _byteswap_uint64(*p);
 #endif 
           } while (p-- > (uint64_t*)m_p);
+#ifndef ENABLE_SSO_NOZERO
           ((char*)buf)[m_length] = '\0';
+#endif
           return m_length;
         }
 #endif
@@ -632,8 +656,8 @@ struct DoubleConvertor
         do 
         {
           if (LIKELY(Util::Char::isdigit(*p))) continue;
-          if (*p != '.' || pdot != end) return false;
-          pdot = p;
+          if (LIKELY(*p == '.' && pdot == end)) pdot = p;
+          else return false;
         }
         while( ++p < end);
 
@@ -665,7 +689,7 @@ struct DoubleConvertor
   }
 
   static double convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     double result = 0.0;
     if( parse( value, result ) )
@@ -771,7 +795,7 @@ struct CharConvertor
   }
 
   static char convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     char result;
     if( parse( value, result ) )
@@ -870,7 +894,7 @@ struct BoolConvertor
   }
 
   static bool convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     bool result = false;
     if( parse( value, result ) )
@@ -972,7 +996,7 @@ struct UtcConvertorBase {
   }
 
   // precision here is in multiples of 3, valid values currently are 0, 3, 6 or 9
-  static inline bool parse_fraction(const unsigned char*& p, int& fraction, int precision)
+  static inline bool parse_fraction(const unsigned char*& p, int& fraction, std::size_t precision)
   {
     unsigned char v;
     bool valid = ( *p++ == '.' );
@@ -1070,13 +1094,14 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value, m_precision);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
 
   template <typename S> static void set(S& result, const UtcTimeStamp& value, int precision = 0)
-  throw( FieldConvertError )
   {
     result.resize(17 + precision + (precision > 0));
     if ( !write((char*)String::data(result), value, precision) )
@@ -1086,7 +1111,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   static inline bool parse( const char* str, const char* end, UtcTimeStamp& utc )
   {
     std::size_t sz = end - str;
-    int precision = 0;
+    std::size_t precision = 0;
     bool haveFraction = sz > 17;
     if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
@@ -1102,7 +1127,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
         valid = valid && parse_fraction(p, fraction, precision);
 
       utc = UtcTimeStamp (hour, min, sec, fraction,
-                          mday, mon, year, precision );
+                          mday, mon, year, (int)precision );
       return valid;
     }
     return false;
@@ -1115,7 +1140,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcTimeStamp& value, int precision = 0 )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value, precision);
@@ -1123,7 +1148,6 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   }
 
   template <typename S> static S convert( const UtcTimeStamp& value, int precision = 0 )
-  throw( FieldConvertError )
   {
     S result;
     set(result, value, precision);
@@ -1132,7 +1156,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 
   static UtcTimeStamp convert( const String::value_type& value,
                                bool calculateDays = false )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     UtcTimeStamp utc( DateTime(0, 0) );
     if (parse(value, utc))
@@ -1144,7 +1168,7 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
   {
     std::size_t sz = String::size(value);
     bool haveFraction = sz > 17;
-    int precision = 0;
+    std::size_t precision = 0;
     if (LIKELY(haveFraction && (precision = (sz - 18)) % 3 == 0) || sz == 17)
     {
       const unsigned char* p = (const unsigned char*)String::data(value);
@@ -1164,13 +1188,11 @@ struct UtcTimeStampConvertor : public UtcConvertorBase
 #if defined(ENABLE_SSO) && (ENABLE_SSO > 2) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcTimeStampConvertor::convert<String::short_string_type>( const UtcTimeStamp& value, int precision )
-  throw( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value, precision));
 }
 template <> inline void HEAVYUSE
 UtcTimeStampConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcTimeStamp& value, int precision)
-  throw( FieldConvertError )
 {
   if ( LIKELY(0 != result.short_assign<char>(Proxy(value, precision))) )
     return;
@@ -1221,7 +1243,9 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value, m_precision);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
@@ -1236,7 +1260,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   {
     std::size_t sz = end - str;
     bool haveFraction = sz > 8;
-    int precision = 0;
+    std::size_t precision = 0;
     if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)str;
@@ -1246,7 +1270,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
       if ( haveFraction )
         valid = valid && parse_fraction(p, fraction, precision);
 
-      utc = UtcTimeOnly( hour, min, sec, fraction, precision );
+      utc = UtcTimeOnly( hour, min, sec, fraction, (int)precision );
       return valid;
     }
     return false;
@@ -1259,6 +1283,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcTimeOnly& value, int precision = 0 )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value, precision);
@@ -1274,7 +1299,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   }
 
   static UtcTimeOnly convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     UtcTimeOnly utc;
     if (parse(value, utc))
@@ -1286,7 +1311,7 @@ struct UtcTimeOnlyConvertor : public UtcConvertorBase
   {
     std::size_t sz = String::size(value);
     bool haveFraction = sz > 8;
-    int precision = 0;
+    std::size_t precision = 0;
     if ((haveFraction && (precision = (sz - 9)) % 3 == 0) || sz == 8)
     {
       const unsigned char* p = (const unsigned char*)String::data(value);
@@ -1324,7 +1349,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   static std::size_t RequiredSize(value_type) { return MaxValueSize; }
 
   static inline unsigned write(char* buffer, const UtcDate& value)
-  throw( FieldConvertError )
   {
     union {
 	char*     pc;
@@ -1354,13 +1378,14 @@ struct UtcDateConvertor : public UtcConvertorBase
         unsigned operator()(char* buf)
         {
           unsigned l = write(buf, m_value);
+#ifndef ENABLE_SSO_NOZERO
           buf[l] = '\0';
+#endif
           return l;
         }
   };
 
   template <typename S> static void set(S& result, const UtcDate& value)
-  throw( FieldConvertError )
   {
     result.resize(8);
     if ( !write((char*)String::data(result), value) )
@@ -1387,7 +1412,7 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static std::string convert( const UtcDate& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     std::string result;
     set(result, value);
@@ -1395,7 +1420,6 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   template <typename S> static S convert( const UtcDate& value )
-  throw( FieldConvertError )
   {
     S result;
     set(result, value);
@@ -1403,7 +1427,7 @@ struct UtcDateConvertor : public UtcConvertorBase
   }
 
   static UtcDate convert( const String::value_type& value )
-  throw( FieldConvertError )
+  THROW_DECL( FieldConvertError )
   {
     UtcDate utc;
     if (parse(value, utc))
@@ -1425,13 +1449,11 @@ typedef UtcDateConvertor UtcDateOnlyConvertor;
 #if defined(ENABLE_SSO) && (defined(_MSC_VER) || defined(__x86_64__) || defined(__i386__))
 template <> inline String::short_string_type HEAVYUSE
 UtcDateConvertor::convert<String::short_string_type>( const UtcDate& value)
-  throw( FieldConvertError )
 {
   return String::short_string_type(String::short_string_type::TypeHolder<char>(), Proxy(value));
 }
 template <> inline void HEAVYUSE
 UtcDateConvertor::set<String::short_string_type>(String::short_string_type& result, const UtcDate& value)
-  throw( FieldConvertError )
 {
   if ( LIKELY(0 != result.short_assign<char>(Proxy(value))) )
     return;

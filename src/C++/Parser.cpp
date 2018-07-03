@@ -33,15 +33,16 @@ namespace FIX
 {
 
 std::size_t Parser::extractLength( const char* msg, std::size_t sz )
-throw( MessageParseError )
+THROW_DECL( MessageParseError )
 {
   if( LIKELY(sz > 3) )
   {
-    const char* p = Util::CharBuffer::memmem(msg, sz, "\0019=", 3);
+    Util::CharBuffer::Fixed<3> bodyLengthTag = { { '\001', '9', '=' } };
+    const char* p = Util::CharBuffer::find( bodyLengthTag, msg, sz);
     if( LIKELY(NULL != p) )
     {
       std::size_t startPos = p - msg + 3;
-      p = (const char*)::memchr( p + 3, '\001', sz - startPos);
+      p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), p + 3, sz - startPos);
       if( LIKELY(NULL != p) )
       {
         int length = 0;

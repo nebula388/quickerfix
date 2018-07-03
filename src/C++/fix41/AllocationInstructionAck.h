@@ -8,8 +8,9 @@ namespace FIX41
 
   class AllocationInstructionAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("P"); }
   public:
-    AllocationInstructionAck() : Message(MsgType()) {}
+    AllocationInstructionAck() : Message(PackedType()) {}
     AllocationInstructionAck(const FIX::Message& m) : Message(m) {}
     AllocationInstructionAck(const Message& m) : Message(m) {}
     AllocationInstructionAck(const AllocationInstructionAck& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX41
       const FIX::AllocID& aAllocID,
       const FIX::TradeDate& aTradeDate,
       const FIX::AllocStatus& aAllocStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAllocID);
-      set(aTradeDate);
-      set(aAllocStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aAllocStatus);
+    }
+
+    AllocationInstructionAck(
+      const FIX::AllocID::Pack& aAllocID,
+      const FIX::TradeDate::Pack& aTradeDate,
+      const FIX::AllocStatus::Pack& aAllocStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aTradeDate);
+      Sequence::push_back_to(*this, aAllocStatus);
     }
 
     FIELD_SET(*this, FIX::ClientID);

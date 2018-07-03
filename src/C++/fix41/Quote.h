@@ -8,8 +8,9 @@ namespace FIX41
 
   class Quote : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("S"); }
   public:
-    Quote() : Message(MsgType()) {}
+    Quote() : Message(PackedType()) {}
     Quote(const FIX::Message& m) : Message(m) {}
     Quote(const Message& m) : Message(m) {}
     Quote(const Quote& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX41
     Quote(
       const FIX::QuoteID& aQuoteID,
       const FIX::Symbol& aSymbol )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteID);
-      set(aSymbol);
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aQuoteID);
+    }
+
+    Quote(
+      const FIX::QuoteID::Pack& aQuoteID,
+      const FIX::Symbol::Pack& aSymbol )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aQuoteID);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);

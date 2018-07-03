@@ -8,8 +8,9 @@ namespace FIX43
 
   class RegistrationInstructions : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("o"); }
   public:
-    RegistrationInstructions() : Message(MsgType()) {}
+    RegistrationInstructions() : Message(PackedType()) {}
     RegistrationInstructions(const FIX::Message& m) : Message(m) {}
     RegistrationInstructions(const Message& m) : Message(m) {}
     RegistrationInstructions(const RegistrationInstructions& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX43
       const FIX::RegistID& aRegistID,
       const FIX::RegistTransType& aRegistTransType,
       const FIX::RegistRefID& aRegistRefID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aRegistID);
-      set(aRegistTransType);
-      set(aRegistRefID);
+      // must be in this order
+      Sequence::push_back_to(*this, aRegistRefID);
+      Sequence::push_back_to(*this, aRegistID);
+      Sequence::push_back_to(*this, aRegistTransType);
+    }
+
+    RegistrationInstructions(
+      const FIX::RegistID::Pack& aRegistID,
+      const FIX::RegistTransType::Pack& aRegistTransType,
+      const FIX::RegistRefID::Pack& aRegistRefID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aRegistRefID);
+      Sequence::push_back_to(*this, aRegistID);
+      Sequence::push_back_to(*this, aRegistTransType);
     }
 
     FIELD_SET(*this, FIX::RegistID);

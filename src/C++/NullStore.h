@@ -60,29 +60,29 @@ class NullStore : public MessageStore
 public:
   NullStore() : m_nextSenderMsgSeqNum( 1 ), m_nextTargetMsgSeqNum( 1 ) {}
 
-  bool set( int, const std::string& ) throw ( IOException );
-  bool set( int, Sg::sg_buf_ptr, int n ) throw ( IOException );
-  void get( int, int, std::vector < std::string > & ) const throw ( IOException );
+  bool set( int, const std::string& ) THROW_DECL( IOException );
+  bool set( int, Sg::sg_buf_ptr, int n );
+  void get( int, int, std::vector < std::string > & ) const THROW_DECL( IOException );
 
-  int getNextSenderMsgSeqNum() const throw ( IOException )
+  int getNextSenderMsgSeqNum() const THROW_DECL( IOException )
   { return m_nextSenderMsgSeqNum; }
-  int getNextTargetMsgSeqNum() const throw ( IOException )
+  int getNextTargetMsgSeqNum() const THROW_DECL( IOException )
   { return m_nextTargetMsgSeqNum; }
-  void setNextSenderMsgSeqNum( int value ) throw ( IOException )
+  void setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException )
   { m_nextSenderMsgSeqNum = value; }
-  void setNextTargetMsgSeqNum( int value ) throw ( IOException )
+  void setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException )
   { m_nextTargetMsgSeqNum = value; }
-  void incrNextSenderMsgSeqNum() throw ( IOException )
+  void incrNextSenderMsgSeqNum() THROW_DECL( IOException )
   { ++m_nextSenderMsgSeqNum; }
-  void incrNextTargetMsgSeqNum() throw ( IOException )
+  void incrNextTargetMsgSeqNum() THROW_DECL( IOException )
   { ++m_nextTargetMsgSeqNum; }
 
-  void reset() throw ( IOException )
+  void reset() THROW_DECL( IOException )
   {
     m_nextSenderMsgSeqNum = 1; m_nextTargetMsgSeqNum = 1;
     setCreationTime( UtcTimeStamp() );
   }
-  void refresh() throw ( IOException ) {}
+  void refresh() THROW_DECL( IOException ) {}
 
 private:
   int m_nextSenderMsgSeqNum;

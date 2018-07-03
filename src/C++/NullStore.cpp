@@ -38,21 +38,20 @@ void NullStoreFactory::destroy( MessageStore* pStore )
   delete pStore;
 }
 
-bool NullStore::set( int msgSeqNum, const std::string& msg )
-throw( IOException )
+bool HOTSECTION NullStore::set( int msgSeqNum, const std::string& msg )
+THROW_DECL( IOException )
 {
   return true;
 }
 
-bool NullStore::set( int, Sg::sg_buf_ptr, int n )
-throw ( IOException )
+bool HOTSECTION NullStore::set( int, Sg::sg_buf_ptr, int n )
 {
   return true;
 }
 
 void NullStore::get( int begin, int end,
                        std::vector < std::string > & messages ) const
-throw( IOException )
+THROW_DECL( IOException )
 {
   messages.clear();
 }

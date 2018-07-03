@@ -8,8 +8,9 @@ namespace FIX43
 
   class QuoteStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("a"); }
   public:
-    QuoteStatusRequest() : Message(MsgType()) {}
+    QuoteStatusRequest() : Message(PackedType()) {}
     QuoteStatusRequest(const FIX::Message& m) : Message(m) {}
     QuoteStatusRequest(const Message& m) : Message(m) {}
     QuoteStatusRequest(const QuoteStatusRequest& m) : Message(m) {}

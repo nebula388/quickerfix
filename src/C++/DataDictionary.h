@@ -257,9 +257,9 @@ public:
     static bool isHeader(location_type l) { return l & Header; }
     bool isHeader() const { return location() & Header; }
     bool isUserHeader() const { return UserLocation & Header; }
-    static bool isTrailer(location_type l) { return l & Trailer; }
-    bool isTrailer() const { return location() & Trailer; }
-    bool isUserTrailer() const { return UserLocation & Trailer; }
+    static bool isTrailer(location_type l) { return (l & Trailer) != 0; }
+    bool isTrailer() const { return (location() & Trailer) != 0; }
+    bool isUserTrailer() const { return (UserLocation & Trailer) != 0; }
     static bool isBody(location_type l) { return l == Body; }
     bool isBody() const { return location() == Body; }
 
@@ -373,6 +373,11 @@ template <unsigned N> class TFieldProperty
 
 typedef TFieldProperty<NumFastFields> FieldProps;
 
+typedef std::vector <
+  int,
+  pool_allocator<int>::type
+> OrderedFields;
+
 typedef Container::DictionaryMap <
   int,
   std::pair < int, DataDictionary* >,
@@ -408,9 +413,49 @@ typedef std::map <
 
 struct MsgTypeData
 {
+  struct MessageFieldsOrderHolder
+  {
+    MessageFieldsOrderHolder()
+    {}
+
+    ~MessageFieldsOrderHolder()
+    {}
+
+    void push_back(int field)
+    {
+      m_orderedFlds.push_back(field);
+    }
+
+    const message_order & getMessageOrder() const
+    {
+      if (m_msgOrder)
+        return m_msgOrder;
+
+      int * tmp = new int[m_orderedFlds.size() + 1];
+      int * i = tmp;
+
+      OrderedFields::const_iterator iter;
+      for( iter = m_orderedFlds.begin(); iter != m_orderedFlds.end(); *(i++) = *(iter++) ) {}
+      *i = 0;
+
+      m_msgOrder = message_order(tmp);
+      delete [] tmp;
+
+      return m_msgOrder;
+    }
+
+  private:
+
+    mutable message_order  m_msgOrder;
+    OrderedFields m_orderedFlds;
+  };
+
   MsgFields& m_required; 
   FieldToGroup* m_groups;
   FieldToProps& m_defined; // is in message
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  MessageFieldsOrderHolder m_ordered;
+#endif
 
   MsgTypeData(MsgFields& required, FieldToGroup& groups, FieldToProps& props)
   : m_required(required), m_groups(&groups), m_defined(props) {}
@@ -450,32 +495,34 @@ typedef Container::DictionaryMap <
   >::type
 > FieldToValue;
 
-typedef std::vector <
-  int,
-  pool_allocator<int>::type
-> OrderedFields;
-
 typedef std::map < int, std::string > FieldToName;
 typedef std::map < std::string, int > NameToField;
 typedef std::map < std::pair < int, std::string > ,
                    std::string  > ValueToName;
 
-  static struct group_key_holder {
-	string_type Header, Trailer;
-  } ALIGN_DECL_DEFAULT const GroupKey;
-
   DataDictionary();
   DataDictionary( const DataDictionary& copy );
-  DataDictionary( std::istream& stream ) throw( ConfigError );
-  DataDictionary( const std::string& url ) throw( ConfigError );
+
+  DataDictionary( std::istream& stream, bool preserveMsgFieldsOrder = false ) THROW_DECL( ConfigError );
+  DataDictionary( const std::string& url, bool preserveMsgFieldsOrder = false ) THROW_DECL( ConfigError );
   virtual ~DataDictionary();
 
-  void LIGHTUSE readFromURL( const std::string& url ) throw( ConfigError );
-  void LIGHTUSE readFromDocument( DOMDocumentPtr pDoc ) throw( ConfigError );
-  void LIGHTUSE readFromStream( std::istream& stream ) throw( ConfigError );
+  void LIGHTUSE readFromURL( const std::string& url ) THROW_DECL( ConfigError );
+  void LIGHTUSE readFromDocument( const DOMDocumentPtr& pDoc ) THROW_DECL( ConfigError );
+  void LIGHTUSE readFromStream( std::istream& stream ) THROW_DECL( ConfigError );
 
   message_order const& getOrderedFields() const;
-
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  message_order const& LIGHTUSE getHeaderOrderedFields() const THROW_DECL( ConfigError );
+  message_order const& LIGHTUSE getTrailerOrderedFields() const THROW_DECL( ConfigError );
+  message_order const& LIGHTUSE getMessageOrderedFields(const string_type& msgType) const
+    THROW_DECL( ConfigError )
+  {
+    MsgTypeToData::const_iterator i = m_messageData.find( msgType );
+    if ( LIKELY(i != m_messageData.end()) ) return i->second.m_ordered.getMessageOrder();
+    throw ConfigError("<Message> " + std::string(msgType.data(), msgType.size()) + " does not have a stored message order");
+  }
+#endif
   FieldProperties getProps( int field ) const
   { return m_fieldProps.at( field ); }
 
@@ -485,7 +532,7 @@ typedef std::map < std::pair < int, std::string > ,
     return ( LIKELY(i != m_messageData.end()) ) ? &i->second : NULL;
   }
 
-  const MsgTypeData* getMessageData( const MsgType& msgType ) const
+  const MsgTypeData* getMessageData( const StringField& msgType ) const
   { return getMessageData( msgType.forString( String::Rval() ) ); }
 
   const MsgTypeData* getEmptyMessageData() const
@@ -649,21 +696,101 @@ typedef std::map < std::pair < int, std::string > ,
   void checkUnknownMsgType( bool value )
   { checkFor(UnknownMsgType, value); }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  void preserveMessageFieldOrder( bool value )
+  { m_storeMsgFieldsOrder = value; }
+  bool isMessageFieldsOrderPreserved() const
+  { return m_storeMsgFieldsOrder; }
+#endif
+
   class MsgInfo
   {
+  public:
+
+    struct Admin
+    {
+      enum Type
+      {
+        None = 0,
+        Heartbeat = '0',
+        TestRequest = '1',
+        ResendRequest = '2',
+        Reject = '3',
+        SequenceReset = '4',
+        Logout = '5',
+        Logon = 'A',
+        Unknown = -1
+      };
+
+      enum Trait
+      {
+        trait_none = 0,
+        trait_session = 1, // TestRequest, Heartbeat, Reject
+        trait_status = 2, // ResendRequest, SequenceReset, Logout
+        trait_logon = 4  // Logon
+      };
+    };
+
+  private:
     const DataDictionary* m_default_application_dictionary;
     mutable const DataDictionary* m_application_dictionary;
-    const MsgType* m_type;
+    const StringField* m_type;
     mutable const MsgTypeData* m_data;
+    mutable Admin::Type m_admin;
+
+    struct AdminSet {
+      Util::BitArray<256, uint32_t> _value;
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__)
+      AdminSet();
+#endif // static initialization otherwise
+      bool test(char v) const { return _value.test( (unsigned char)v ); }
+    };
+
+    struct TestAdminType
+    {
+      typedef Admin::Type result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        const char* value;
+        return String::size(v) == 1 && adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::Type)value[0] : Admin::None;
+      }
+    };
+  
+    struct TestAdminMsgType {
+      typedef bool result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        return String::size(v) == 1 && adminTypeSet.test( String::data(v)[0] );
+      }
+    };
+  
+    struct TestAdminTrait
+    {
+      typedef Admin::Trait result_type;
+      template <typename S> result_type operator()( const S& v ) const {
+        if ( LIKELY(String::size(v) == 1) ) {
+          Admin::Trait traits[8] = { Admin::trait_none, Admin::trait_session,
+                                     Admin::trait_session, Admin::trait_session,
+                                     Admin::trait_status, Admin::trait_status,
+                                     Admin::trait_status, Admin::trait_logon };
+          Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
+          std::size_t pos = Util::CharBuffer::find( String::data(v)[0], b );
+          return traits[pos & 7];
+        }
+        return Admin::trait_none;
+      }
+    };
+
+    static ALIGN_DECL_DEFAULT const AdminSet adminTypeSet;
 
   public:
 
     MsgInfo( const DataDictionary& dictionary )
     : m_default_application_dictionary(&dictionary), m_application_dictionary(&dictionary),
-      m_type(NULL), m_data(NULL) {}
+      m_type(NULL), m_data(NULL), m_admin(Admin::None) {}
     MsgInfo( const DataDictionary* defaultDD, 
-             const DataDictionary* p = NULL, const MsgType* t = NULL, const MsgTypeData* d = NULL )
-    : m_default_application_dictionary(defaultDD), m_application_dictionary(p), m_type(t), m_data(d) {}
+             const DataDictionary* p = NULL, const StringField* t = NULL,
+             const MsgTypeData* d = NULL, Admin::Type a = Admin::None )
+    : m_default_application_dictionary(defaultDD), m_application_dictionary(p), m_type(t),
+      m_data(d), m_admin(a) {}
 
     const MsgTypeData* messageData() const
     {
@@ -671,44 +798,64 @@ typedef std::map < std::pair < int, std::string > ,
             (LIKELY(m_application_dictionary && m_type) ? (m_data =
                m_application_dictionary->getMessageData(*m_type)) : NULL);
     }
-    const MsgType& messageType() const
+    const StringField& messageType() const
     {
       if ( LIKELY(m_type != NULL) ) return *m_type;
       throw FieldNotFound( FIELD::MsgType );
     }
-    const MsgType& messageType( const FieldMap& header )
+
+    Admin::Type messageType( const StringField* msgType, bool setAdmin = true )
     {
-      return ( LIKELY(m_type != NULL) ) ? *m_type : *(m_type = FIELD_GET_PTR(header, MsgType));
+      m_type = msgType;
+      return setAdmin ? (m_admin = msgAdminType( *msgType )) : m_admin;
     }
 
-    void messageType( const MsgType* msgType ) { m_type = msgType; }
+    Admin::Type messageType( const FieldMap& header )
+    {
+      return ( LIKELY(m_type != NULL) )
+        ? m_admin : (m_admin = msgAdminType( *(m_type = FIELD_GET_PTR(header, MsgType)) ) );
+    }
+
+    Admin::Type adminType() const { return m_admin; }
 
     const DataDictionary* defaultApplicationDictionary() const { return m_default_application_dictionary; }
     const DataDictionary* applicationDictionary() const { return m_application_dictionary; }
     void applicationDictionary(const DataDictionary* p) { m_application_dictionary = p; }
+
+    static inline Admin::Type msgAdminType( const FieldBase& msgType )
+    { return msgType.forString( TestAdminType() ); }
+
+    static inline Admin::Trait msgAdminTrait( const FieldBase& msgType )
+    { return msgType.forString( TestAdminTrait() ); }
+
+    static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
+    { return msgType.forString( TestAdminMsgType() ); }
+
+    static inline bool NOTHROW isAdminMsgType( const MsgType::Pack& msgType )
+    { return msgType.m_length == 1 && adminTypeSet.test(msgType.m_data[0]); }
   };
 
   /// Validate a message.
   static void HEAVYUSE  validate( const Message& message,
                         const BeginString& beginString,
                         const MsgInfo& msgInfo,
-                        const DataDictionary* const pSessionDD)
-  throw( FIX::Exception );
+                        const DataDictionary* const pSessionDD) THROW_DECL( FIX::Exception );
 
-  void validate( const Message& message, bool bodyOnly ) const
-  throw( FIX::Exception );
+  void validate( const Message& message, bool bodyOnly ) const THROW_DECL( FIX::Exception );
 
-  void validate( const Message& message ) const
-  throw( FIX::Exception )
+  void validate( const Message& message ) const THROW_DECL( FIX::Exception )
   { validate( message, false ); }
 
   DataDictionary& operator=( const DataDictionary& rhs );
 
 private:
 
+  struct group_key_holder { string_type Header, Trailer; };
+  static ALIGN_DECL_DEFAULT const group_key_holder GroupKey;
+
   /// Retrieve body fields from the group dictionary nested within FieldToGroup
   const MsgFields& getNestedBodyFields() const
-  { return m_requiredFields.begin()->second; }
+  { return m_requiredFields.size() > 0 ? m_requiredFields.begin()->second : m_noFields; }
 
   /// Iterate through field map doing basic checks.
   void iterate( const FieldMap& map ) const;
@@ -739,14 +886,14 @@ private:
 
   /// Check if field tag number is defined in spec.
   void checkValidTagNumber( const FieldBase& field ) const
-  throw( InvalidTagNumber )
+    THROW_DECL( InvalidTagNumber )
   {
     if( LIKELY(isField( field.getTag()) ) ) return;
     throw InvalidTagNumber( field.getTag() );
   }
 
   void checkValidFormat( const FieldBase& field ) const
-  throw( IncorrectDataFormat )
+    THROW_DECL( IncorrectDataFormat )
   {
     TYPE::Type type = TYPE::Unknown;
     getFieldType( field.getTag(), type );
@@ -777,7 +924,7 @@ private:
   }
 
   void checkValue( const FieldBase& field ) const
-  throw( IncorrectTagValue )
+    THROW_DECL( IncorrectTagValue )
   {
     int f = field.getTag();
     FieldToValue::const_iterator i = m_fieldValues.find( f );
@@ -791,7 +938,7 @@ private:
 
   /// Check if a field has a value.
   void checkHasValue( const FieldBase& field ) const
-  throw( NoTagValue )
+    THROW_DECL( NoTagValue )
   {
     if ( LIKELY(!isChecked(FieldsHaveValues) ||
 		         field.forString( String::Size() )) )
@@ -802,7 +949,7 @@ private:
   /// Check if a field is in this message type.
   void checkIsInMessage
   ( const FieldBase& field, const MsgType& msgType ) const
-  throw( TagNotDefinedForMessage )
+    THROW_DECL( TagNotDefinedForMessage )
   {
     if ( LIKELY(isMsgField( msgType.forString( String::Rval() ), field.getTag() )) )
       return;
@@ -811,7 +958,7 @@ private:
 
   void checkIsInMessage
   ( const FieldBase& field, const MsgTypeData& msgData ) const
-  throw( TagNotDefinedForMessage )
+    THROW_DECL( TagNotDefinedForMessage )
   {
     if ( LIKELY(msgData.m_defined.find( field.getTag() ) != msgData.m_defined.end()) )
       return;
@@ -821,7 +968,7 @@ private:
   /// Check if group count matches number of groups in
   void checkGroupCount
   ( const FieldBase& field, const FieldMap& fieldMap, const MsgType& msgType ) const
-  throw( RepeatingGroupCountMismatch )
+    THROW_DECL( RepeatingGroupCountMismatch )
   {
     int fieldNum = field.getTag();
     if( isGroup(msgType.forString( String::Rval() ), fieldNum) )
@@ -834,7 +981,6 @@ private:
   }
   void checkGroupCount
   ( const FieldBase& field, const FieldMap& fieldMap, const MsgTypeData& msgData ) const
-  throw( RepeatingGroupCountMismatch )
   {
     int fieldNum = field.getTag();
     const FieldToGroup* groups = msgData.groups();
@@ -852,7 +998,7 @@ private:
   void checkHasRequired
   ( const FieldMap& header, const FieldMap& body, const FieldMap& trailer,
     const MsgType& msgType ) const
-  throw( RequiredTagMissing )
+    THROW_DECL( RequiredTagMissing )
   {
     MsgTypeToData::const_iterator iM
       = m_messageData.find( msgType.forString( String::Rval() ) );
@@ -862,7 +1008,7 @@ private:
   void checkHasRequired
   ( const MsgTypeData* messageData,
     const FieldMap& header, const FieldMap& body, const FieldMap& trailer ) const
-  throw( RequiredTagMissing )
+    THROW_DECL( RequiredTagMissing )
   {
     HeaderFields::const_iterator h = includes(header.begin(), header.end(),
                  m_requiredHeaderFields.begin(), m_requiredHeaderFields.end(), HeaderCompare() );
@@ -878,12 +1024,10 @@ private:
 #endif
   } 
 
-  void checkHasRequiredInGroups( const FieldToGroup& groupFields, const FieldMap& body ) const
-  throw( RequiredTagMissing );
+  void checkHasRequiredInGroups( const FieldToGroup& groupFields, const FieldMap& body ) const;
 
   void checkHasRequiredUnordered
   ( const MsgFields& fields, const FieldToGroup* groupFields, const FieldMap& body ) const
-  throw( RequiredTagMissing )
   {
     for ( MsgFields::const_iterator r = fields.begin(); r != fields.end(); ++r )
     {
@@ -895,7 +1039,6 @@ private:
 
   void checkHasRequired
   ( const MsgFields& fields, const FieldToGroup* groupFields, const FieldMap& body ) const
-  throw( RequiredTagMissing )
   {
     MsgFields::const_iterator r = includes(body.begin(), body.end(),
                  fields.begin(), fields.end(), FieldCompare() );
@@ -923,11 +1066,17 @@ private:
   MsgTypeFieldProps m_messageFields;
   MsgTypeRequiredFields m_requiredFields;
   MsgTypeToData m_messageData;
-
   OrderedFields m_orderedFields;
   mutable OrderedFieldsArray m_orderedFieldsArray;
   HeaderFields m_requiredHeaderFields;
   TrailerFields m_requiredTrailerFields;
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  bool m_storeMsgFieldsOrder;
+  OrderedFields m_headerOrderedFields;
+  mutable OrderedFieldsArray m_headerOrderArray;
+  OrderedFields m_trailerOrderedFields;
+  mutable OrderedFieldsArray m_trailerOrderArray;
+#endif
   FieldTypes m_fieldTypes;
   FieldToValue m_fieldValues;
   FieldToName m_fieldNames;

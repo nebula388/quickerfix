@@ -28,16 +28,16 @@
 #include <queue>
 #include <iostream>
 
-#include "quickfix/Application.h"
-#include "quickfix/MessageCracker.h"
-#include "quickfix/Values.h"
-#include "quickfix/Utility.h"
-#include "quickfix/Mutex.h"
+#include "Application.h"
+#include "MessageCracker.h"
+#include "Values.h"
+#include "Utility.h"
+#include "Mutex.h"
 
-#include "quickfix/fix42/NewOrderSingle.h"
-#include "quickfix/fix42/OrderCancelRequest.h"
-#include "quickfix/fix42/MarketDataRequest.h"
-#include "quickfix/fix43/MarketDataRequest.h"
+#include "fix42/NewOrderSingle.h"
+#include "fix42/OrderCancelRequest.h"
+#include "fix42/MarketDataRequest.h"
+#include "fix43/MarketDataRequest.h"
 
 class Application
       : public FIX::Application,
@@ -49,11 +49,11 @@ class Application
   void onLogout( const FIX::SessionID& sessionID );
   void toAdmin( FIX::Message&, const FIX::SessionID& ) {}
   void toApp( FIX::Message&, const FIX::SessionID& )
-  throw( FIX::DoNotSend ) {}
+    THROW_DECL( FIX::DoNotSend ) {}
   void fromAdmin( const FIX::Message&, const FIX::SessionID& )
-  throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
   void fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
-  throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
 
   // MessageCracker overloads
   void onMessage( const FIX42::NewOrderSingle&, const FIX::SessionID& );

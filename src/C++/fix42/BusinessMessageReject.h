@@ -8,8 +8,9 @@ namespace FIX42
 
   class BusinessMessageReject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("j"); }
   public:
-    BusinessMessageReject() : Message(MsgType()) {}
+    BusinessMessageReject() : Message(PackedType()) {}
     BusinessMessageReject(const FIX::Message& m) : Message(m) {}
     BusinessMessageReject(const Message& m) : Message(m) {}
     BusinessMessageReject(const BusinessMessageReject& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX42
     BusinessMessageReject(
       const FIX::RefMsgType& aRefMsgType,
       const FIX::BusinessRejectReason& aBusinessRejectReason )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aRefMsgType);
-      set(aBusinessRejectReason);
+      // must be in this order
+      Sequence::push_back_to(*this, aRefMsgType);
+      Sequence::push_back_to(*this, aBusinessRejectReason);
+    }
+
+    BusinessMessageReject(
+      const FIX::RefMsgType::Pack& aRefMsgType,
+      const FIX::BusinessRejectReason::Pack& aBusinessRejectReason )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aRefMsgType);
+      Sequence::push_back_to(*this, aBusinessRejectReason);
     }
 
     FIELD_SET(*this, FIX::RefSeqNum);

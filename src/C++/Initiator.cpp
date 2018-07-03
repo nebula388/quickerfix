@@ -33,9 +33,10 @@
 
 namespace FIX
 {
-Initiator::Initiator( Application& application,
+COLDSECTION Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
-                      const SessionSettings& settings ) throw( ConfigError )
+                      const SessionSettings& settings )
+THROW_DECL( ConfigError )
 : m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
@@ -46,10 +47,11 @@ Initiator::Initiator( Application& application,
   m_stop( true )
 { initialize(); }
 
-Initiator::Initiator( Application& application,
+COLDSECTION Initiator::Initiator( Application& application,
                       MessageStoreFactory& messageStoreFactory,
                       const SessionSettings& settings,
-                      LogFactory& logFactory ) throw( ConfigError )
+                      LogFactory& logFactory )
+THROW_DECL( ConfigError )
 : m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
@@ -60,7 +62,8 @@ Initiator::Initiator( Application& application,
   m_stop( true )
 { initialize(); }
 
-void Initiator::initialize() throw ( ConfigError )
+COLDSECTION void Initiator::initialize()
+THROW_DECL( ConfigError )
 {
   std::set < SessionID > sessions = m_settings.getSessions();
   std::set < SessionID > ::iterator i;
@@ -85,7 +88,7 @@ void Initiator::initialize() throw ( ConfigError )
     throw ConfigError( "No sessions defined for initiator" );
 }
 
-Initiator::~Initiator()
+COLDSECTION Initiator::~Initiator()
 {
   Sessions::iterator i;
   for ( i = m_sessions.begin(); i != m_sessions.end(); ++i )
@@ -187,7 +190,8 @@ bool Initiator::isDisconnected( const SessionID& sessionID )
   return m_disconnected.find( sessionID ) != m_disconnected.end();
 }
 
-void Initiator::start() throw ( ConfigError, RuntimeError )
+void Initiator::start()
+THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -200,7 +204,8 @@ void Initiator::start() throw ( ConfigError, RuntimeError )
 }
 
 
-void Initiator::block() throw ( ConfigError, RuntimeError )
+void Initiator::block()
+THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -209,7 +214,8 @@ void Initiator::block() throw ( ConfigError, RuntimeError )
   startThread(this);
 }
 
-bool Initiator::poll( double timeout ) throw ( ConfigError, RuntimeError )
+bool Initiator::poll( double timeout )
+THROW_DECL( ConfigError, RuntimeError )
 {
   if( m_firstPoll )
   {

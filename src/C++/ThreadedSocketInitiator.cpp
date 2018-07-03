@@ -29,10 +29,11 @@
 
 namespace FIX
 {
+COLDSECTION
 ThreadedSocketInitiator::ThreadedSocketInitiator(
   Application& application,
   MessageStoreFactory& factory,
-  const SessionSettings& settings ) throw( ConfigError )
+  const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Initiator( application, factory, settings ),
   m_lastConnect( 0 ), m_reconnectInterval( 30 ), m_noDelay( false ), 
   m_sendBufSize( 0 ), m_rcvBufSize( 0 ) 
@@ -40,11 +41,12 @@ ThreadedSocketInitiator::ThreadedSocketInitiator(
   socket_init(); 
 }
 
+COLDSECTION
 ThreadedSocketInitiator::ThreadedSocketInitiator(
   Application& application,
   MessageStoreFactory& factory,
   const SessionSettings& settings,
-  LogFactory& logFactory ) throw( ConfigError )
+  LogFactory& logFactory ) THROW_DECL( ConfigError )
 : Initiator( application, factory, settings, logFactory ),
   m_lastConnect( 0 ), m_reconnectInterval( 30 ), m_noDelay( false ), 
   m_sendBufSize( 0 ), m_rcvBufSize( 0 ) 
@@ -57,8 +59,9 @@ ThreadedSocketInitiator::~ThreadedSocketInitiator()
   socket_term(); 
 }
 
+COLDSECTION
 void ThreadedSocketInitiator::onConfigure( const SessionSettings& s )
-throw ( ConfigError )
+THROW_DECL( ConfigError )
 {
   const Dictionary& dict = s.get();
 
@@ -72,8 +75,9 @@ throw ( ConfigError )
     m_rcvBufSize = dict.getInt( SOCKET_RECEIVE_BUFFER_SIZE );
 }
 
+COLDSECTION
 void ThreadedSocketInitiator::onInitialize( const SessionSettings& s )
-throw ( RuntimeError )
+THROW_DECL( RuntimeError )
 {
 }
 
@@ -141,9 +145,11 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
 
     std::string address;
     short port = 0;
-    getHost( s, d, address, port );
+    std::string sourceAddress;
+    short sourcePort = 0;
+    getHost( s, d, address, port, sourceAddress, sourcePort );
 
-    int socket = socket_createConnector();
+	sys_socket_t socket = socket_createConnector();
     if( m_noDelay )
       socket_setsockopt( socket, TCP_NODELAY );
     if( m_sendBufSize )
@@ -152,10 +158,10 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
       socket_setsockopt( socket, SO_RCVBUF, m_rcvBufSize );
 
     setPending( s );
-    log->onEvent( "Connecting to " + address + " on port " + IntConvertor::convert((unsigned short)port) );
+    log->onEvent( "Connecting to " + address + " on port " + IntConvertor::convert((unsigned short)port) + " (Source " + sourceAddress + ":" + IntConvertor::convert((unsigned short)sourcePort) + ")");
 
     ThreadedSocketConnection* pConnection =
-      new ThreadedSocketConnection( s, socket, address, port, getLog() );
+      new ThreadedSocketConnection( s, socket, address, port, getLog(), sourceAddress, sourcePort );
 
     ThreadPair* pair = new ThreadPair( this, pConnection );
 
@@ -178,14 +184,14 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
   catch ( std::exception& ) {}
 }
 
-void ThreadedSocketInitiator::addThread( int s, thread_id t )
+void ThreadedSocketInitiator::addThread( sys_socket_t s, thread_id t )
 {
   Locker l(m_mutex);
 
   m_threads[ s ] = t;
 }
 
-void ThreadedSocketInitiator::removeThread( int s )
+void ThreadedSocketInitiator::removeThread( sys_socket_t s )
 {
   Locker l(m_mutex);
   SocketToThread::iterator i = m_threads.find( s );
@@ -205,7 +211,7 @@ THREAD_PROC ThreadedSocketInitiator::socketThread( void* p )
   ThreadedSocketConnection* pConnection = pair->second;
   FIX::SessionID sessionID = pConnection->getSession()->getSessionID();
   FIX::Session* pSession = FIX::Session::lookupSession( sessionID );
-  int socket = pConnection->getSocket();
+  sys_socket_t socket = pConnection->getSocket();
   delete pair;
 
   pInitiator->lock();
@@ -236,7 +242,8 @@ THREAD_PROC ThreadedSocketInitiator::socketThread( void* p )
 }
 
 void ThreadedSocketInitiator::getHost( const SessionID& s, const Dictionary& d,
-                                       std::string& address, short& port )
+                                       std::string& address, short& port,
+                                       std::string& sourceAddress, short& sourcePort )
 {
   int num = 0;
   SessionToHostNum::iterator i = m_sessionToHostNum.find( s );
@@ -254,12 +261,29 @@ void ThreadedSocketInitiator::getHost( const SessionID& s, const Dictionary& d,
   {
     address = d.getString( hostString );
     port = ( short ) d.getInt( portString );
+
+    std::stringstream sourceHostStream;
+    sourceHostStream << SOCKET_CONNECT_SOURCE_HOST << num;
+    hostString = sourceHostStream.str();
+    if( d.has(hostString) )
+      sourceAddress = d.getString( hostString );
+
+    std::stringstream sourcePortStream;
+    sourcePortStream << SOCKET_CONNECT_SOURCE_PORT << num;
+    portString = sourcePortStream.str();
+    if( d.has(portString) )
+      sourcePort = ( short ) d.getInt( portString );
   }
   else
   {
     num = 0;
     address = d.getString( SOCKET_CONNECT_HOST );
     port = ( short ) d.getInt( SOCKET_CONNECT_PORT );
+
+    if( d.has(SOCKET_CONNECT_SOURCE_HOST) )
+      sourceAddress = d.getString( SOCKET_CONNECT_SOURCE_HOST );
+    if( d.has(SOCKET_CONNECT_SOURCE_PORT) )
+      sourcePort = ( short ) d.getInt( SOCKET_CONNECT_SOURCE_PORT );
   }
 
   m_sessionToHostNum[ s ] = ++num;

@@ -8,8 +8,9 @@ namespace FIX40
 
   class OrderCancelReject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("9"); }
   public:
-    OrderCancelReject() : Message(MsgType()) {}
+    OrderCancelReject() : Message(PackedType()) {}
     OrderCancelReject(const FIX::Message& m) : Message(m) {}
     OrderCancelReject(const Message& m) : Message(m) {}
     OrderCancelReject(const OrderCancelReject& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX40
     OrderCancelReject(
       const FIX::OrderID& aOrderID,
       const FIX::ClOrdID& aClOrdID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrderID);
-      set(aClOrdID);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrderID);
+    }
+
+    OrderCancelReject(
+      const FIX::OrderID::Pack& aOrderID,
+      const FIX::ClOrdID::Pack& aClOrdID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrderID);
     }
 
     FIELD_SET(*this, FIX::OrderID);

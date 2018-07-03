@@ -8,8 +8,9 @@ namespace FIX43
 
   class Reject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("3"); }
   public:
-    Reject() : Message(MsgType()) {}
+    Reject() : Message(PackedType()) {}
     Reject(const FIX::Message& m) : Message(m) {}
     Reject(const Message& m) : Message(m) {}
     Reject(const Reject& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX43
 
     Reject(
       const FIX::RefSeqNum& aRefSeqNum )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aRefSeqNum);
+      // must be in this order
+      Sequence::push_back_to(*this, aRefSeqNum);
+    }
+
+    Reject(
+      const FIX::RefSeqNum::Pack& aRefSeqNum )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aRefSeqNum);
     }
 
     FIELD_SET(*this, FIX::RefSeqNum);

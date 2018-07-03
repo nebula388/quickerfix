@@ -8,8 +8,9 @@ namespace FIX41
 
   class DontKnowTrade : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("Q"); }
   public:
-    DontKnowTrade() : Message(MsgType()) {}
+    DontKnowTrade() : Message(PackedType()) {}
     DontKnowTrade(const FIX::Message& m) : Message(m) {}
     DontKnowTrade(const Message& m) : Message(m) {}
     DontKnowTrade(const DontKnowTrade& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX41
       const FIX::DKReason& aDKReason,
       const FIX::Symbol& aSymbol,
       const FIX::Side& aSide )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aDKReason);
-      set(aSymbol);
-      set(aSide);
+      // must be in this order
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aDKReason);
+    }
+
+    DontKnowTrade(
+      const FIX::DKReason::Pack& aDKReason,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aDKReason);
     }
 
     FIELD_SET(*this, FIX::OrderID);

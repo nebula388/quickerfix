@@ -213,28 +213,27 @@ public:
   void clearQueue()
   { Locker l( m_mutex ); m_queue.clear(); }
 
-  bool set( int s, const std::string& m ) throw ( IOException )
+  bool set( int s, const std::string& m ) THROW_DECL( IOException )
   { Locker l( m_mutex ); return m_pStore->set( s, m ); }
-  bool set( int s, Sg::sg_buf_ptr m, int n ) throw ( IOException )
+  bool set( int s, Sg::sg_buf_ptr m, int n )
   { Locker l( m_mutex ); return m_pStore->set( s, m, n ); }
-  void get( int b, int e, std::vector < std::string > &m ) const
-  throw ( IOException )
+  void get( int b, int e, std::vector < std::string > &m ) const THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->get( b, e, m ); }
-  int getNextSenderMsgSeqNum() const throw ( IOException )
+  int getNextSenderMsgSeqNum() const THROW_DECL( IOException )
   { Locker l( m_mutex ); return m_pStore->getNextSenderMsgSeqNum(); }
-  int getNextTargetMsgSeqNum() const throw ( IOException )
+  int getNextTargetMsgSeqNum() const THROW_DECL( IOException )
   { Locker l( m_mutex ); return m_pStore->getNextTargetMsgSeqNum(); }
-  void setNextSenderMsgSeqNum( int n ) throw ( IOException )
+  void setNextSenderMsgSeqNum( int n ) THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->setNextSenderMsgSeqNum( n ); }
-  void setNextTargetMsgSeqNum( int n ) throw ( IOException )
+  void setNextTargetMsgSeqNum( int n ) THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->setNextTargetMsgSeqNum( n ); }
-  void incrNextSenderMsgSeqNum() throw ( IOException )
+  void incrNextSenderMsgSeqNum() THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->incrNextSenderMsgSeqNum(); }
-  void incrNextTargetMsgSeqNum() throw ( IOException )
+  void incrNextTargetMsgSeqNum() THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->incrNextTargetMsgSeqNum(); }
-  void reset() throw ( IOException )
+  void reset() THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->reset(); setCreationTime( m_pStore->getCreationTime() ); }
-  void refresh() throw ( IOException )
+  void refresh() THROW_DECL( IOException )
   { Locker l( m_mutex ); m_pStore->refresh(); setCreationTime( m_pStore->getCreationTime() ); }
 
   void clear() {

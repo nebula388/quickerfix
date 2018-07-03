@@ -8,8 +8,9 @@ namespace FIX43
 
   class ListStatus : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("N"); }
   public:
-    ListStatus() : Message(MsgType()) {}
+    ListStatus() : Message(PackedType()) {}
     ListStatus(const FIX::Message& m) : Message(m) {}
     ListStatus(const Message& m) : Message(m) {}
     ListStatus(const ListStatus& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX43
       const FIX::ListOrderStatus& aListOrderStatus,
       const FIX::RptSeq& aRptSeq,
       const FIX::TotNoOrders& aTotNoOrders )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aListStatusType);
-      set(aNoRpts);
-      set(aListOrderStatus);
-      set(aRptSeq);
-      set(aTotNoOrders);
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoOrders);
+      Sequence::push_back_to(*this, aNoRpts);
+      Sequence::push_back_to(*this, aRptSeq);
+      Sequence::push_back_to(*this, aListStatusType);
+      Sequence::push_back_to(*this, aListOrderStatus);
+    }
+
+    ListStatus(
+      const FIX::ListID::Pack& aListID,
+      const FIX::ListStatusType::Pack& aListStatusType,
+      const FIX::NoRpts::Pack& aNoRpts,
+      const FIX::ListOrderStatus::Pack& aListOrderStatus,
+      const FIX::RptSeq::Pack& aRptSeq,
+      const FIX::TotNoOrders::Pack& aTotNoOrders )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoOrders);
+      Sequence::push_back_to(*this, aNoRpts);
+      Sequence::push_back_to(*this, aRptSeq);
+      Sequence::push_back_to(*this, aListStatusType);
+      Sequence::push_back_to(*this, aListOrderStatus);
     }
 
     FIELD_SET(*this, FIX::ListID);

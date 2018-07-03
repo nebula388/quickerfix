@@ -52,18 +52,18 @@ class Initiator
 {
 public:
   Initiator( Application&, MessageStoreFactory&,
-             const SessionSettings& ) throw( ConfigError );
+             const SessionSettings& ) THROW_DECL( ConfigError );
   Initiator( Application&, MessageStoreFactory&,
-             const SessionSettings&, LogFactory& ) throw( ConfigError );
+             const SessionSettings&, LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~Initiator();
 
   /// Start initiator.
-  void start() throw ( ConfigError, RuntimeError );
+  void start() THROW_DECL( ConfigError, RuntimeError );
   /// Block on the initiator
-  void block() throw ( ConfigError, RuntimeError );
+  void block() THROW_DECL( ConfigError, RuntimeError );
   /// Poll the initiator
-  bool poll( double timeout = 0.0 ) throw ( ConfigError, RuntimeError );
+  bool poll( double timeout = 0.0 ) THROW_DECL( ConfigError, RuntimeError );
 
   /// Stop initiator.
   void stop( bool force = false );
@@ -104,12 +104,12 @@ protected:
   void connect();
 
 private:
-  void initialize() throw ( ConfigError );
+  void initialize() THROW_DECL( ConfigError );
 
   /// Implemented to configure acceptor
-  virtual void onConfigure( const SessionSettings& ) throw ( ConfigError ) {};
+  virtual void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError, RuntimeError ) {};
   /// Implemented to initialize initiator
-  virtual void onInitialize( const SessionSettings& ) throw ( RuntimeError ) {};
+  virtual void onInitialize( const SessionSettings& ) THROW_DECL( ConfigError, RuntimeError ) {};
   /// Implemented to start connecting to targets.
   virtual void onStart() = 0;
   /// Implemented to connect and poll for events.
@@ -135,7 +135,9 @@ private:
   thread_id m_threadid;
   Application& m_application;
   MessageStoreFactory& m_messageStoreFactory;
+protected:
   SessionSettings m_settings;
+private:
   LogFactory* m_pLogFactory;
   Log* m_pLog;
   NullLog m_nullLog;

@@ -40,20 +40,20 @@ class ThreadedSocketInitiator : public Initiator
 {
 public:
   ThreadedSocketInitiator( Application&, MessageStoreFactory&,
-                           const SessionSettings& ) throw( ConfigError );
+                           const SessionSettings& ) THROW_DECL( ConfigError );
   ThreadedSocketInitiator( Application&, MessageStoreFactory&,
                            const SessionSettings&,
-                           LogFactory& ) throw( ConfigError );
+                           LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~ThreadedSocketInitiator();
 
 private:
-  typedef std::map < int, thread_id > SocketToThread;
+  typedef std::map < sys_socket_t, thread_id > SocketToThread;
   typedef std::map < SessionID, int > SessionToHostNum;
   typedef std::pair < ThreadedSocketInitiator*, ThreadedSocketConnection* > ThreadPair;
 
-  void onConfigure( const SessionSettings& ) throw ( ConfigError );
-  void onInitialize( const SessionSettings& ) throw ( RuntimeError );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll( double timeout );
@@ -61,12 +61,12 @@ private:
 
   void doConnect( const SessionID& s, const Dictionary& d );
 
-  void addThread( int s, thread_id t );
-  void removeThread( int s );
+  void addThread(sys_socket_t s, thread_id t );
+  void removeThread(sys_socket_t s );
   void lock() { Locker l(m_mutex); }
   static THREAD_PROC socketThread( void* p );
 
-  void getHost( const SessionID&, const Dictionary&, std::string&, short& );
+  void getHost( const SessionID&, const Dictionary&, std::string&, short&, std::string&, short& );
 
   SessionSettings m_settings;
   SessionToHostNum m_sessionToHostNum;

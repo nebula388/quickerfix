@@ -8,8 +8,9 @@ namespace FIX42
 
   class SecurityStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("e"); }
   public:
-    SecurityStatusRequest() : Message(MsgType()) {}
+    SecurityStatusRequest() : Message(PackedType()) {}
     SecurityStatusRequest(const FIX::Message& m) : Message(m) {}
     SecurityStatusRequest(const Message& m) : Message(m) {}
     SecurityStatusRequest(const SecurityStatusRequest& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX42
       const FIX::SecurityStatusReqID& aSecurityStatusReqID,
       const FIX::Symbol& aSymbol,
       const FIX::SubscriptionRequestType& aSubscriptionRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityStatusReqID);
-      set(aSymbol);
-      set(aSubscriptionRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aSecurityStatusReqID);
+    }
+
+    SecurityStatusRequest(
+      const FIX::SecurityStatusReqID::Pack& aSecurityStatusReqID,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::SubscriptionRequestType::Pack& aSubscriptionRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aSecurityStatusReqID);
     }
 
     FIELD_SET(*this, FIX::SecurityStatusReqID);

@@ -28,6 +28,7 @@
 
 #include "FieldMap.h"
 #include "FixFields.h"
+#include "FixExtensions.h"
 #include "Group.h"
 #include "SessionID.h"
 #include "DataDictionary.h"
@@ -38,15 +39,94 @@
 
 namespace FIX
 {
-typedef FieldMap Header;
-typedef FieldMap Trailer;
-
 static int const headerOrder[] =
   {
     FIELD::BeginString,
     FIELD::BodyLength,
     FIELD::MsgType
   };
+
+class Header : public FieldMap
+{
+public:
+  Header() : FieldMap(message_order( message_order::header ) )
+  {}
+
+  Header(const message_order& order) : FieldMap(order)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const message_order& order) : FieldMap(a, order)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const message_order& order, const FieldMap::Options& opt) : FieldMap( a, order, opt)
+  {}
+
+  Header(const FieldMap::allocator_type& a, const Header& other) : FieldMap(a, other)
+  {}
+
+  void addGroup( const FIX::Group& group )
+  { FieldMap::addGroup( group.field(), group ); }
+
+  void replaceGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::replaceGroup( num, group.field(), group ); }
+
+  Group& getGroup( unsigned num, FIX::Group& group ) const
+  { group.clear();
+    return static_cast < Group& >
+      ( FieldMap::getGroup( num, group.field(), group ) );
+  }
+
+  void removeGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::removeGroup( num, group.field() ); }
+  void removeGroup( const FIX::Group& group )
+  { FieldMap::removeGroup( group.field() ); }
+
+  bool hasGroup( const FIX::Group& group ) const
+  { return FieldMap::hasGroup( group.field() ); }
+  bool hasGroup( unsigned num, const FIX::Group& group ) const
+  { return FieldMap::hasGroup( num, group.field() ); }
+};
+
+class Trailer : public FieldMap
+{
+public:
+  Trailer() : FieldMap(message_order( message_order::trailer ) )
+  {}
+
+  Trailer(const message_order& order) : FieldMap(order)
+  {}
+
+  Trailer(FieldMap::allocator_type& a, const message_order& order) : FieldMap(a, order)
+  {}
+
+  Trailer(const FieldMap::allocator_type& a, const message_order& order, const FieldMap::Options& opt) : FieldMap( a, order, opt)
+  {}
+
+  Trailer(const FieldMap::allocator_type& a, const Trailer& other) : FieldMap(a, other)
+  {}
+
+  void addGroup( const FIX::Group& group )
+  { FieldMap::addGroup( group.field(), group ); }
+
+  void replaceGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::replaceGroup( num, group.field(), group ); }
+
+  Group& getGroup( unsigned num, FIX::Group& group ) const
+  { group.clear();
+    return static_cast < Group& >
+      ( FieldMap::getGroup( num, group.field(), group ) );
+  }
+
+  void removeGroup( unsigned num, const FIX::Group& group )
+  { FieldMap::removeGroup( num, group.field() ); }
+  void removeGroup( const FIX::Group& group )
+  { FieldMap::removeGroup( group.field() ); }
+
+  bool hasGroup( const FIX::Group& group ) const
+  { return FieldMap::hasGroup( group.field() ); }
+  bool hasGroup( unsigned num, const FIX::Group& group ) const
+  { return FieldMap::hasGroup( num, group.field() ); }
+};
 
 /**
  * Base class for all %FIX messages.
@@ -58,82 +138,68 @@ class Message : public FieldMap
 {
 public:
 
-  struct AdminSet {
-    Util::BitSet<256> _value;
-    AdminSet();
-    bool test(char v) { return _value[(unsigned char)v]; }
-  };
-
-  struct Admin
-  {
-    enum AdminType
-    {
-      None = 0,
-      Heartbeat = '0',
-      TestRequest = '1',
-      ResendRequest = '2',
-      Reject = '3',
-      SequenceReset = '4',
-      Logout = '5',
-      Logon = 'A'   
-    };
-  };
-
   enum SerializationHint
   {
     KeepFieldChecksum,
     SerializedOnce
   };
 
+  static inline MsgType::Pack identifyType( const char* message, std::size_t length )
+  {
+    Util::CharBuffer::Fixed<4> msgTypeTag = { { '\001', '3', '5', '=' } };
+    const char* p = Util::CharBuffer::find( msgTypeTag, message, length );
+    if ( p != NULL )
+    {
+      p += 4;
+      const char* e = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), p, length - (p - message) );
+      if ( e != NULL )
+        return MsgType::Pack( p, e - p );
+    }
+    throw MessageParseError();
+  }
+
 private:
   friend class DataDictionary;
   friend class Session;
 
-  enum status_type {
+  struct HeaderFieldSet
+  {
+    Util::BitArray<1280, uint32_t> _value;
+#if !defined(__BYTE_ORDER__)  || (__BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__) || defined(HAVE_EMX)
+    HeaderFieldSet();
+#endif // static initialization otherwise
+    void static spec( DataDictionary& dict );
+    std::size_t size() const { return _value.size(); }
+    bool test( std::size_t bit ) const { return _value.test( bit ); }
+  };
+  static ALIGN_DECL_DEFAULT const HeaderFieldSet headerFieldSet;
+
+  struct TrailerFieldSet
+  {
+    void static spec( DataDictionary& dict );
+  };
+
+  typedef uintptr_t status_value_type;
+  enum status_enum_type {
 	tag_out_of_order,
 	invalid_tag_format,
 	incorrect_data_format,
 
 	has_external_allocator,
 
-	has_sender_comp_id = FIELD::SenderCompID - (sizeof(intptr_t) <= 4 ? 32 : 0), // 49/17
-	has_target_comp_id = FIELD::TargetCompID - (sizeof(intptr_t) <= 4 ? 32 : 0), // 56/24
-	serialized_once    = (sizeof(intptr_t) * 8) - 1
+#ifdef HAVE_EMX
+	emx_compatible,
+#endif
+
+	has_sender_comp_id = FIELD::SenderCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 49/17
+	has_target_comp_id = FIELD::TargetCompID - (sizeof(status_value_type) <= 4 ? 32 : 0), // 56/24
+	serialized_once    = (sizeof(status_value_type) * 8) - 1
   };
   static const intptr_t status_error_mask =  (1 << tag_out_of_order) |
                                              (1 << invalid_tag_format) |
                                              (1 << incorrect_data_format);
 
   enum field_type { header, body, trailer };
-
-  enum admin_trait
-  {
-    admin_none = 0,
-    admin_session = 1, // TestRequest, Heartbeat, Reject
-    admin_status = 2, // ResendRequest, SequenceReset, Logout
-    admin_logon = 4  // Logon
-  };
-
-  struct HeaderFieldSet : public Util::BitSet<1280>
-  {
-    static const int   n_required = 3; // BeginString, BodyLength and MsgType are required
-    static const int   m_fields[];
-    HeaderFieldSet()
-    { for(const int* p = m_fields; *p; p++) if ((unsigned)*p < size()) set(*p); }
-    void static spec( DataDictionary& dict )
-    { for(int i = 0; m_fields[i]; i++) dict.addSpecHeaderField( m_fields[i] ); }
-  };
-  static ALIGN_DECL_DEFAULT HeaderFieldSet headerFieldSet;
-
-  struct TrailerFieldSet : public Util::BitSet<128>
-  {
-    static const int   n_required = 1; // CheckSum is required
-    static const int   m_fields[];
-    TrailerFieldSet()
-    { for(const int* p = m_fields; *p; p++) if ((unsigned)*p < size()) set(*p); }
-    void static spec( DataDictionary& dict )
-    { for(int i = 0; m_fields[i]; i++) dict.addSpecTrailerField( m_fields[i] ); }
-  };
 
   class FieldReader : public Sequence {
 
@@ -318,20 +384,6 @@ private:
 
   };
 
-  static inline bool isAdminMsg( const char* msg, std::size_t size )
-  {
-    if ( size > 5 )
-    {
-      Util::CharBuffer::Fixed<4> const v = { { '\001', '3', '5', '=' } };
-      const char* p = Util::CharBuffer::find( v, msg, size );
-      return p && p[5] == '\001' && s_adminTypeSet.test( p[4] );
-    }
-    throw InvalidMessage();
-  }
-
-  static inline bool isAdminMsg( const std::string& msg )
-  { return isAdminMsg( String::data(msg), String::size(msg) ); }
-
   // parses header up to MsgType and returns pointer to the BodyLength field
   const BodyLength* readSpecHeader( FieldReader& reader, const MsgType*& msgType )
   {
@@ -372,10 +424,10 @@ private:
   void HEAVYUSE readString( FieldReader& reader, bool validate,
                    DataDictionary::MsgInfo& msgInfo,
 		   const FIX::DataDictionary& sessionDataDictionary,
-                   DataDictionaryProvider& dictionaryProvider ) throw( InvalidMessage );
+                   DataDictionaryProvider& dictionaryProvider );
   void HEAVYUSE readString( FieldReader& reader, bool validate, DataDictionary::MsgInfo& msgInfo,
-                  const FIX::DataDictionary& dataDictionary ) throw( InvalidMessage );
-  const MsgType* HEAVYUSE readString( FieldReader& reader, bool validate ) throw( InvalidMessage );
+                  const FIX::DataDictionary& dataDictionary );
+  const MsgType* HEAVYUSE readString( FieldReader& reader, bool validate );
 
   static const std::size_t HeaderFieldCountEstimate = 8;
   static const std::size_t TrailerFieldCountEstimate= 4;
@@ -385,12 +437,13 @@ private:
            ? (available - HeaderFieldCountEstimate - TrailerFieldCountEstimate) : HeaderFieldCountEstimate;
   }
 
+  // session interface for incoming messages
   HEAVYUSE Message( const char* p, std::size_t n,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* dataDictionary,
            FieldMap::allocator_type& a,
            bool validate )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
@@ -403,13 +456,27 @@ private:
       msgInfo.messageType( readString( reader, validate ) );
   }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  void resetOrder( const MsgType::Pack& msgType,
+                   const DataDictionary& sessionDataDictionary,
+                   const DataDictionary& applicationDataDictionary )
+  {
+    // this substitution depends on the compare_type of the field container
+    // using a reference to the m_order of its FieldMap wrapper 
+    m_header.m_order = sessionDataDictionary.getHeaderOrderedFields();
+    m_trailer.m_order = sessionDataDictionary.getTrailerOrderedFields();
+    m_order = applicationDataDictionary.getMessageOrderedFields(msgType);
+  }
+#endif
+
+  // session interface for incoming FIXT messages
   HEAVYUSE Message( const char* p, std::size_t n,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* sessionDataDictionary,
            DataDictionaryProvider& dictionaryProvider,
            FieldMap::allocator_type& a,
            bool validate )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
@@ -422,31 +489,86 @@ private:
                 dictionaryProvider );
   }
 
+  // session interface for resending messages
   Message( const std::string& s,
            DataDictionary::MsgInfo& msgInfo,
            const DataDictionary* sessionDataDictionary,
            DataDictionaryProvider* dictionaryProvider,
            FieldMap::allocator_type& a,
            bool validate )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap(a),
     m_header( a, message_order( message_order::header ) ),
     m_trailer( a, message_order( message_order::trailer ) ),
     m_status( 0 )
   {
     FieldReader reader(String::data(s), String::size(s));
-    if (dictionaryProvider)
-      readString( reader, validate, msgInfo,
-                  sessionDataDictionary ? *sessionDataDictionary
-                                        : dictionaryProvider->defaultSessionDataDictionary(),
-                 *dictionaryProvider );
+    if (dictionaryProvider) // FIXT
+    {
+      if (sessionDataDictionary)
+      {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+        if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        {
+          const DataDictionary* applicationDictionary = msgInfo.defaultApplicationDictionary(); 
+          MsgType::Pack t = identifyType( String::data(s), String::size(s) );
+          resetOrder( t, *sessionDataDictionary,
+                    (!DataDictionary::MsgInfo::isAdminMsgType(t) && applicationDictionary)
+                                            ? *applicationDictionary : *sessionDataDictionary );
+        }
+#endif
+      }
+      else
+        sessionDataDictionary = &dictionaryProvider->defaultSessionDataDictionary();
+      readString( reader, validate, msgInfo, *sessionDataDictionary, *dictionaryProvider );
+    }
     else if (sessionDataDictionary)
     {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+        if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+          resetOrder( identifyType(String::data(s), String::size(s) ),
+                      *sessionDataDictionary, *sessionDataDictionary );
+#endif
       msgInfo.applicationDictionary( sessionDataDictionary );
       readString( reader, validate, msgInfo, *sessionDataDictionary );
     }
     else
       readString( reader, validate );
+  }
+
+  // session interface for protocol messages
+  Message( const MsgType::Pack& msgType, const DataDictionary* sessionDataDictionary, FieldMap::allocator_type& a)
+  : FieldMap(a),
+    m_header( a, message_order( message_order::header ) ),
+    m_trailer( a, message_order( message_order::trailer ) ),
+    m_status( 0 )
+  {
+    if (sessionDataDictionary)
+    {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+      if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        resetOrder( msgType, *sessionDataDictionary, *sessionDataDictionary );
+#endif
+    }
+    m_header.setField( msgType );
+  }
+  Message( const MsgType::Pack& msgType,
+           const DataDictionary* sessionDataDictionary,
+           const DataDictionary* applicationDataDictionary, FieldMap::allocator_type& a)
+  : FieldMap(a),
+    m_header( a, message_order( message_order::header ) ),
+    m_trailer( a, message_order( message_order::trailer ) ),
+    m_status( 0 )
+  {
+    if (sessionDataDictionary)
+    {
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+      if (sessionDataDictionary->isMessageFieldsOrderPreserved())
+        resetOrder( msgType, *sessionDataDictionary,
+                    applicationDataDictionary ? *applicationDataDictionary : *sessionDataDictionary );
+#endif
+    }
+    m_header.setField( msgType );
   }
 
   std::string& toString( const FieldCounter&, std::string& ) const;
@@ -455,7 +577,7 @@ private:
   {
     FieldCounter c( *this );
     int bodyLength = c.getBodyLength() + c.getBeginStringLength() + 
-	  Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, c.getBodyLength()))->second.getLength();
+	  (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, c.getBodyLength()))->second.getLength();
     return m_trailer.serializeTo(
              FieldMap::serializeTo(
                m_header.serializeTo(
@@ -466,38 +588,6 @@ private:
 
   void HEAVYUSE setGroup( Message::FieldReader& reader, FieldMap& section,
                  const DataDictionary& messageDD, int group, int delim, const DataDictionary& groupDD);
-
-  struct TestAdminType
-  {
-    typedef Admin::AdminType result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      const char* value;
-      return String::size(v) == 1 && s_adminTypeSet.test( *(value = String::data(v)) ) ? (Admin::AdminType)value[0] : Admin::None;
-    }
-  };
-
-  struct TestAdminMsgType {
-    typedef bool result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      return String::size(v) == 1 && s_adminTypeSet.test( String::data(v)[0] );
-    }
-  };
-
-  struct TestAdminTrait
-  {
-    typedef admin_trait result_type;
-    template <typename S> result_type operator()( const S& v ) const {
-      if ( LIKELY(String::size(v) == 1) ) {
-        admin_trait traits[8] = { admin_none, admin_session, admin_session, admin_session,
-                                  admin_status, admin_status, admin_status, admin_logon };
-        Util::CharBuffer::Fixed<8> b = { { '\0', '0', '1', '3', '2', '4', '5', 'A' } };
-        std::size_t pos = Util::CharBuffer::find( String::data(v)[0], b );
-        return traits[pos & 7];
-      }
-      return admin_none;
-    }
-  };
-
 protected:
   /// Constructor for derived classes
   template <typename Packed>
@@ -529,7 +619,7 @@ public:
 
   /// Construct a message from a string
   HEAVYUSE Message( const std::string& string, bool validate = true )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -542,7 +632,7 @@ public:
   /// Construct a message from a string using a data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& dataDictionary,
            bool validate = true )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -556,7 +646,7 @@ public:
   /// Construct a message from a string using a session and application data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( get_allocator(), message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -566,10 +656,11 @@ public:
     FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
+
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary,
            FieldMap::allocator_type& allocator, bool validate = true )
-  throw( InvalidMessage )
+  THROW_DECL( InvalidMessage )
   : FieldMap( allocator, message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( allocator, message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
     m_trailer( allocator, message_order( message_order::trailer ), Options( TrailerFieldCountEstimate ) ),
@@ -580,13 +671,45 @@ public:
     readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
   }
 
+#ifdef ENABLE_DICTIONARY_FIELD_ORDER
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 ) {}
+
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
+           const std::string& string, bool validate = true )
+  THROW_DECL( InvalidMessage )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 )
+  {
+    FieldReader reader( String::data(string), String::size(string) );
+    readString( reader, validate );
+  }
+
+  Message( const message_order& headerOrder, const message_order& trailerOrder, const message_order& bodyOrder,
+           const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
+           const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
+  THROW_DECL( InvalidMessage )
+  : FieldMap( FieldMap::create_allocator(), bodyOrder, Options( bodyFieldCountEstimate(), false ) ),
+    m_header( get_allocator(), headerOrder, Options( HeaderFieldCountEstimate ) ),
+    m_trailer( get_allocator(), trailerOrder, Options( TrailerFieldCountEstimate ) ),
+    m_status( 0 )
+  {
+    DataDictionary::MsgInfo msgInfo( applicationDataDictionary );
+    FieldReader reader( String::data(string), String::size(string) );
+    readString( reader, validate, msgInfo, sessionDataDictionary, DataDictionaryProvider::defaultProvider() );
+  }
+#endif // ENABLE_DICTIONARY_FIELD_ORDER
+
   Message( const Message& copy )
   : FieldMap( FieldMap::create_allocator(), copy ),
-    m_header( get_allocator(), message_order( message_order::header ) ),
-    m_trailer( get_allocator(), message_order( message_order::trailer ) )
+    m_header( get_allocator(), copy.m_header ),
+    m_trailer( get_allocator(), copy.m_trailer )
   {
-    m_header = copy.m_header;
-    m_trailer = copy.m_trailer;
     m_status = copy.m_status;
     m_status_data = copy.m_status_data;
   }
@@ -600,7 +723,7 @@ public:
   void replaceGroup( unsigned num, const FIX::Group& group )
   { FieldMap::replaceGroup( num, group.field(), group ); }
 
-  Group& getGroup( unsigned num, FIX::Group& group ) const throw( FieldNotFound )
+  Group& getGroup( unsigned num, FIX::Group& group ) const THROW_DECL( FieldNotFound )
   { group.clear();
     return static_cast < Group& >
       ( FieldMap::getGroup( num, group.field(), group ) );
@@ -673,22 +796,19 @@ public:
    * that is passed in.  It will return true on success and false
    * on failure.
    */
-  void setString( const std::string& string, bool validate )
-  throw( InvalidMessage )
+  void setString( const std::string& string, bool validate ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
     readString( reader, validate );
   }
-  void setString( const std::string& string )
-  throw( InvalidMessage )
+  void setString( const std::string& string ) THROW_DECL( InvalidMessage )
   { setString( string, true ); }
 
   void setString( const std::string& string,
                   bool validate,
                   const FIX::DataDictionary* pSessionDataDictionary,
-                  const FIX::DataDictionary* pApplicationDataDictionary )
-  throw( InvalidMessage )
+                  const FIX::DataDictionary* pApplicationDataDictionary ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
@@ -710,8 +830,7 @@ public:
   }
   void setString( const std::string& string,
                   bool validate,
-                  const FIX::DataDictionary* pDataDictionary )
-  throw( InvalidMessage )
+                  const FIX::DataDictionary* pDataDictionary ) THROW_DECL( InvalidMessage )
   {
     clear();
     FieldReader reader( String::data(string), String::size(string) );
@@ -740,7 +859,7 @@ public:
   /// Mutable getter for the message header
   Header& getHeader() { return m_header; }
   /// Getter for the message trailer
-  const Header& getTrailer() const { return m_trailer; }
+  const Trailer& getTrailer() const { return m_trailer; }
   /// Mutable getter for the message trailer
   Trailer& getTrailer() { return m_trailer; }
 
@@ -748,7 +867,7 @@ public:
   {
     if( getStatusBit(tag_out_of_order) )
     {
-      field = m_status_data;
+      field = (int)m_status_data;
       return false;
     }
     return true;
@@ -779,7 +898,7 @@ public:
     if( m_header.isSetField(FIELD::MsgType) )
     {
       const MsgType& msgType = FIELD_GET_REF( m_header, MsgType );
-      return isAdminMsgType( msgType );
+      return DataDictionary::MsgInfo::isAdminMsgType( msgType );
     }
     return false;
   }
@@ -789,7 +908,7 @@ public:
     if( m_header.isSetField(FIELD::MsgType) )
     {
       const MsgType& msgType = FIELD_GET_REF( m_header, MsgType );
-      return !isAdminMsgType( msgType );
+      return !DataDictionary::MsgInfo::isAdminMsgType( msgType );
     }
     return false;
   }
@@ -818,11 +937,8 @@ public:
     }
   }
 
-  static inline Admin::AdminType msgAdminType( const MsgType& msgType )
-  { return msgType.forString( TestAdminType() ); }
-
   static inline bool NOTHROW isAdminMsgType( const MsgType& msgType )
-  { return msgType.forString( TestAdminMsgType() ); }
+  { return DataDictionary::MsgInfo::isAdminMsgType( msgType ); }
 
   static ApplVerID toApplVerID(const BeginString& value)
   {
@@ -872,7 +988,7 @@ public:
 				    const DataDictionary* pD = 0 )
   {
     return ( LIKELY((unsigned)field < headerFieldSet.size()) &&
-	     headerFieldSet[field] ) || 
+	     headerFieldSet.test( field ) ) || 
 	   ( pD && pD->isHeaderField( field ) );
   }
   
@@ -898,10 +1014,21 @@ public:
   }
 
   /// Returns the session ID of the intended recipient
-  SessionID getSessionID( const std::string& qualifier = "" ) const
-  throw( FieldNotFound );
+  SessionID getSessionID( const std::string& qualifier = "" ) const THROW_DECL( FieldNotFound );
   /// Sets the session ID of the intended recipient
   void setSessionID( const SessionID& sessionID );
+
+#ifdef HAVE_EMX
+  void setSubMessageType(const std::string & subMsgType)
+  {
+    m_header.setField(EMX::MsgType::Pack(subMsgType));
+    setStatusBit(emx_compatible);
+  }
+
+  const std::string & getSubMessageType() const { 
+    return getStatusBit(emx_compatible) ? m_header.getField(FIELD::EMX::MsgType) : m_emx_none;
+  }
+#endif
 
 private:
 
@@ -910,17 +1037,18 @@ private:
     // length field is 1 less except for Signature
     int lenField = (field != FIELD::Signature) ? (field - 1) : FIELD::SignatureLength;
     const FieldBase* fieldPtr = section.getFieldPtrIfSet( lenField );
-    if ( fieldPtr )
+    if ( LIKELY(NULL != fieldPtr) )
     {
       const FieldBase::string_type& fieldLength = fieldPtr->getRawString();
-      if ( IntConvertor::parse( fieldLength, lenField ) )
+      if ( LIKELY(IntConvertor::parse( fieldLength, lenField )) )
         reader.pos( lenField );
       else
       {
         setErrorStatusBit( incorrect_data_format, lenField );
-        return false;
+        throw InvalidMessage("format error for data length field " + IntConvertor::convert(lenField));
       }
-    }
+    } else
+      throw InvalidMessage("missing data length field " + IntConvertor::convert(lenField));
     return true;
   }
 
@@ -931,69 +1059,79 @@ private:
   void validate(const BodyLength* pBodyLength);
   std::string toXMLFields(const FieldMap& fields, int space) const;
 
-  static inline int createStatus(status_type bit, bool v)
+  static inline status_value_type createStatus(status_enum_type bit, bool v)
   {
-    return (int)v << bit;
+    return (status_value_type)v << bit;
   }
 
-  inline void setStatusBit(status_type bit)
+  inline void setStatusBit(status_enum_type bit)
   {
-    m_status |= 1 << bit;
+    m_status |= (status_value_type)1 << bit;
   }
 
-  inline void setStatusCompID(int field) {
-    m_status |= ((intptr_t)1 << (field - ((sizeof(intptr_t) <= 4) ? 32 : 0))) &
-					 (((intptr_t)1 << has_sender_comp_id) | ((intptr_t)1 << has_target_comp_id ));
+#ifdef HAVE_EMX
+  inline bool verifyEMX(int field, bool isAppMessage = true) {
+    if (field == FIELD::EMX::MsgType || !isAppMessage) 
+    {
+      m_status |= createStatus(emx_compatible, true);
+      return isAppMessage;
+    }
+    return false;
+  }
+  static const std::string m_emx_none;
+#endif
+
+  inline void setHeaderStatusBits(int field) {
+    // SenderCompID and TargetCompID tag values are between 32 and 64
+    status_value_type v = ((status_value_type)(field < 64) << (field - ((sizeof(status_value_type) <= 4) ? 32 : 0))) &
+			 (((status_value_type)1 << has_sender_comp_id) | ((status_value_type)1 << has_target_comp_id ));
+    m_status |= v;
   }
 
-  inline void setErrorStatusBit(status_type bit, int data)
+  inline void setErrorStatusBit(status_enum_type bit, intptr_t data)
   {
     if ( !(m_status & status_error_mask) )
     {
       m_status_data = data;
-      m_status |= 1 << bit;
+      m_status |= (status_value_type)1 << bit;
     }
   }
 
-  inline void clearStatusBit(status_type bit)
+  inline void clearStatusBit(status_enum_type bit)
   {
-    m_status &= ~(1 << bit);
+    m_status &= ~((status_value_type)1 << bit);
   }
 
-  inline bool getStatusBit(status_type bit) const
+  inline bool getStatusBit(status_enum_type bit) const
   {
-    return (m_status & (1 << bit)) != 0;
+    return (m_status & ((status_value_type)1 << bit)) != 0;
   }
-
-  static inline admin_trait msgAdminTrait( const FieldBase& msgType ) 
-  { return msgType.forString( TestAdminTrait() ); }
 
 protected:
-  mutable FieldMap m_header;
-  mutable FieldMap m_trailer;
-  intptr_t m_status;
+  mutable Header m_header;
+  mutable Trailer m_trailer;
+  status_value_type m_status;
   intptr_t m_status_data;
 
-  static ALIGN_DECL_DEFAULT AdminSet s_adminTypeSet;
-  static std::auto_ptr<DataDictionary> s_dataDictionary;
+  static SmartPtr<DataDictionary> s_dataDictionary;
 };
 /*! @} */
 
 inline const char* Message::FieldReader::scan()
 {
   const char* b = m_start + m_pos;
-  const char* p = Util::Tag::delimit(b, m_end - b);
+  const char* p = Util::Tag::delimit(b, (unsigned)(m_end - b));
   if ( LIKELY(p != NULL) )
   {
-    m_length = p - b;
+    m_length = (int)(p - b);
     if ( LIKELY(Util::Tag::parse(b, p, m_field, m_csum)) )
     {
       p++;
-      b = (char*)::memchr( p, '\001', m_end - p );
+      b = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), p, m_end - p );
       if ( LIKELY(b != NULL) )
       {
         m_start = p;
-        m_pos = b - p;
+        m_pos = (int)(b - p);
         return NULL;
       }
       else
@@ -1012,11 +1150,11 @@ inline const char* Message::FieldReader::scan()
 inline void Message::FieldReader::skip()
 {
   const char* b = m_start + m_pos;
-  const char* p = (const char*)::memchr( b, '\001', m_end - b );
+  const char* p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), b, m_end - b );
   if ( LIKELY(p != NULL) )
   {
     m_start = b;
-    m_pos = p - b + 1;
+    m_pos = (int)(p - b + 1);
     return;
   }
 
@@ -1034,7 +1172,7 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
   {
     if( LIKELY(it->first == FIELD::BeginString) )
     {
-      m_prefix = it->second.getLength();
+      m_prefix = (int)it->second.getLength();
       if( LIKELY(++it != end) )
         if( LIKELY(it->first == FIELD::BodyLength) )
           ++it;
@@ -1046,7 +1184,7 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
     }
     for( ; it != end; ++it )
     {
-      m_length += it->second.getLength();
+      m_length += (int)it->second.getLength();
     }
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
@@ -1064,9 +1202,9 @@ Message::FieldCounter::countHeader( int beginStringField,
     if ( LIKELY(tag != bodyLengthField) )
     {
       if( LIKELY(tag != beginStringField) )
-        m_length += it->second.getLength();
+        m_length += (int)it->second.getLength();
       else
-        m_prefix += it->second.getLength();
+        m_prefix += (int)it->second.getLength();
     }
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
@@ -1080,7 +1218,7 @@ Message::FieldCounter::countBody(const FieldMap& fields)
   for( FieldMap::const_iterator it = fields.begin();
        LIKELY(it != end); ++it )
   {
-    result += it->second.getLength();
+    result += (int)it->second.getLength();
   }
   return result + countGroups(fields.g_begin(), fields.g_end());
 }
@@ -1093,7 +1231,7 @@ Message::FieldCounter::countTrailer(const FieldMap& fields)
         it != end; ++it )
   {
     if ( it->first != checkSumTag )
-      m_length += it->second.getLength();
+      m_length += (int)it->second.getLength();
   }
   m_length += countGroups(fields.g_begin(), fields.g_end());
 }
@@ -1107,7 +1245,7 @@ inline std::ostream& operator <<
 }
 
 inline SessionID Message::getSessionID( const std::string& qualifier ) const
-throw( FieldNotFound )
+THROW_DECL( FieldNotFound )
 {
   BeginString beginString;
   SenderCompID senderCompID;
@@ -1128,23 +1266,10 @@ inline void Message::setSessionID( const SessionID& sessionID )
 }
 
 /// Parse the type of a message from a string.
-inline MsgType identifyType( const char* message, std::size_t length )
-throw( MessageParseError )
+inline MsgType identifyType( const std::string& message ) THROW_DECL( MessageParseError )
 {
-  const char* p = Util::CharBuffer::memmem( message, length, "\00135=", 4 );
-  if ( p != NULL )
-  {
-    p += 4;
-    const char* e = (const char*)::memchr( p, '\001', length - (p - message) );
-    if ( e != NULL )
-      return MsgType( p, e - p );
-  }
-  throw MessageParseError();
-}
-inline MsgType identifyType( const std::string& message )
-throw( MessageParseError )
-{
-  return identifyType( String::data(message), String::size(message) );
+  MsgType::Pack pack( Message::identifyType( String::data(message), String::size(message) ) );
+  return MsgType( pack.m_data, pack.m_length );
 }
 }
 

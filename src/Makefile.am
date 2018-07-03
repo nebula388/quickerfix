@@ -1,14 +1,22 @@
-if HAVE_PYTHON
-PYTHON_DIR = python
+if HAVE_PYTHON2
+PYTHON2_DIR = python2
+endif
+
+if HAVE_PYTHON3
+PYTHON3_DIR = python3
 endif
 
 if HAVE_RUBY
 RUBY_DIR = ruby
 endif
 
-SUBDIRS = C++ ${PYTHON_DIR} ${RUBY_DIR}
+SUBDIRS = C++ ${PYTHON2_DIR} ${PYTHON3_DIR} ${RUBY_DIR}
 
+if NO_UNIT_TEST
+noinst_PROGRAMS =
+else
 noinst_PROGRAMS = at ut pt
+endif
 
 at_SOURCES = at.cpp at_application.h
 ut_SOURCES = ut.cpp

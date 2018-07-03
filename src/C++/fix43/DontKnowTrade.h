@@ -8,8 +8,9 @@ namespace FIX43
 
   class DontKnowTrade : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("Q"); }
   public:
-    DontKnowTrade() : Message(MsgType()) {}
+    DontKnowTrade() : Message(PackedType()) {}
     DontKnowTrade(const FIX::Message& m) : Message(m) {}
     DontKnowTrade(const Message& m) : Message(m) {}
     DontKnowTrade(const DontKnowTrade& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX43
       const FIX::ExecID& aExecID,
       const FIX::DKReason& aDKReason,
       const FIX::Side& aSide )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrderID);
-      set(aExecID);
-      set(aDKReason);
-      set(aSide);
+      // must be in this order
+      Sequence::push_back_to(*this, aExecID);
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aDKReason);
+    }
+
+    DontKnowTrade(
+      const FIX::OrderID::Pack& aOrderID,
+      const FIX::ExecID::Pack& aExecID,
+      const FIX::DKReason::Pack& aDKReason,
+      const FIX::Side::Pack& aSide )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aExecID);
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aDKReason);
     }
 
     FIELD_SET(*this, FIX::OrderID);

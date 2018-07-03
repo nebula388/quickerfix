@@ -84,19 +84,19 @@ public:
   FileStore( std::string, const SessionID& s );
   virtual ~FileStore();
 
-  bool set( int, const std::string& ) throw ( IOException );
-  bool set( int, Sg::sg_buf_ptr, int n ) throw ( IOException );
-  void get( int, int, std::vector < std::string > & ) const throw ( IOException );
+  bool set( int, const std::string& ) THROW_DECL( IOException );
+  bool set( int, Sg::sg_buf_ptr, int n );
+  void get( int, int, std::vector < std::string > & ) const THROW_DECL( IOException );
 
-  int getNextSenderMsgSeqNum() const throw ( IOException );
-  int getNextTargetMsgSeqNum() const throw ( IOException );
-  void setNextSenderMsgSeqNum( int value ) throw ( IOException );
-  void setNextTargetMsgSeqNum( int value ) throw ( IOException );
-  void incrNextSenderMsgSeqNum() throw ( IOException );
-  void incrNextTargetMsgSeqNum() throw ( IOException );
+  int getNextSenderMsgSeqNum() const THROW_DECL( IOException );
+  int getNextTargetMsgSeqNum() const THROW_DECL( IOException );
+  void setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException );
+  void setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException );
+  void incrNextSenderMsgSeqNum() THROW_DECL( IOException );
+  void incrNextTargetMsgSeqNum() THROW_DECL( IOException );
 
-  void reset() throw ( IOException );
-  void refresh() throw ( IOException );
+  void reset() THROW_DECL( IOException );
+  void refresh() THROW_DECL( IOException );
 
 private:
   typedef std::pair < FILE_OFFSET_TYPE, int > OffsetSize;
@@ -112,7 +112,7 @@ private:
   void setSeqNum();
   void setSession();
 
-  bool get( int, std::string& ) const throw ( IOException );
+  bool get( int, std::string& ) const THROW_DECL( IOException );
 
   MemoryStore m_cache;
   NumToOffset m_offsets;

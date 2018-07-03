@@ -8,8 +8,9 @@ namespace FIX43
 
   class SecurityStatus : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("f"); }
   public:
-    SecurityStatus() : Message(MsgType()) {}
+    SecurityStatus() : Message(PackedType()) {}
     SecurityStatus(const FIX::Message& m) : Message(m) {}
     SecurityStatus(const Message& m) : Message(m) {}
     SecurityStatus(const SecurityStatus& m) : Message(m) {}

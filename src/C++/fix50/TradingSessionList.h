@@ -8,8 +8,9 @@ namespace FIX50
 
   class TradingSessionList : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BJ"); }
   public:
-    TradingSessionList() : Message(MsgType()) {}
+    TradingSessionList() : Message(PackedType()) {}
     TradingSessionList(const FIX::Message& m) : Message(m) {}
     TradingSessionList(const Message& m) : Message(m) {}
     TradingSessionList(const TradingSessionList& m) : Message(m) {}

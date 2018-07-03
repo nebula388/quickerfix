@@ -47,7 +47,7 @@ ALIGN_DECL_DEFAULT const int detail::bitop_base::Mod67Position[] = {
 
 #if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
 // cacheline aligned block of magic constants
-ALIGN_DECL(64) Util::x86Data::ConvBits Util::x86Data::cbits =
+ALIGN_DECL(64) HOTDATA Util::x86Data::ConvBits const Util::x86Data::cbits =
 {
   { // mul_10
    10, 10, 10, 10, 10, 10, 10, 10
@@ -71,7 +71,20 @@ ALIGN_DECL(64) Util::x86Data::ConvBits Util::x86Data::cbits =
   }
 };
 
-ALIGN_DECL_DEFAULT Util::x86Data::Log2 Util::x86Data::m_digits[32] = 
+#ifdef __SSSE3__
+ALIGN_DECL_DEFAULT HOTDATA const unsigned char Util::CharBuffer::s_vshift[32] =
+        { 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   15,
+          0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
+#endif
+
+ALIGN_DECL_DEFAULT HOTDATA const unsigned char Util::CharBuffer::s_vmask[32] =
+        { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+          0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 };
+
+ALIGN_DECL_DEFAULT HOTDATA const Util::CharBuffer::Fixed<16> Util::CharBuffer::s_uint_charset =
+      { { '0','1','2','3','4','5','6','7','8','9','9','9','9','9','9','9' } };
+
+ALIGN_DECL_DEFAULT HOTDATA const Util::x86Data::Log2 Util::x86Data::m_digits[32] = 
 {
   { { 1, 9 } },
   { { 1, 9 } },
@@ -103,11 +116,11 @@ ALIGN_DECL_DEFAULT Util::x86Data::Log2 Util::x86Data::m_digits[32] =
   { { 9, 999999999 } },
   { { 9, 999999999 } },
   { { 9, 999999999 } },
-  { { 10, (std::numeric_limits<uint32_t>::max)() } },
-  { { 10, (std::numeric_limits<uint32_t>::max)() } }
+  { { 10, 0xffffffff } },
+  { { 10, 0xffffffff } }
 };
 
-ALIGN_DECL_DEFAULT Util::NumData::DigitPair Util::NumData::m_pairs[100] =
+ALIGN_DECL_DEFAULT HOTDATA const Util::NumData::DigitPair Util::NumData::m_pairs[100] =
 {
 { {'0','0'} }, { {'0','1'} }, { {'0','2'} }, { {'0','3'} }, { {'0','4'} }, { {'0','5'} }, { {'0','6'} }, { {'0','7'} }, { {'0','8'} }, { {'0','9'} },
 { {'1','0'} }, { {'1','1'} }, { {'1','2'} }, { {'1','3'} }, { {'1','4'} }, { {'1','5'} }, { {'1','6'} }, { {'1','7'} }, { {'1','8'} }, { {'1','9'} },
@@ -121,7 +134,7 @@ ALIGN_DECL_DEFAULT Util::NumData::DigitPair Util::NumData::m_pairs[100] =
 { {'9','0'} }, { {'9','1'} }, { {'9','2'} }, { {'9','3'} }, { {'9','4'} }, { {'9','5'} }, { {'9','6'} }, { {'9','7'} }, { {'9','8'} }, { {'9','9'} }
 };
 
-ALIGN_DECL_DEFAULT Util::ULong::Log2 Util::ULong::m_digits[64] =
+ALIGN_DECL_DEFAULT HOTDATA const Util::ULong::Log2 Util::ULong::m_digits[64] =
 {
   { 9, 1 },
   { 9, 1 },
@@ -253,9 +266,26 @@ void socket_term()
 #endif
 }
 
-int socket_createAcceptor(int port, bool reuse)
+int socket_bind(sys_socket_t socket, const char* hostname, int port )
 {
-  int socket = ::socket( PF_INET, SOCK_STREAM, 0 );
+  sockaddr_in address;
+  socklen_t socklen;
+
+  address.sin_family = PF_INET;
+  address.sin_port = htons( port );
+  if ( !hostname || !*hostname )
+    address.sin_addr.s_addr = INADDR_ANY;
+  else
+    address.sin_addr.s_addr = inet_addr( hostname );
+  socklen = sizeof( address );
+
+  return  bind( socket, reinterpret_cast < sockaddr* > ( &address ),
+                     socklen );
+}
+
+sys_socket_t socket_createAcceptor(int port, bool reuse)
+{
+  sys_socket_t socket = ::socket( PF_INET, SOCK_STREAM, 0 );
   if ( socket < 0 ) return -1;
 
   sockaddr_in address;
@@ -281,12 +311,12 @@ int socket_createAcceptor(int port, bool reuse)
   return socket;
 }
 
-int socket_createConnector()
+sys_socket_t socket_createConnector()
 {
   return ::socket( PF_INET, SOCK_STREAM, IPPROTO_TCP );
 }
 
-int socket_connect( int socket, const char* address, int port )
+int socket_connect(sys_socket_t socket, const char* address, int port )
 {
   const char* hostname = socket_hostname( address );
   if( hostname == 0 ) return -1;
@@ -302,18 +332,22 @@ int socket_connect( int socket, const char* address, int port )
   return result;
 }
 
-int socket_accept( int s )
+int socket_accept(sys_socket_t s )
 {
   if ( !socket_isValid( s ) ) return -1;
   return accept( s, 0, 0 );
 }
 
-ssize_t socket_send( int s, const char* msg, size_t length )
+ssize_t socket_send(sys_socket_t s, const char* msg, size_t length )
 {
+#ifdef _MSC_VER
+  return send(s, msg, (int)length, 0);
+#else
   return send( s, msg, length, 0 );
+#endif
 }
 
-void socket_close( int s )
+void socket_close(sys_socket_t s )
 {
   shutdown( s, 2 );
 #ifdef _MSC_VER
@@ -323,7 +357,7 @@ void socket_close( int s )
 #endif
 }
 
-bool socket_fionread( int s, int& bytes )
+bool socket_fionread(sys_socket_t s, int& bytes )
 {
   bytes = 0;
 #if defined(_MSC_VER)
@@ -335,13 +369,13 @@ bool socket_fionread( int s, int& bytes )
 #endif
 }
 
-bool socket_disconnected( int s )
+bool socket_disconnected(sys_socket_t s )
 {
   char byte;
   return ::recv (s, &byte, sizeof (byte), MSG_PEEK) <= 0;
 }
 
-int socket_setsockopt( int s, int opt )
+int socket_setsockopt(sys_socket_t s, int opt )
 {
 #ifdef _MSC_VER
   BOOL optval = TRUE;
@@ -351,7 +385,7 @@ int socket_setsockopt( int s, int opt )
   return socket_setsockopt( s, opt, optval );
 }
 
-int socket_setsockopt( int s, int opt, int optval )
+int socket_setsockopt(sys_socket_t s, int opt, int optval )
 {
   int level = SOL_SOCKET;
   if( opt == TCP_NODELAY )
@@ -392,7 +426,7 @@ int socket_setsockopt( int s, int opt, int optval )
 #endif
 }
 
-int socket_getsockopt( int s, int opt, int& optval )
+int socket_getsockopt(sys_socket_t s, int opt, int& optval )
 {
   int level = SOL_SOCKET;
   if( opt == TCP_NODELAY )
@@ -409,17 +443,17 @@ int socket_getsockopt( int s, int opt, int& optval )
 }
 
 #ifndef _MSC_VER
-int socket_fcntl( int s, int opt, int arg )
+int socket_fcntl(sys_socket_t s, int opt, int arg )
 {
   return ::fcntl( s, opt, arg );
 }
 
-int socket_getfcntlflag( int s, int arg )
+int socket_getfcntlflag(sys_socket_t s, int arg )
 {
   return socket_fcntl( s, F_GETFL, arg );
 }
 
-int socket_setfcntlflag( int s, int arg )
+int socket_setfcntlflag(sys_socket_t s, int arg )
 {
   int oldValue = socket_getfcntlflag( s, arg );
   oldValue |= arg;
@@ -427,7 +461,7 @@ int socket_setfcntlflag( int s, int arg )
 }
 #endif
 
-void socket_setnonblock( int socket )
+void socket_setnonblock(sys_socket_t socket )
 {
 #ifdef _MSC_VER
   u_long opt = 1;
@@ -437,7 +471,7 @@ void socket_setnonblock( int socket )
 #endif
 }
 
-bool socket_isValid( int socket )
+bool socket_isValid(sys_socket_t socket )
 {
 #ifdef _MSC_VER
   return socket != INVALID_SOCKET;
@@ -447,7 +481,7 @@ bool socket_isValid( int socket )
 }
 
 #ifndef _MSC_VER
-bool socket_isBad( int s )
+bool socket_isBad(sys_socket_t s )
 {
   struct stat buf;
   fstat( s, &buf );
@@ -455,7 +489,7 @@ bool socket_isBad( int s )
 }
 #endif
 
-void socket_invalidate( int& socket )
+void socket_invalidate(sys_socket_t& socket )
 {
 #ifdef _MSC_VER
   socket = INVALID_SOCKET;
@@ -464,7 +498,7 @@ void socket_invalidate( int& socket )
 #endif
 }
 
-short socket_hostport( int socket )
+short socket_hostport(sys_socket_t socket )
 {
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
@@ -474,7 +508,7 @@ short socket_hostport( int socket )
   return ntohs( addr.sin_port );
 }
 
-const char* socket_hostname( int socket )
+const char* socket_hostname(sys_socket_t socket )
 {
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
@@ -513,7 +547,7 @@ const char* socket_hostname( const char* name )
   return inet_ntoa( **paddr );
 }
 
-const char* socket_peername( int socket )
+const char* socket_peername(sys_socket_t socket )
 {
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
@@ -526,21 +560,21 @@ const char* socket_peername( int socket )
     return "UNKNOWN";
 }
 
-std::pair<int, int> socket_createpair()
+std::pair<sys_socket_t, sys_socket_t> socket_createpair()
 {
 #ifdef _MSC_VER
-  int acceptor = socket_createAcceptor(0, true);
+  sys_socket_t acceptor = socket_createAcceptor(0, true);
   const char* host = socket_hostname( acceptor );
   short port = socket_hostport( acceptor );
-  int client = socket_createConnector();
+  sys_socket_t client = socket_createConnector();
   socket_connect( client, "localhost", port );
-  int server = socket_accept( acceptor );
+  sys_socket_t server = socket_accept( acceptor );
   socket_close(acceptor);
-  return std::pair<int, int>( client, server );
+  return std::pair<sys_socket_t, sys_socket_t>( client, server );
 #else
-  int pair[2];
+  sys_socket_t pair[2];
   socketpair( AF_UNIX, SOCK_STREAM, 0, pair );
-  return std::pair<int, int>( pair[0], pair[1] );
+  return std::pair<sys_socket_t, sys_socket_t>( pair[0], pair[1] );
 #endif
 }
 
@@ -579,9 +613,9 @@ tm time_localtime( const time_t* t)
 bool thread_spawn( THREAD_START_ROUTINE func, void* var, thread_id& thread )
 {
 #ifdef _MSC_VER
-  thread_id result = 0;
-  unsigned int id = 0;
-  result = _beginthreadex( NULL, 0, &func, var, 0, &id );
+  uintptr_t result = 0;
+  unsigned id = 0;
+  result = _beginthreadex( NULL, 0, func, var, 0, &id );
   if ( result == 0 ) return false;
 #else
   thread_id result = 0;
@@ -620,7 +654,7 @@ void thread_detach( thread_id thread )
 thread_id thread_self()
 {
 #ifdef _MSC_VER
-  return (unsigned)GetCurrentThread();
+  return (thread_id)GetCurrentThread();
 #else
   return pthread_self();
 #endif
@@ -751,7 +785,7 @@ long file_handle_read_at( FILE_HANDLE_TYPE handle, char* buf,
     overlapped.Offset = offset.LowPart;
     overlapped.OffsetHigh = offset.HighPart;
     overlapped.hEvent = 0;
-    if( ::ReadFile( handle, buf, size, &numRead, &overlapped ) )
+    if( ::ReadFile( handle, buf, (DWORD)size, &numRead, &overlapped ) )
       return (long)numRead;
     return -1;
 #else
@@ -764,7 +798,7 @@ long file_handle_write( FILE_HANDLE_TYPE handle,
 {
 #ifdef _MSC_VER
     DWORD numWritten;
-    if( ::WriteFile( handle, buf, size, &numWritten, NULL ) )
+    if( ::WriteFile( handle, buf, (DWORD)size, &numWritten, NULL ) )
       return (long)numWritten;
     return -1;
 #else

@@ -36,7 +36,7 @@
 
 namespace FIX
 {
-FileStore::FileStore( std::string path, const SessionID& s )
+COLDSECTION FileStore::FileStore( std::string path, const SessionID& s )
 : m_msgFileHandle( INVALID_FILE_HANDLE_VALUE ), m_headerFile( 0 ),
   m_seqNumsFile( 0 ), m_sessionFile( 0 )
 {
@@ -74,7 +74,7 @@ FileStore::FileStore( std::string path, const SessionID& s )
   }
 }
 
-FileStore::~FileStore()
+COLDSECTION FileStore::~FileStore()
 {
   if( m_msgFileHandle != INVALID_FILE_HANDLE_VALUE)
     file_handle_close( m_msgFileHandle );
@@ -84,7 +84,7 @@ FileStore::~FileStore()
   if( m_sessionFile ) ::fclose( m_sessionFile );
 }
 
-void FileStore::open( bool deleteFile )
+COLDSECTION void FileStore::open( bool deleteFile )
 {
   if ( m_msgFileHandle != INVALID_FILE_HANDLE_VALUE )
     file_handle_close( m_msgFileHandle );
@@ -136,7 +136,7 @@ void FileStore::open( bool deleteFile )
   setNextTargetMsgSeqNum( getNextTargetMsgSeqNum() );
 }
 
-void FileStore::populateCache()
+COLDSECTION void FileStore::populateCache()
 {
   FILE* headerFile;
   headerFile = file_fopen( m_headerFileName.c_str(), "r+" );
@@ -147,7 +147,7 @@ void FileStore::populateCache()
     size_t size;
     while ( FILE_FSCANF( headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%" SIZE_T_TYPE_MOD "u ",
                         &num, FILE_OFFSET_TYPE_ADDR(offset), &size ) == 3 )
-      m_offsets[ num ] = std::make_pair( offset, size );
+      m_offsets[ num ] = std::make_pair( offset, (int)size );
     fclose( headerFile );
   }
 
@@ -201,7 +201,7 @@ void FileStoreFactory::destroy( MessageStore* pStore )
 }
 
 bool FileStore::set( int msgSeqNum, const std::string& msg )
-throw ( IOException )
+THROW_DECL( IOException )
 {
   if ( fseek( m_headerFile, 0, SEEK_END ) ) 
     throw IOException( "Cannot seek to end of " + m_headerFileName );
@@ -211,7 +211,7 @@ throw ( IOException )
   if ( FILE_OFFSET_TYPE_VALUE(offset) < 0 ) 
     throw IOException( "Unable to get file pointer position from " +
                        m_msgFileName );
-  int size = msg.size();
+  int size = (int)msg.size();
 
   if ( fprintf( m_headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%d ",
                 msgSeqNum, FILE_OFFSET_TYPE_VALUE(offset), size ) < 0 )
@@ -225,7 +225,6 @@ throw ( IOException )
 }
 
 bool FileStore::set( int msgSeqNum, Sg::sg_buf_ptr b, int n )
-throw ( IOException )
 {
   if ( fseek( m_headerFile, 0, SEEK_END ) ) 
     throw IOException( "Cannot seek to end of " + m_headerFileName );
@@ -234,7 +233,7 @@ throw ( IOException )
   offset = file_handle_seek( m_msgFileHandle, offset, FILE_POSITION_END );
   if ( FILE_OFFSET_TYPE_VALUE(offset) < 0 ) 
     throw IOException( "Unable to get file pointer position from " + m_msgFileName );
-  int size = Sg::size(b, n);
+  int size = (int)Sg::size(b, n);
 
   if ( fprintf( m_headerFile, "%d,%" FILE_OFFSET_TYPE_MOD "d,%d ",
                 msgSeqNum, FILE_OFFSET_TYPE_VALUE(offset), size ) < 0 )
@@ -251,7 +250,7 @@ throw ( IOException )
 
 void FileStore::get( int begin, int end,
                      std::vector < std::string > & result ) const
-throw ( IOException )
+THROW_DECL( IOException )
 {
   result.clear();
   for ( int i = begin; i <= end; ++i )
@@ -264,48 +263,48 @@ throw ( IOException )
   }
 }
 
-int FileStore::getNextSenderMsgSeqNum() const throw ( IOException )
+int FileStore::getNextSenderMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextSenderMsgSeqNum();
 }
 
-int FileStore::getNextTargetMsgSeqNum() const throw ( IOException )
+int FileStore::getNextTargetMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextTargetMsgSeqNum();
 }
 
-void FileStore::setNextSenderMsgSeqNum( int value ) throw ( IOException )
+void FileStore::setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   m_cache.setNextSenderMsgSeqNum( value );
   setSeqNum();
 }
 
-void FileStore::setNextTargetMsgSeqNum( int value ) throw ( IOException )
+void FileStore::setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   m_cache.setNextTargetMsgSeqNum( value );
   setSeqNum();
 }
 
-void FileStore::incrNextSenderMsgSeqNum() throw ( IOException )
+void FileStore::incrNextSenderMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextSenderMsgSeqNum();
   setSeqNum();
 }
 
-void FileStore::incrNextTargetMsgSeqNum() throw ( IOException )
+void FileStore::incrNextTargetMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextTargetMsgSeqNum();
   setSeqNum();
 }
 
-void FileStore::reset() throw ( IOException )
+void FileStore::reset() THROW_DECL( IOException )
 {
   m_cache.reset();
   open( true );
   setSession();
 }
 
-void FileStore::refresh() throw ( IOException )
+void FileStore::refresh() THROW_DECL( IOException )
 {
   m_cache.reset();
   open( false );
@@ -334,7 +333,7 @@ void FileStore::setSession()
 }
 
 bool FileStore::get( int msgSeqNum, std::string& msg ) const
-throw ( IOException )
+THROW_DECL( IOException )
 {
   NumToOffset::const_iterator find = m_offsets.find( msgSeqNum );
   if ( find == m_offsets.end() ) return false;

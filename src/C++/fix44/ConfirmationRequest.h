@@ -8,8 +8,9 @@ namespace FIX44
 
   class ConfirmationRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BH"); }
   public:
-    ConfirmationRequest() : Message(MsgType()) {}
+    ConfirmationRequest() : Message(PackedType()) {}
     ConfirmationRequest(const FIX::Message& m) : Message(m) {}
     ConfirmationRequest(const Message& m) : Message(m) {}
     ConfirmationRequest(const ConfirmationRequest& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX44
       const FIX::ConfirmReqID& aConfirmReqID,
       const FIX::ConfirmType& aConfirmType,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aConfirmReqID);
-      set(aConfirmType);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aConfirmType);
+      Sequence::push_back_to(*this, aConfirmReqID);
+    }
+
+    ConfirmationRequest(
+      const FIX::ConfirmReqID::Pack& aConfirmReqID,
+      const FIX::ConfirmType::Pack& aConfirmType,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aConfirmType);
+      Sequence::push_back_to(*this, aConfirmReqID);
     }
 
     FIELD_SET(*this, FIX::ConfirmReqID);

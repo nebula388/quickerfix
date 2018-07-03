@@ -8,8 +8,9 @@ namespace FIX43
 
   class MassQuoteAcknowledgement : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("b"); }
   public:
-    MassQuoteAcknowledgement() : Message(MsgType()) {}
+    MassQuoteAcknowledgement() : Message(PackedType()) {}
     MassQuoteAcknowledgement(const FIX::Message& m) : Message(m) {}
     MassQuoteAcknowledgement(const Message& m) : Message(m) {}
     MassQuoteAcknowledgement(const MassQuoteAcknowledgement& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX43
 
     MassQuoteAcknowledgement(
       const FIX::QuoteStatus& aQuoteStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteStatus);
+    }
+
+    MassQuoteAcknowledgement(
+      const FIX::QuoteStatus::Pack& aQuoteStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteStatus);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);

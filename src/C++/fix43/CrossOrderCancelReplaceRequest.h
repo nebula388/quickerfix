@@ -8,8 +8,9 @@ namespace FIX43
 
   class CrossOrderCancelReplaceRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("t"); }
   public:
-    CrossOrderCancelReplaceRequest() : Message(MsgType()) {}
+    CrossOrderCancelReplaceRequest() : Message(PackedType()) {}
     CrossOrderCancelReplaceRequest(const FIX::Message& m) : Message(m) {}
     CrossOrderCancelReplaceRequest(const Message& m) : Message(m) {}
     CrossOrderCancelReplaceRequest(const CrossOrderCancelReplaceRequest& m) : Message(m) {}
@@ -23,15 +24,36 @@ namespace FIX43
       const FIX::HandlInst& aHandlInst,
       const FIX::TransactTime& aTransactTime,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aCrossID);
-      set(aOrigCrossID);
-      set(aCrossType);
-      set(aCrossPrioritization);
-      set(aHandlInst);
-      set(aTransactTime);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
+    }
+
+    CrossOrderCancelReplaceRequest(
+      const FIX::CrossID::Pack& aCrossID,
+      const FIX::OrigCrossID::Pack& aOrigCrossID,
+      const FIX::CrossType::Pack& aCrossType,
+      const FIX::CrossPrioritization::Pack& aCrossPrioritization,
+      const FIX::HandlInst::Pack& aHandlInst,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aHandlInst);
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
     }
 
     FIELD_SET(*this, FIX::OrderID);

@@ -8,8 +8,9 @@ namespace FIX44
 
   class DerivativeSecurityListRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("z"); }
   public:
-    DerivativeSecurityListRequest() : Message(MsgType()) {}
+    DerivativeSecurityListRequest() : Message(PackedType()) {}
     DerivativeSecurityListRequest(const FIX::Message& m) : Message(m) {}
     DerivativeSecurityListRequest(const Message& m) : Message(m) {}
     DerivativeSecurityListRequest(const DerivativeSecurityListRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX44
     DerivativeSecurityListRequest(
       const FIX::SecurityReqID& aSecurityReqID,
       const FIX::SecurityListRequestType& aSecurityListRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSecurityReqID);
-      set(aSecurityListRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityListRequestType);
+    }
+
+    DerivativeSecurityListRequest(
+      const FIX::SecurityReqID::Pack& aSecurityReqID,
+      const FIX::SecurityListRequestType::Pack& aSecurityListRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSecurityReqID);
+      Sequence::push_back_to(*this, aSecurityListRequestType);
     }
 
     FIELD_SET(*this, FIX::SecurityReqID);
@@ -30,6 +42,14 @@ namespace FIX44
     FIELD_SET(*this, FIX::UnderlyingSymbolSfx);
     FIELD_SET(*this, FIX::UnderlyingSecurityID);
     FIELD_SET(*this, FIX::UnderlyingSecurityIDSource);
+    FIELD_SET(*this, FIX::NoUnderlyingSecurityAltID);
+    class NoUnderlyingSecurityAltID: public FIX::Group
+    {
+    public:
+    NoUnderlyingSecurityAltID() : FIX::Group(457,458,FIX::message_order(458,459,0)) {}
+      FIELD_SET(*this, FIX::UnderlyingSecurityAltID);
+      FIELD_SET(*this, FIX::UnderlyingSecurityAltIDSource);
+    };
     FIELD_SET(*this, FIX::UnderlyingProduct);
     FIELD_SET(*this, FIX::UnderlyingCFICode);
     FIELD_SET(*this, FIX::UnderlyingSecurityType);
@@ -71,6 +91,14 @@ namespace FIX44
     FIELD_SET(*this, FIX::UnderlyingStartValue);
     FIELD_SET(*this, FIX::UnderlyingCurrentValue);
     FIELD_SET(*this, FIX::UnderlyingEndValue);
+    FIELD_SET(*this, FIX::NoUnderlyingStips);
+    class NoUnderlyingStips: public FIX::Group
+    {
+    public:
+    NoUnderlyingStips() : FIX::Group(887,888,FIX::message_order(888,889,0)) {}
+      FIELD_SET(*this, FIX::UnderlyingStipType);
+      FIELD_SET(*this, FIX::UnderlyingStipValue);
+    };
     FIELD_SET(*this, FIX::SecuritySubType);
     FIELD_SET(*this, FIX::Currency);
     FIELD_SET(*this, FIX::Text);

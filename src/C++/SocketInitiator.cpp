@@ -32,7 +32,7 @@ namespace FIX
 SocketInitiator::SocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings )
-throw( ConfigError )
+THROW_DECL( ConfigError )
 : Initiator( application, factory, settings ),
   m_connector( 1 ), m_lastConnect( 0 ),
   m_reconnectInterval( 30 ), m_noDelay( false ), m_sendBufSize( 0 ),
@@ -44,7 +44,7 @@ SocketInitiator::SocketInitiator( Application& application,
                                   MessageStoreFactory& factory,
                                   const SessionSettings& settings,
                                   LogFactory& logFactory )
-throw( ConfigError )
+THROW_DECL( ConfigError )
 : Initiator( application, factory, settings, logFactory ),
   m_connector( 1 ), m_lastConnect( 0 ),
   m_reconnectInterval( 30 ), m_noDelay( false ), m_sendBufSize( 0 ),
@@ -65,7 +65,7 @@ SocketInitiator::~SocketInitiator()
 }
 
 void SocketInitiator::onConfigure( const SessionSettings& s )
-throw ( ConfigError )
+THROW_DECL( ConfigError )
 {
   const Dictionary& dict = s.get();
 
@@ -80,7 +80,7 @@ throw ( ConfigError )
 }
 
 void SocketInitiator::onInitialize( const SessionSettings& s )
-throw ( RuntimeError )
+THROW_DECL( RuntimeError )
 {
 }
 
@@ -134,28 +134,27 @@ void SocketInitiator::doConnect( const SessionID& s, const Dictionary& d )
   {
     std::string address;
     short port = 0;
+    std::string sourceAddress;
+    short sourcePort = 0;
+
     Session* session = Session::lookupSession( s );
     if( !session->isSessionTime(UtcTimeStamp()) ) return;
 
     Log* log = session->getLog();
 
-    getHost( s, d, address, port );
+    getHost( s, d, address, port, sourceAddress, sourcePort );
 
-    log->onEvent( "Connecting to " + address + " on port " + IntConvertor::convert((unsigned short)port) );
-    int result = m_connector.connect( address, port, m_noDelay, m_sendBufSize, m_rcvBufSize );
+    log->onEvent( "Connecting to " + address + " on port " + IntConvertor::convert((unsigned short)port) + " (Source " + sourceAddress + ":" + IntConvertor::convert((unsigned short)sourcePort) + ")");
+    sys_socket_t result = m_connector.connect( address, port, m_noDelay, m_sendBufSize, m_rcvBufSize, sourceAddress, sourcePort );
+    setPending( s );
 
-    if( result != -1 )
-    {
-      setPending( s );
-
-      m_pendingConnections[ result ] 
-        = new SocketConnection( *this, s, result, &m_connector.getMonitor() );
-    }
+    m_pendingConnections[ result ] 
+      = new SocketConnection( *this, s, result, &m_connector.getMonitor() );
   }
   catch ( std::exception& ) {}
 }
 
-void SocketInitiator::onConnect( SocketConnector&, int s )
+void SocketInitiator::onConnect( SocketConnector&, sys_socket_t s )
 {
   SocketConnections::iterator i = m_pendingConnections.find( s );
   if( i == m_pendingConnections.end() ) return;
@@ -167,7 +166,7 @@ void SocketInitiator::onConnect( SocketConnector&, int s )
   pSocketConnection->onTimeout();
 }
 
-void SocketInitiator::onWrite( SocketConnector& connector, int s )
+void SocketInitiator::onWrite( SocketConnector& connector, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return ;
@@ -176,7 +175,7 @@ void SocketInitiator::onWrite( SocketConnector& connector, int s )
     pSocketConnection->unsignal();
 }
 
-bool SocketInitiator::onData( SocketConnector& connector, int s )
+bool SocketInitiator::onData( SocketConnector& connector, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   if ( i == m_connections.end() ) return false;
@@ -184,7 +183,7 @@ bool SocketInitiator::onData( SocketConnector& connector, int s )
   return pSocketConnection->read( connector );
 }
 
-void SocketInitiator::onDisconnect( SocketConnector&, int s )
+void SocketInitiator::onDisconnect( SocketConnector&, sys_socket_t s )
 {
   SocketConnections::iterator i = m_connections.find( s );
   SocketConnections::iterator j = m_pendingConnections.find( s );
@@ -233,7 +232,8 @@ void SocketInitiator::onTimeout( SocketConnector& )
 }
 
 void SocketInitiator::getHost( const SessionID& s, const Dictionary& d,
-                               std::string& address, short& port )
+                               std::string& address, short& port,
+                               std::string& sourceAddress, short& sourcePort)
 {
   int num = 0;
   SessionToHostNum::iterator i = m_sessionToHostNum.find( s );
@@ -247,16 +247,36 @@ void SocketInitiator::getHost( const SessionID& s, const Dictionary& d,
   portStream << SOCKET_CONNECT_PORT << num;
   std::string portString = portStream.str();
 
+  sourcePort = 0;
+  sourceAddress.empty();
+
   if( d.has(hostString) && d.has(portString) )
   {
     address = d.getString( hostString );
     port = ( short ) d.getInt( portString );
+
+    std::stringstream sourceHostStream;
+    sourceHostStream << SOCKET_CONNECT_SOURCE_HOST << num;
+    hostString = sourceHostStream.str();
+    if( d.has(hostString) )
+      sourceAddress = d.getString( hostString );
+
+    std::stringstream sourcePortStream;
+    sourcePortStream << SOCKET_CONNECT_SOURCE_PORT << num;
+    portString = sourcePortStream.str();
+    if( d.has(portString) )
+      sourcePort = ( short ) d.getInt( portString );
   }
   else
   {
     num = 0;
     address = d.getString( SOCKET_CONNECT_HOST );
     port = ( short ) d.getInt( SOCKET_CONNECT_PORT );
+
+    if( d.has(SOCKET_CONNECT_SOURCE_HOST) )
+      sourceAddress = d.getString( SOCKET_CONNECT_SOURCE_HOST );
+    if( d.has(SOCKET_CONNECT_SOURCE_PORT) )
+      sourcePort = ( short ) d.getInt( SOCKET_CONNECT_SOURCE_PORT );
   }
 
   m_sessionToHostNum[ s ] = ++num;

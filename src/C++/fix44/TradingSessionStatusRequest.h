@@ -8,8 +8,9 @@ namespace FIX44
 
   class TradingSessionStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("g"); }
   public:
-    TradingSessionStatusRequest() : Message(MsgType()) {}
+    TradingSessionStatusRequest() : Message(PackedType()) {}
     TradingSessionStatusRequest(const FIX::Message& m) : Message(m) {}
     TradingSessionStatusRequest(const Message& m) : Message(m) {}
     TradingSessionStatusRequest(const TradingSessionStatusRequest& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX44
     TradingSessionStatusRequest(
       const FIX::TradSesReqID& aTradSesReqID,
       const FIX::SubscriptionRequestType& aSubscriptionRequestType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aTradSesReqID);
-      set(aSubscriptionRequestType);
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aTradSesReqID);
+    }
+
+    TradingSessionStatusRequest(
+      const FIX::TradSesReqID::Pack& aTradSesReqID,
+      const FIX::SubscriptionRequestType::Pack& aSubscriptionRequestType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aTradSesReqID);
     }
 
     FIELD_SET(*this, FIX::TradSesReqID);

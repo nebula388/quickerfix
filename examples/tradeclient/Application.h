@@ -22,49 +22,49 @@
 #ifndef TRADECLIENT_APPLICATION_H
 #define TRADECLIENT_APPLICATION_H
 
-#include "quickfix/Application.h"
-#include "quickfix/MessageCracker.h"
-#include "quickfix/Values.h"
-#include "quickfix/Mutex.h"
+#include "Application.h"
+#include "MessageCracker.h"
+#include "Values.h"
+#include "Mutex.h"
 
-#include "quickfix/fix40/NewOrderSingle.h"
-#include "quickfix/fix40/ExecutionReport.h"
-#include "quickfix/fix40/OrderCancelRequest.h"
-#include "quickfix/fix40/OrderCancelReject.h"
-#include "quickfix/fix40/OrderCancelReplaceRequest.h"
+#include "fix40/NewOrderSingle.h"
+#include "fix40/ExecutionReport.h"
+#include "fix40/OrderCancelRequest.h"
+#include "fix40/OrderCancelReject.h"
+#include "fix40/OrderCancelReplaceRequest.h"
 
-#include "quickfix/fix41/NewOrderSingle.h"
-#include "quickfix/fix41/ExecutionReport.h"
-#include "quickfix/fix41/OrderCancelRequest.h"
-#include "quickfix/fix41/OrderCancelReject.h"
-#include "quickfix/fix41/OrderCancelReplaceRequest.h"
+#include "fix41/NewOrderSingle.h"
+#include "fix41/ExecutionReport.h"
+#include "fix41/OrderCancelRequest.h"
+#include "fix41/OrderCancelReject.h"
+#include "fix41/OrderCancelReplaceRequest.h"
 
-#include "quickfix/fix42/NewOrderSingle.h"
-#include "quickfix/fix42/ExecutionReport.h"
-#include "quickfix/fix42/OrderCancelRequest.h"
-#include "quickfix/fix42/OrderCancelReject.h"
-#include "quickfix/fix42/OrderCancelReplaceRequest.h"
+#include "fix42/NewOrderSingle.h"
+#include "fix42/ExecutionReport.h"
+#include "fix42/OrderCancelRequest.h"
+#include "fix42/OrderCancelReject.h"
+#include "fix42/OrderCancelReplaceRequest.h"
 
-#include "quickfix/fix43/NewOrderSingle.h"
-#include "quickfix/fix43/ExecutionReport.h"
-#include "quickfix/fix43/OrderCancelRequest.h"
-#include "quickfix/fix43/OrderCancelReject.h"
-#include "quickfix/fix43/OrderCancelReplaceRequest.h"
-#include "quickfix/fix43/MarketDataRequest.h"
+#include "fix43/NewOrderSingle.h"
+#include "fix43/ExecutionReport.h"
+#include "fix43/OrderCancelRequest.h"
+#include "fix43/OrderCancelReject.h"
+#include "fix43/OrderCancelReplaceRequest.h"
+#include "fix43/MarketDataRequest.h"
 
-#include "quickfix/fix44/NewOrderSingle.h"
-#include "quickfix/fix44/ExecutionReport.h"
-#include "quickfix/fix44/OrderCancelRequest.h"
-#include "quickfix/fix44/OrderCancelReject.h"
-#include "quickfix/fix44/OrderCancelReplaceRequest.h"
-#include "quickfix/fix44/MarketDataRequest.h"
+#include "fix44/NewOrderSingle.h"
+#include "fix44/ExecutionReport.h"
+#include "fix44/OrderCancelRequest.h"
+#include "fix44/OrderCancelReject.h"
+#include "fix44/OrderCancelReplaceRequest.h"
+#include "fix44/MarketDataRequest.h"
 
-#include "quickfix/fix50/NewOrderSingle.h"
-#include "quickfix/fix50/ExecutionReport.h"
-#include "quickfix/fix50/OrderCancelRequest.h"
-#include "quickfix/fix50/OrderCancelReject.h"
-#include "quickfix/fix50/OrderCancelReplaceRequest.h"
-#include "quickfix/fix50/MarketDataRequest.h"
+#include "fix50/NewOrderSingle.h"
+#include "fix50/ExecutionReport.h"
+#include "fix50/OrderCancelRequest.h"
+#include "fix50/OrderCancelReject.h"
+#include "fix50/OrderCancelReplaceRequest.h"
+#include "fix50/MarketDataRequest.h"
 
 #include <queue>
 
@@ -81,11 +81,11 @@ private:
   void onLogout( const FIX::SessionID& sessionID );
   void toAdmin( FIX::Message&, const FIX::SessionID& ) {}
   void toApp( FIX::Message&, const FIX::SessionID& )
-  throw( FIX::DoNotSend );
+    THROW_DECL( FIX::DoNotSend );
   void fromAdmin( const FIX::Message&, const FIX::SessionID& )
-  throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
   void fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
-  throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
 
   void onMessage( const FIX40::ExecutionReport&, const FIX::SessionID& );
   void onMessage( const FIX40::OrderCancelReject&, const FIX::SessionID& );

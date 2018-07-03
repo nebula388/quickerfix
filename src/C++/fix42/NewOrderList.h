@@ -8,8 +8,9 @@ namespace FIX42
 
   class NewOrderList : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("E"); }
   public:
-    NewOrderList() : Message(MsgType()) {}
+    NewOrderList() : Message(PackedType()) {}
     NewOrderList(const FIX::Message& m) : Message(m) {}
     NewOrderList(const Message& m) : Message(m) {}
     NewOrderList(const NewOrderList& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX42
       const FIX::ListID& aListID,
       const FIX::BidType& aBidType,
       const FIX::TotNoOrders& aTotNoOrders )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aBidType);
-      set(aTotNoOrders);
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoOrders);
+      Sequence::push_back_to(*this, aBidType);
+    }
+
+    NewOrderList(
+      const FIX::ListID::Pack& aListID,
+      const FIX::BidType::Pack& aBidType,
+      const FIX::TotNoOrders::Pack& aTotNoOrders )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoOrders);
+      Sequence::push_back_to(*this, aBidType);
     }
 
     FIELD_SET(*this, FIX::ListID);

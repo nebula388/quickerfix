@@ -3,14 +3,18 @@
 
 AC_PREREQ([2.59])
 
-AC_INIT([QuickFIX], [1.14.3], [ask@quickfixengine.org])
+AC_INIT([QuickFIX], [1.15.1], [ask@quickfixengine.org])
 AC_CONFIG_MACRO_DIR([m4])
 m4_include([m4/ax_sso.m4])
+m4_include([m4/ax_throw_decl.m4])
+m4_include([m4/ax_fieldorder.m4])
+m4_include([m4/ax_emx.m4])
 m4_include([m4/ax_lib_mysql.m4])
 m4_include([m4/ax_lib_postgresql.m4])
 m4_include([m4/ax_lib_boost.m4])
 m4_include([m4/ax_lib_tbb.m4])
 m4_include([m4/ax_lib_stlport.m4])
+m4_include([m4/ax_lib_ssl.m4])
 m4_include([m4/ax_allocator.m4])
 m4_include([m4/ax_python.m4])
 m4_include([m4/ax_ruby.m4])
@@ -32,52 +36,86 @@ AM_PROG_LEX
 AX_ORDERING()
 AX_FIELDMAP()
 AX_SSO()
+AX_THROW_DECL()
+AX_FIELD_ORDER()
+AX_EMX()
 AX_LIB_MYSQL()
 AX_LIB_POSTGRESQL()
 AX_LIB_BOOST()
 AX_LIB_TBB()
 AX_LIB_STLPORT()
+AX_LIB_SSL()
 AX_PYTHON()
 AX_RUBY()
 AX_JAVA()
 
-# libs
-LIBS="$STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $LIBS"
-# gcc flags
-if test `uname` == SunOS; then
-   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
-else
-	SHAREDFLAGS="-Wall -ansi -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
-fi
+########################################
+# Disable unit tests on Solaris, AIX
 
-CFLAGS="$CFLAGS $SHAREDFLAGS"
-AC_SUBST(CFLAGS)
-CXXFLAGS="$CXXFLAGS $SHAREDFLAGS"
-AC_SUBST(CXXFLAGS)
+AC_CANONICAL_HOST
 
+AC_CHECK_PROG([build_no_unit_test],[g++],[no],[yes])
+
+# Detect the target system
+case "${host_os}" in
+    *sunos*)
+        build_no_unit_test=yes
+        ;;
+    *solaris*)
+        build_no_unit_test=yes
+        ;;
+    *aix*)
+        build_no_unit_test=yes
+        ;;
+    *)
+        ;;
+esac
+
+# Pass the conditionals to automake
+AM_CONDITIONAL([NO_UNIT_TEST], [test "$build_no_unit_test" = "yes"])
+
+########################################
 
 # Checks for libraries.
 AC_CHECK_LIB(c,shutdown,true,AC_CHECK_LIB(socket,shutdown))
 AC_CHECK_LIB(c,inet_addr,true,AC_CHECK_LIB(nsl,inet_addr))
 AC_CHECK_LIB(c,nanosleep,true,AC_CHECK_LIB(rt,nanosleep))
 AC_CHECK_LIB(compat,ftime)
-AC_CHECK_FUNC([clock_gettime], [AC_DEFINE([HAVE_CLOCK_GETTIME], [1],
-                               [Define if clock_gettime exists.])])
-AC_CHECK_FUNC([clock_get_time], [AC_DEFINE([__MACH__], [1],
-                               [Define if clock_get_time exists.])])
+
+# libs
+DEFAULT_LIBS=$LIBS
+LIBS="$OPENSSL_LIBS $STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $DEFAULT_LIBS"
+# gcc flags
+if test `uname` == SunOS; then
+   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $JAVA_CFLAGS $RUBY_CFLAGS"
+else
+  if test `uname` == AIX; then
+   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
+  else
+    SHAREDFLAGS="-Wall -ansi -Wno-unused-command-line-argument -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual -Wno-deprecated-declarations -Wno-deprecated $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $XML_CPPFLAGS $XML_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS"
+  fi
+fi
+
+CFLAGS="$SHAREDFLAGS $CFLAGS"
+AC_SUBST(CFLAGS)
+CXXFLAGS="$SHAREDFLAGS $CXXFLAGS"
+AC_SUBST(CXXFLAGS)
+
 
 AC_MSG_CHECKING([which threading environment to use])
 # each host OS needs special threading flags
 case $build_os in
 	freebsd*|netbsd*)
-		LIBS="-pthread $LIBS"
+		DEFAULT_LIBS="-pthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-pthread])
 		;;
 	linux-*) 
+		DEFAULT_LIBS="-lpthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-lpthread])
 		AC_CHECK_LIB(pthread, pthread_create)
 		;;
 	solaris*) 
+		DEFAULT_LIBS="-lpthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-lpthread])
 		AC_CHECK_LIB(pthread, pthread_create)
 		;;
@@ -155,6 +193,42 @@ else AC_MSG_RESULT(no)
     AC_MSG_ERROR(unable to find set_terminate in std or global namespace))
 fi
 
+AC_MSG_CHECKING(for std::tr1::shared_ptr)
+AC_TRY_COMPILE(
+	[#include <tr1/memory>],
+	[std::tr1::shared_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_TR1_SHARED_PTR, 1,
+	The system supports std::tr1::shared_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for std::unique_ptr)
+AC_TRY_COMPILE(
+	[#include <memory>],
+	[std::unique_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_UNIQUE_PTR, 1,
+	The system supports std::unique_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for std::shared_ptr)
+AC_TRY_COMPILE(
+	[#include <memory>],
+	[std::shared_ptr<int> ptr;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_STD_SHARED_PTR, 1,
+	The system supports std::shared_ptr),
+	AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for boost::shared_ptr)
+AC_TRY_COMPILE(
+        [#include <boost/shared_ptr.hpp>],
+        [boost::shared_ptr<int> ptr;],
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_BOOST_SHARED_PTR, 1,
+        The system supports boost::shared_ptr),
+        AC_MSG_RESULT(no))
+
 AC_MSG_CHECKING(for typeinfo in the global namespace)
 AC_TRY_COMPILE(
 	[#include <typeinfo>],
@@ -191,26 +265,17 @@ AC_TRY_COMPILE(
 	 The system has gethostbyname_r which takes a result as a pass-in param),
 	 AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(for std::tr1::shared_ptr)
-AC_TRY_COMPILE(
-	[#include <tr1/memory>],
-	[std::tr1::shared_ptr<int> ptr;],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_STD_TR1_SHARED_PTR, 1,
-	The system supports std::tr1::shared_ptr),
-	AC_MSG_RESULT(no))
-
-AC_MSG_CHECKING(for std::shared_ptr)
-AC_TRY_COMPILE(
-	[#include <memory>],
-	[std::shared_ptr<int> ptr;],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_STD_SHARED_PTR, 1,
-	The system supports std::shared_ptr),
-	AC_MSG_RESULT(no))
-
 # check for SSO
 AX_SSO_CHECK()
+
+# check dynamic exception specifications
+AX_THROW_DECL_CHECK()
+
+# check for dictionary field order
+AX_FIELD_ORDER_CHECK()
+
+# check for EMX header extension
+AX_EMX_CHECK()
 
 # check for tbb
 AX_LIB_TBB_CHECK()
@@ -225,12 +290,8 @@ AC_DEFINE(_REENTRANT, 1, enable reentrant system calls)
 # Checks for library functions.
 AC_LANG_RESTORE
 
-AC_CHECK_LIB(iberty, cplus_demangle,    
-  AC_DEFINE(HAVE_CPLUS_DEMANGLE,1,whether or not we have to demangle names)
-  LIBS="$LIBS -liberty")
-
-AC_CHECK_LIB(rt, clock_gettime, RT_LIBS="-lrt")
-AC_SUBST(RT_LIBS)
+AC_CHECK_LIB([rt], [clock_gettime], [RT_LIBS="-lrt"])
+AC_SUBST([RT_LIBS])
 
 # Checks for runtime behavior
 AC_MSG_CHECKING(if select modifies timeval parameter)
@@ -254,13 +315,18 @@ select statement decrements timeval parameter if interupted),
 AC_MSG_RESULT(no),
 AC_MSG_RESULT(unable to determine, assuming no...))
 
+# libs again, may have changed
+LIBS="$OPENSSL_LIBS $STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $DEFAULT_LIBS"
+
 AC_CONFIG_FILES([
     quickfix.pc
     Makefile
+    UnitTest++/Makefile
     src/Makefile
     src/C++/Makefile
     src/C++/test/Makefile
-    src/python/Makefile
+    src/python2/Makefile
+    src/python3/Makefile
     src/ruby/Makefile
     bin/Makefile
     bin/cfg/Makefile

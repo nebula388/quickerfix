@@ -83,7 +83,7 @@ public:
       else
       {
         ::memcpy( IOV_BUF(buf), p, sz );
-        advance( sz );
+        advance( (int)sz );
         break;
       }
     }
@@ -92,10 +92,8 @@ public:
   {
     addToStream( String::data(s), String::size(s) );
   }
-  std::size_t extractLength( const char* msg, std::size_t size )
-  throw ( MessageParseError );
-  bool readFixMessage( std::string& str )
-  throw ( MessageParseError )
+  std::size_t extractLength( const char* msg, std::size_t size ) THROW_DECL( MessageParseError );
+  bool readFixMessage( std::string& str ) THROW_DECL( MessageParseError )
   {
     if( parse() )
     {
@@ -128,7 +126,7 @@ public:
                                       m_buffer + cursor, m_pos - cursor );
           if( LIKELY(NULL != p) )
           {
-            m_begin = p - m_buffer;
+            m_begin = (int)(p - m_buffer);
             cursor = m_begin + 2;
             m_state = HAVE_BEGIN_STRING;
           }
@@ -146,11 +144,12 @@ public:
       case HAVE_BEGIN_STRING:
         if( LIKELY(m_pos - cursor > 3) )
         {
-          p = Util::CharBuffer::memmem(m_buffer + cursor,
-                                       m_pos - cursor, "\0019=", 3);
+          Util::CharBuffer::Fixed<3> bodyLengthTag = { { '\001', '9', '=' } };
+          p = Util::CharBuffer::find( bodyLengthTag,
+                                      m_buffer + cursor, m_pos - cursor );
           if( LIKELY(NULL != p ) )
           {
-            cursor = p - m_buffer + 3;
+            cursor = (int)(p - m_buffer + 3);
             m_state = HAVE_BODY_LENGTH;
           }
           else
@@ -202,12 +201,12 @@ public:
                                       m_buffer + cursor, m_pos - cursor);
           if( LIKELY(NULL != p) && LIKELY((p - m_buffer) == cursor) )
           {
-            cursor = p - m_buffer + 4;
+            cursor = (int)(p - m_buffer + 4);
             m_state = HAVE_CHECKSUM;
           }
           else
           {
-            m_cursor = p ? p - m_buffer + 4 : cursor;
+            m_cursor = p ? (int)(p - m_buffer + 4) : cursor;
             m_state = RTR;
             throw MessageParseError( "BodyLength mismatch" );
           }
@@ -218,10 +217,10 @@ public:
         // fall through
       case HAVE_CHECKSUM:
         if( LIKELY(m_pos - cursor > 0) &&
-            LIKELY(NULL != (p = (const char*)::memchr( m_buffer + cursor,
-                                               '\001', m_pos - cursor )) ) )
+            LIKELY(NULL != (p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'),
+                                                        m_buffer + cursor, m_pos - cursor )) ) )
         {
-          cursor = p - m_buffer + 1;
+          cursor = (int)(p - m_buffer + 1);
           m_state = HAVE_MESSAGE;
         }
         else
@@ -292,11 +291,11 @@ public:
     if( LIKELY(NULL != b) )
     {
       std::size_t offset = ( b += S ) - (char*)IOV_BUF(msg);
-      const char* e = (const char*)::memchr( b, '\001', IOV_LEN(msg) - offset );
+      const char* e = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), b, IOV_LEN(msg) - offset );
       if ( LIKELY(NULL != e) )
       {
         IOV_BUF(msg) = (char*)IOV_BUF(msg) + offset;
-        IOV_LEN(msg) = e - b;
+        IOV_LEN(msg) = (Sg::sg_size_t)(e - b);
         return msg;
       }
     }

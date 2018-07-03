@@ -8,8 +8,9 @@ namespace FIX42
 
   class ListStrikePrice : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("m"); }
   public:
-    ListStrikePrice() : Message(MsgType()) {}
+    ListStrikePrice() : Message(PackedType()) {}
     ListStrikePrice(const FIX::Message& m) : Message(m) {}
     ListStrikePrice(const Message& m) : Message(m) {}
     ListStrikePrice(const ListStrikePrice& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX42
     ListStrikePrice(
       const FIX::ListID& aListID,
       const FIX::TotNoStrikes& aTotNoStrikes )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aTotNoStrikes);
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoStrikes);
+    }
+
+    ListStrikePrice(
+      const FIX::ListID::Pack& aListID,
+      const FIX::TotNoStrikes::Pack& aTotNoStrikes )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aTotNoStrikes);
     }
 
     FIELD_SET(*this, FIX::ListID);

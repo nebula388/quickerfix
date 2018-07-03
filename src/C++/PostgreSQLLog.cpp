@@ -41,7 +41,7 @@ const std::string PostgreSQLLogFactory::DEFAULT_PASSWORD = "";
 const std::string PostgreSQLLogFactory::DEFAULT_HOST = "localhost";
 const short PostgreSQLLogFactory::DEFAULT_PORT = 0;
 
-PostgreSQLLog::PostgreSQLLog
+COLDSECTION PostgreSQLLog::PostgreSQLLog
 ( const SessionID& s, const DatabaseConnectionID& d, PostgreSQLConnectionPool* p )
 : m_pConnectionPool( p )
 {
@@ -50,7 +50,7 @@ PostgreSQLLog::PostgreSQLLog
   m_pConnection = m_pConnectionPool->create( d );
 }
 
-PostgreSQLLog::PostgreSQLLog
+COLDSECTION PostgreSQLLog::PostgreSQLLog
 ( const DatabaseConnectionID& d, PostgreSQLConnectionPool* p )
 : m_pConnectionPool( p ), m_pSessionID( 0 )
 {
@@ -58,7 +58,7 @@ PostgreSQLLog::PostgreSQLLog
   m_pConnection = m_pConnectionPool->create( d );
 }
 
-PostgreSQLLog::PostgreSQLLog
+COLDSECTION PostgreSQLLog::PostgreSQLLog
 ( const SessionID& s, const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 )
@@ -68,7 +68,7 @@ PostgreSQLLog::PostgreSQLLog
   m_pConnection = new PostgreSQLConnection( database, user, password, host, port );
 }
 
-PostgreSQLLog::PostgreSQLLog
+COLDSECTION PostgreSQLLog::PostgreSQLLog
 ( const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 ), m_pSessionID( 0 )
@@ -77,14 +77,14 @@ PostgreSQLLog::PostgreSQLLog
   m_pConnection = new PostgreSQLConnection( database, user, password, host, port );
 }
 
-void PostgreSQLLog::init()
+COLDSECTION void PostgreSQLLog::init()
 {
   setIncomingTable( "messages_log" );
   setOutgoingTable( "messages_log" );
   setEventTable( "event_log" );
 }
 
-PostgreSQLLog::~PostgreSQLLog()
+COLDSECTION PostgreSQLLog::~PostgreSQLLog()
 {
   if( m_pConnectionPool )
     m_pConnectionPool->destroy( m_pConnection );
@@ -93,7 +93,7 @@ PostgreSQLLog::~PostgreSQLLog()
   delete m_pSessionID;
 }
 
-Log* PostgreSQLLogFactory::create()
+COLDSECTION Log* PostgreSQLLogFactory::create()
 {
   std::string database;
   std::string user;
@@ -108,7 +108,7 @@ Log* PostgreSQLLogFactory::create()
   return result;
 }
 
-Log* PostgreSQLLogFactory::create( const SessionID& s )
+COLDSECTION Log* PostgreSQLLogFactory::create( const SessionID& s )
 {
   std::string database;
   std::string user;
@@ -127,6 +127,7 @@ Log* PostgreSQLLogFactory::create( const SessionID& s )
   return result;
 }
 
+COLDSECTION
 void PostgreSQLLogFactory::init( const Dictionary& settings, 
            std::string& database, 
            std::string& user,
@@ -167,6 +168,7 @@ void PostgreSQLLogFactory::init( const Dictionary& settings,
   }
 }
 
+COLDSECTION
 void PostgreSQLLogFactory::initLog( const Dictionary& settings, PostgreSQLLog& log )
 {
     try { log.setIncomingTable( settings.getString( POSTGRESQL_LOG_INCOMING_TABLE ) ); }
@@ -179,12 +181,12 @@ void PostgreSQLLogFactory::initLog( const Dictionary& settings, PostgreSQLLog& l
     catch( ConfigError& ) {}
 }
 
-void PostgreSQLLogFactory::destroy( Log* pLog )
+COLDSECTION void PostgreSQLLogFactory::destroy( Log* pLog )
 {
   delete pLog;
 }
 
-void PostgreSQLLog::clear()
+COLDSECTION void PostgreSQLLog::clear()
 {
   std::stringstream whereClause;
 
@@ -224,7 +226,7 @@ void PostgreSQLLog::clear()
   m_pConnection->execute( event );
 }
 
-void PostgreSQLLog::backup() {}
+COLDSECTION void PostgreSQLLog::backup() {}
 
 void PostgreSQLLog::insert( const std::string& table, const std::string value )
 {

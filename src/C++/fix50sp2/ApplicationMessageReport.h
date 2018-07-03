@@ -8,8 +8,9 @@ namespace FIX50SP2
 
   class ApplicationMessageReport : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("BY"); }
   public:
-    ApplicationMessageReport() : Message(MsgType()) {}
+    ApplicationMessageReport() : Message(PackedType()) {}
     ApplicationMessageReport(const FIX::Message& m) : Message(m) {}
     ApplicationMessageReport(const Message& m) : Message(m) {}
     ApplicationMessageReport(const ApplicationMessageReport& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX50SP2
     ApplicationMessageReport(
       const FIX::ApplReportID& aApplReportID,
       const FIX::ApplReportType& aApplReportType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aApplReportID);
-      set(aApplReportType);
+      // must be in this order
+      Sequence::push_back_to(*this, aApplReportID);
+      Sequence::push_back_to(*this, aApplReportType);
+    }
+
+    ApplicationMessageReport(
+      const FIX::ApplReportID::Pack& aApplReportID,
+      const FIX::ApplReportType::Pack& aApplReportType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aApplReportID);
+      Sequence::push_back_to(*this, aApplReportType);
     }
 
     FIELD_SET(*this, FIX::ApplReportID);

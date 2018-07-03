@@ -162,7 +162,7 @@ MessageStore* OdbcStoreFactory::create( const SessionID& s, const Dictionary& se
 }
 
 bool OdbcStore::set( int msgSeqNum, const std::string& msg )
-throw ( IOException )
+THROW_DECL( IOException )
 {
   std::string msgCopy = msg;
   string_replace( "'", "''", msgCopy );
@@ -198,7 +198,6 @@ throw ( IOException )
 
 void OdbcStore::get( int begin, int end,
                     std::vector < std::string > & result ) const
-throw ( IOException )
 {
   result.clear();
   std::stringstream queryString;
@@ -231,17 +230,17 @@ throw ( IOException )
   }
 }
 
-int OdbcStore::getNextSenderMsgSeqNum() const throw ( IOException )
+int OdbcStore::getNextSenderMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextSenderMsgSeqNum();
 }
 
-int OdbcStore::getNextTargetMsgSeqNum() const throw ( IOException )
+int OdbcStore::getNextTargetMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextTargetMsgSeqNum();
 }
 
-void OdbcStore::setNextSenderMsgSeqNum( int value ) throw ( IOException )
+void OdbcStore::setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET outgoing_seqnum=" << value << " WHERE "
@@ -255,7 +254,7 @@ void OdbcStore::setNextSenderMsgSeqNum( int value ) throw ( IOException )
   m_cache.setNextSenderMsgSeqNum( value );
 }
 
-void OdbcStore::setNextTargetMsgSeqNum( int value ) throw ( IOException )
+void OdbcStore::setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET incoming_seqnum=" << value << " WHERE "
@@ -271,19 +270,19 @@ void OdbcStore::setNextTargetMsgSeqNum( int value ) throw ( IOException )
   m_cache.setNextTargetMsgSeqNum( value );
 }
 
-void OdbcStore::incrNextSenderMsgSeqNum() throw ( IOException )
+void OdbcStore::incrNextSenderMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextSenderMsgSeqNum();
   setNextSenderMsgSeqNum( m_cache.getNextSenderMsgSeqNum() );
 }
 
-void OdbcStore::incrNextTargetMsgSeqNum() throw ( IOException )
+void OdbcStore::incrNextTargetMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextTargetMsgSeqNum();
   setNextTargetMsgSeqNum( m_cache.getNextTargetMsgSeqNum() );
 }
 
-void OdbcStore::reset() throw ( IOException )
+void OdbcStore::reset() THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "DELETE FROM messages WHERE "
@@ -322,7 +321,7 @@ void OdbcStore::reset() throw ( IOException )
     query2.throwException();
 }
 
-void OdbcStore::refresh() throw ( IOException )
+void OdbcStore::refresh() THROW_DECL( IOException )
 {
   m_cache.reset();
   populateCache(); 

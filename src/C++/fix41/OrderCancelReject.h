@@ -8,8 +8,9 @@ namespace FIX41
 
   class OrderCancelReject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("9"); }
   public:
-    OrderCancelReject() : Message(MsgType()) {}
+    OrderCancelReject() : Message(PackedType()) {}
     OrderCancelReject(const FIX::Message& m) : Message(m) {}
     OrderCancelReject(const Message& m) : Message(m) {}
     OrderCancelReject(const OrderCancelReject& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX41
       const FIX::ClOrdID& aClOrdID,
       const FIX::OrigClOrdID& aOrigClOrdID,
       const FIX::OrdStatus& aOrdStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrderID);
-      set(aClOrdID);
-      set(aOrigClOrdID);
-      set(aOrdStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aOrdStatus);
+      Sequence::push_back_to(*this, aOrigClOrdID);
+    }
+
+    OrderCancelReject(
+      const FIX::OrderID::Pack& aOrderID,
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::OrigClOrdID::Pack& aOrigClOrdID,
+      const FIX::OrdStatus::Pack& aOrdStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrderID);
+      Sequence::push_back_to(*this, aOrdStatus);
+      Sequence::push_back_to(*this, aOrigClOrdID);
     }
 
     FIELD_SET(*this, FIX::OrderID);

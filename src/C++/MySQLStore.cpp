@@ -43,7 +43,7 @@ const std::string MySQLStoreFactory::DEFAULT_PASSWORD = "";
 const std::string MySQLStoreFactory::DEFAULT_HOST = "localhost";
 const short MySQLStoreFactory::DEFAULT_PORT = 3306;
 
-MySQLStore::MySQLStore
+COLDSECTION MySQLStore::MySQLStore
 ( const SessionID& s, const DatabaseConnectionID& d, MySQLConnectionPool* p )
   : m_pConnectionPool( p ), m_sessionID( s )
 {
@@ -51,7 +51,7 @@ MySQLStore::MySQLStore
   populateCache();
 }
 
-MySQLStore::MySQLStore
+COLDSECTION MySQLStore::MySQLStore
 ( const SessionID& s, const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 ), m_sessionID( s )
@@ -60,7 +60,7 @@ MySQLStore::MySQLStore
   populateCache();
 }
 
-MySQLStore::~MySQLStore()
+COLDSECTION MySQLStore::~MySQLStore()
 {
   if( m_pConnectionPool )
     m_pConnectionPool->destroy( m_pConnection );
@@ -68,7 +68,7 @@ MySQLStore::~MySQLStore()
     delete m_pConnection;
 }
 
-void MySQLStore::populateCache()
+void COLDSECTION MySQLStore::populateCache()
 {
   std::stringstream queryString;
 
@@ -122,7 +122,7 @@ void MySQLStore::populateCache()
   }
 }
 
-MessageStore* MySQLStoreFactory::create( const SessionID& s )
+MessageStore* COLDSECTION MySQLStoreFactory::create( const SessionID& s )
 {
   if( m_useSettings )
     return create( s, m_settings.get(s) );
@@ -135,7 +135,7 @@ MessageStore* MySQLStoreFactory::create( const SessionID& s )
   }
 }
 
-MessageStore* MySQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
+MessageStore* COLDSECTION MySQLStoreFactory::create( const SessionID& s, const Dictionary& settings )
 {
   std::string database = DEFAULT_DATABASE;
   std::string user = DEFAULT_USER;
@@ -167,8 +167,7 @@ void MySQLStoreFactory::destroy( MessageStore* pStore )
   delete pStore;
 }
 
-bool MySQLStore::set( int msgSeqNum, const std::string& msg )
-throw ( IOException )
+bool MySQLStore::set( int msgSeqNum, const std::string& msg ) THROW_DECL( IOException )
 {
   Util::scoped_array<char>::type msgCopy( new char[ 2 * msg.size()  + 1 ] );
   mysql_escape_string( msgCopy.get(), msg.c_str(), msg.size() );
@@ -203,7 +202,7 @@ throw ( IOException )
 
 void MySQLStore::get( int begin, int end,
                       std::vector < std::string > & result ) const
-throw ( IOException )
+THROW_DECL( IOException )
 {
   result.clear();
   std::stringstream queryString;
@@ -224,17 +223,17 @@ throw ( IOException )
     result.push_back( query.getValue( row, 0 ) );
 }
 
-int MySQLStore::getNextSenderMsgSeqNum() const throw ( IOException )
+int MySQLStore::getNextSenderMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextSenderMsgSeqNum();
 }
 
-int MySQLStore::getNextTargetMsgSeqNum() const throw ( IOException )
+int MySQLStore::getNextTargetMsgSeqNum() const THROW_DECL( IOException )
 {
   return m_cache.getNextTargetMsgSeqNum();
 }
 
-void MySQLStore::setNextSenderMsgSeqNum( int value ) throw ( IOException )
+void MySQLStore::setNextSenderMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET outgoing_seqnum=" << value << " WHERE "
@@ -248,7 +247,7 @@ void MySQLStore::setNextSenderMsgSeqNum( int value ) throw ( IOException )
   m_cache.setNextSenderMsgSeqNum( value );
 }
 
-void MySQLStore::setNextTargetMsgSeqNum( int value ) throw ( IOException )
+void MySQLStore::setNextTargetMsgSeqNum( int value ) THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "UPDATE sessions SET incoming_seqnum=" << value << " WHERE "
@@ -264,19 +263,19 @@ void MySQLStore::setNextTargetMsgSeqNum( int value ) throw ( IOException )
   m_cache.setNextTargetMsgSeqNum( value );
 }
 
-void MySQLStore::incrNextSenderMsgSeqNum() throw ( IOException )
+void MySQLStore::incrNextSenderMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextSenderMsgSeqNum();
   setNextSenderMsgSeqNum( m_cache.getNextSenderMsgSeqNum() );
 }
 
-void MySQLStore::incrNextTargetMsgSeqNum() throw ( IOException )
+void MySQLStore::incrNextTargetMsgSeqNum() THROW_DECL( IOException )
 {
   m_cache.incrNextTargetMsgSeqNum();
   setNextTargetMsgSeqNum( m_cache.getNextTargetMsgSeqNum() );
 }
 
-void MySQLStore::reset() throw ( IOException )
+void MySQLStore::reset() THROW_DECL( IOException )
 {
   std::stringstream queryString;
   queryString << "DELETE FROM messages WHERE "
@@ -314,7 +313,7 @@ void MySQLStore::reset() throw ( IOException )
     query2.throwException();
 }
 
-void MySQLStore::refresh() throw ( IOException )
+void MySQLStore::refresh() THROW_DECL( IOException )
 {
   m_cache.reset();
   populateCache(); 

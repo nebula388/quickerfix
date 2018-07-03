@@ -8,8 +8,9 @@ namespace FIX40
 
   class ListStatus : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("N"); }
   public:
-    ListStatus() : Message(MsgType()) {}
+    ListStatus() : Message(PackedType()) {}
     ListStatus(const FIX::Message& m) : Message(m) {}
     ListStatus(const Message& m) : Message(m) {}
     ListStatus(const ListStatus& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX40
       const FIX::ListID& aListID,
       const FIX::NoRpts& aNoRpts,
       const FIX::RptSeq& aRptSeq )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aListID);
-      set(aNoRpts);
-      set(aRptSeq);
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aNoRpts);
+      Sequence::push_back_to(*this, aRptSeq);
+    }
+
+    ListStatus(
+      const FIX::ListID::Pack& aListID,
+      const FIX::NoRpts::Pack& aNoRpts,
+      const FIX::RptSeq::Pack& aRptSeq )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aListID);
+      Sequence::push_back_to(*this, aNoRpts);
+      Sequence::push_back_to(*this, aRptSeq);
     }
 
     FIELD_SET(*this, FIX::ListID);

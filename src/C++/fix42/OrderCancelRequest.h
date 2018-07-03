@@ -8,8 +8,9 @@ namespace FIX42
 
   class OrderCancelRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("F"); }
   public:
-    OrderCancelRequest() : Message(MsgType()) {}
+    OrderCancelRequest() : Message(PackedType()) {}
     OrderCancelRequest(const FIX::Message& m) : Message(m) {}
     OrderCancelRequest(const Message& m) : Message(m) {}
     OrderCancelRequest(const OrderCancelRequest& m) : Message(m) {}
@@ -21,13 +22,30 @@ namespace FIX42
       const FIX::Symbol& aSymbol,
       const FIX::Side& aSide,
       const FIX::TransactTime& aTransactTime )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aOrigClOrdID);
-      set(aClOrdID);
-      set(aSymbol);
-      set(aSide);
-      set(aTransactTime);
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrigClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aTransactTime);
+    }
+
+    OrderCancelRequest(
+      const FIX::OrigClOrdID::Pack& aOrigClOrdID,
+      const FIX::ClOrdID::Pack& aClOrdID,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Side::Pack& aSide,
+      const FIX::TransactTime::Pack& aTransactTime )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aClOrdID);
+      Sequence::push_back_to(*this, aOrigClOrdID);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aTransactTime);
     }
 
     FIELD_SET(*this, FIX::OrigClOrdID);

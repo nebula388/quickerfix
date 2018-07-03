@@ -8,8 +8,9 @@ namespace FIX42
 
   class QuoteStatusRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("a"); }
   public:
-    QuoteStatusRequest() : Message(MsgType()) {}
+    QuoteStatusRequest() : Message(PackedType()) {}
     QuoteStatusRequest(const FIX::Message& m) : Message(m) {}
     QuoteStatusRequest(const Message& m) : Message(m) {}
     QuoteStatusRequest(const QuoteStatusRequest& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX42
 
     QuoteStatusRequest(
       const FIX::Symbol& aSymbol )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aSymbol);
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
+    }
+
+    QuoteStatusRequest(
+      const FIX::Symbol::Pack& aSymbol )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aSymbol);
     }
 
     FIELD_SET(*this, FIX::QuoteID);

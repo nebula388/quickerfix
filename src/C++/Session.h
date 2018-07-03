@@ -63,13 +63,13 @@ public:
   bool sentLogout() { return m_state.sentLogout(); }
   bool receivedLogon() { return m_state.receivedLogon(); }
   bool isLoggedOn() { return receivedLogon() && sentLogon(); }
-  void reset() throw( IOException ) 
+  void reset() THROW_DECL( IOException )
   { generateLogout(); disconnect(); m_state.reset(); }
-  void refresh() throw( IOException )
+  void refresh() THROW_DECL( IOException )
   { m_state.refresh(); }
-  void setNextSenderMsgSeqNum( int num ) throw( IOException )
+  void setNextSenderMsgSeqNum( int num ) THROW_DECL( IOException )
   { m_state.setNextSenderMsgSeqNum( num ); }
-  void setNextTargetMsgSeqNum( int num ) throw( IOException )
+  void setNextTargetMsgSeqNum( int num ) THROW_DECL( IOException )
   { m_state.setNextTargetMsgSeqNum( num ); }
 
   const SessionID& getSessionID() const
@@ -84,20 +84,19 @@ public:
 
   static bool sendToTarget( Message& message,
                             const std::string& qualifier = "" )
-  throw( SessionNotFound );
+  THROW_DECL( SessionNotFound );
   static bool sendToTarget( Message& message, const SessionID& sessionID )
-  throw( SessionNotFound );
+  THROW_DECL( SessionNotFound );
   static bool sendToTarget( Message&,
                             const SenderCompID& senderCompID,
                             const TargetCompID& targetCompID,
                             const std::string& qualifier = "" )
-  throw( SessionNotFound );
+  THROW_DECL( SessionNotFound );
   static bool sendToTarget( Message& message,
                             const std::string& senderCompID,
                             const std::string& targetCompID,
                             const std::string& qualifier = "" )
-  throw( SessionNotFound );
-
+  THROW_DECL( SessionNotFound );
   static std::set<SessionID> getSessions();
   static bool doesSessionExist( const SessionID& );
   static Session* lookupSession( const SessionID& );
@@ -269,8 +268,8 @@ private:
   bool tx( const std::string& );
   bool sendRaw( Message&, int msgSeqNum = 0 );
   bool resend( Message& message );
-  void persist( const Message&, const std::string& ) throw ( IOException );
-  template <typename B> void persist( const Message& message, B buf, int n) throw ( IOException ) {
+  void persist( const Message&, const std::string& ) THROW_DECL( IOException );
+  template <typename B> void persist( const Message& message, B buf, int n) {
     if( m_persistMessages )
     {
       MsgSeqNum msgSeqNum;
@@ -295,7 +294,7 @@ private:
   }
 
   void fill( Header&, UtcTimeStamp now = UtcTimeStamp()  );
-  Message::admin_trait fill( Header&, int num, UtcTimeStamp now = UtcTimeStamp() );
+  DataDictionary::MsgInfo::Admin::Trait fill( Header&, int num, UtcTimeStamp now = UtcTimeStamp() );
 
   inline bool isGoodTime( const SendingTime& sendingTime,
                           const UtcTimeStamp& now )
@@ -324,8 +323,8 @@ private:
   bool shouldSendReset();
 
   bool validLogonState( const MsgType& msgType );
-  bool validLogonState( Message::Admin::AdminType adminType );
-  void fromCallback( Message::Admin::AdminType adminType, const Message& msg,
+  bool validLogonState( DataDictionary::MsgInfo::Admin::Type adminType );
+  void fromCallback( DataDictionary::MsgInfo::Admin::Type adminType, const Message& msg,
                      const SessionID& sessionID );
 
   void doBadTime( const Message& msg );
@@ -369,7 +368,7 @@ private:
   void populateRejectReason( Message&, int field, const std::string& );
   void populateRejectReason( Message&, const std::string& );
 
-  bool verify( const Message& msg, Message::Admin::AdminType adminType,
+  bool verify( const Message& msg, DataDictionary::MsgInfo::Admin::Type adminType,
 				   const UtcTimeStamp& now,
                                    const Header& header,
                                    bool  checkTooHigh, bool checkTooLow );
@@ -378,10 +377,11 @@ private:
   {
     const Header&  header = msg.getHeader();
     const MsgType* pType = FIELD_GET_PTR( header, MsgType );
-    return verify( msg, pType ? Message::msgAdminType(*pType) : Message::Admin::None,
+    return verify( msg,
+                   pType ? DataDictionary::MsgInfo::msgAdminType(*pType) : DataDictionary::MsgInfo::Admin::None,
                    UtcTimeStamp(), header, checkTooHigh, checkTooLow );
   }
-  bool verify( const Message& msg, Message::Admin::AdminType adminType,
+  bool verify( const Message& msg, DataDictionary::MsgInfo::Admin::Type adminType,
                bool checkTooHigh = true, bool checkTooLow = true )
   {
     return verify( msg, adminType, UtcTimeStamp(), msg.getHeader(),
@@ -419,7 +419,7 @@ private:
   LogFactory* m_pLogFactory;
   Responder* m_pResponder;
   Mutex m_mutex;
-  FieldMap::allocator_type m_rcvAllocator;
+  FieldMap::allocator_type m_rcvAllocator, m_sendAllocator;
   std::string m_sendStringBuffer;
 
   static Sessions s_sessions;
@@ -505,7 +505,7 @@ private:
 #else
 				::memcpy((char*)IOV_BUF(*e) + IOV_LEN(*e), src, l);
 #endif
-				IOV_LEN(*e) += l;	
+				IOV_LEN(*e) += (Sg::sg_size_t)l;	
 				return *this;
 			}
 			SgBuffer& HEAVYUSE append(int field, int sz, const char* s, std::size_t l) {

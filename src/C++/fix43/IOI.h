@@ -8,8 +8,9 @@ namespace FIX43
 
   class IOI : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("6"); }
   public:
-    IOI() : Message(MsgType()) {}
+    IOI() : Message(PackedType()) {}
     IOI(const FIX::Message& m) : Message(m) {}
     IOI(const Message& m) : Message(m) {}
     IOI(const IOI& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX43
       const FIX::IOITransType& aIOITransType,
       const FIX::Side& aSide,
       const FIX::IOIQty& aIOIQty )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aIOIid);
-      set(aIOITransType);
-      set(aSide);
-      set(aIOIQty);
+      // must be in this order
+      Sequence::push_back_to(*this, aIOIid);
+      Sequence::push_back_to(*this, aIOIQty);
+      Sequence::push_back_to(*this, aIOITransType);
+      Sequence::push_back_to(*this, aSide);
+    }
+
+    IOI(
+      const FIX::IOIid::Pack& aIOIid,
+      const FIX::IOITransType::Pack& aIOITransType,
+      const FIX::Side::Pack& aSide,
+      const FIX::IOIQty::Pack& aIOIQty )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aIOIid);
+      Sequence::push_back_to(*this, aIOIQty);
+      Sequence::push_back_to(*this, aIOITransType);
+      Sequence::push_back_to(*this, aSide);
     }
 
     FIELD_SET(*this, FIX::IOIid);

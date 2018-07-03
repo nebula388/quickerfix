@@ -28,9 +28,9 @@
 #include <iostream>
 
 #include "Application.h"
-#include "quickfix/Mutex.h"
-#include "quickfix/AtomicCount.h"
-#include "quickfix/Session.h"
+#include "Mutex.h"
+#include "AtomicCount.h"
+#include "Session.h"
 #ifndef _MSC_VER
 #include <sys/time.h>
 #else
@@ -174,14 +174,14 @@ void Application::onLogout( const FIX::SessionID& sessionID )
 }
 
 void Application::fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
-throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
 {
   crack( message, sessionID );
   q_on_receive( message );
 }
 
 void Application::toApp( FIX::Message& message, const FIX::SessionID& sessionID )
-throw( FIX::DoNotSend )
+THROW_DECL( FIX::DoNotSend )
 {
   try
   {

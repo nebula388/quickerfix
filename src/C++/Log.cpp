@@ -29,14 +29,14 @@ namespace FIX
 {
 Mutex ScreenLog::s_mutex;
 
-Log* ScreenLogFactory::create()
+COLDSECTION Log* ScreenLogFactory::create()
 {
   bool incoming, outgoing, event;
   init( m_settings.get(), incoming, outgoing, event );
   return new ScreenLog( incoming, outgoing, event );
 }
 
-Log* ScreenLogFactory::create( const SessionID& sessionID )
+COLDSECTION Log* ScreenLogFactory::create( const SessionID& sessionID )
 {
   Dictionary settings;
   if( m_settings.has(sessionID) ) 
@@ -47,6 +47,7 @@ Log* ScreenLogFactory::create( const SessionID& sessionID )
   return new ScreenLog( sessionID, incoming, outgoing, event );
 }
 
+COLDSECTION
 void ScreenLogFactory::init( const Dictionary& settings, bool& incoming, bool& outgoing, bool& event )
 {
   if( m_useSettings )
@@ -70,7 +71,7 @@ void ScreenLogFactory::init( const Dictionary& settings, bool& incoming, bool& o
   }
 }
 
-void ScreenLogFactory::destroy( Log* pLog )
+COLDSECTION void ScreenLogFactory::destroy( Log* pLog )
 {
   delete pLog;
 }

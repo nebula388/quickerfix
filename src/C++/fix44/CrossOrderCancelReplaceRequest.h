@@ -8,8 +8,9 @@ namespace FIX44
 
   class CrossOrderCancelReplaceRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("t"); }
   public:
-    CrossOrderCancelReplaceRequest() : Message(MsgType()) {}
+    CrossOrderCancelReplaceRequest() : Message(PackedType()) {}
     CrossOrderCancelReplaceRequest(const FIX::Message& m) : Message(m) {}
     CrossOrderCancelReplaceRequest(const Message& m) : Message(m) {}
     CrossOrderCancelReplaceRequest(const CrossOrderCancelReplaceRequest& m) : Message(m) {}
@@ -22,14 +23,33 @@ namespace FIX44
       const FIX::CrossPrioritization& aCrossPrioritization,
       const FIX::TransactTime& aTransactTime,
       const FIX::OrdType& aOrdType )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aCrossID);
-      set(aOrigCrossID);
-      set(aCrossType);
-      set(aCrossPrioritization);
-      set(aTransactTime);
-      set(aOrdType);
+      // must be in this order
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
+    }
+
+    CrossOrderCancelReplaceRequest(
+      const FIX::CrossID::Pack& aCrossID,
+      const FIX::OrigCrossID::Pack& aOrigCrossID,
+      const FIX::CrossType::Pack& aCrossType,
+      const FIX::CrossPrioritization::Pack& aCrossPrioritization,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::OrdType::Pack& aOrdType )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aOrdType);
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aCrossID);
+      Sequence::push_back_to(*this, aCrossType);
+      Sequence::push_back_to(*this, aCrossPrioritization);
+      Sequence::push_back_to(*this, aOrigCrossID);
     }
 
     FIELD_SET(*this, FIX::OrderID);
@@ -130,6 +150,14 @@ namespace FIX44
     FIELD_SET(*this, FIX::SymbolSfx);
     FIELD_SET(*this, FIX::SecurityID);
     FIELD_SET(*this, FIX::SecurityIDSource);
+    FIELD_SET(*this, FIX::NoSecurityAltID);
+    class NoSecurityAltID: public FIX::Group
+    {
+    public:
+    NoSecurityAltID() : FIX::Group(454,455,FIX::message_order(455,456,0)) {}
+      FIELD_SET(*this, FIX::SecurityAltID);
+      FIELD_SET(*this, FIX::SecurityAltIDSource);
+    };
     FIELD_SET(*this, FIX::Product);
     FIELD_SET(*this, FIX::CFICode);
     FIELD_SET(*this, FIX::SecurityType);
@@ -165,6 +193,16 @@ namespace FIX44
     FIELD_SET(*this, FIX::ContractSettlMonth);
     FIELD_SET(*this, FIX::CPProgram);
     FIELD_SET(*this, FIX::CPRegType);
+    FIELD_SET(*this, FIX::NoEvents);
+    class NoEvents: public FIX::Group
+    {
+    public:
+    NoEvents() : FIX::Group(864,865,FIX::message_order(865,866,867,868,0)) {}
+      FIELD_SET(*this, FIX::EventType);
+      FIELD_SET(*this, FIX::EventDate);
+      FIELD_SET(*this, FIX::EventPx);
+      FIELD_SET(*this, FIX::EventText);
+    };
     FIELD_SET(*this, FIX::DatedDate);
     FIELD_SET(*this, FIX::InterestAccrualDate);
     FIELD_SET(*this, FIX::NoUnderlyings);
@@ -176,6 +214,14 @@ namespace FIX44
       FIELD_SET(*this, FIX::UnderlyingSymbolSfx);
       FIELD_SET(*this, FIX::UnderlyingSecurityID);
       FIELD_SET(*this, FIX::UnderlyingSecurityIDSource);
+      FIELD_SET(*this, FIX::NoUnderlyingSecurityAltID);
+      class NoUnderlyingSecurityAltID: public FIX::Group
+      {
+      public:
+      NoUnderlyingSecurityAltID() : FIX::Group(457,458,FIX::message_order(458,459,0)) {}
+        FIELD_SET(*this, FIX::UnderlyingSecurityAltID);
+        FIELD_SET(*this, FIX::UnderlyingSecurityAltIDSource);
+      };
       FIELD_SET(*this, FIX::UnderlyingProduct);
       FIELD_SET(*this, FIX::UnderlyingCFICode);
       FIELD_SET(*this, FIX::UnderlyingSecurityType);
@@ -217,6 +263,14 @@ namespace FIX44
       FIELD_SET(*this, FIX::UnderlyingStartValue);
       FIELD_SET(*this, FIX::UnderlyingCurrentValue);
       FIELD_SET(*this, FIX::UnderlyingEndValue);
+      FIELD_SET(*this, FIX::NoUnderlyingStips);
+      class NoUnderlyingStips: public FIX::Group
+      {
+      public:
+      NoUnderlyingStips() : FIX::Group(887,888,FIX::message_order(888,889,0)) {}
+        FIELD_SET(*this, FIX::UnderlyingStipType);
+        FIELD_SET(*this, FIX::UnderlyingStipValue);
+      };
     };
     FIELD_SET(*this, FIX::NoLegs);
     class NoLegs: public FIX::Group
@@ -227,6 +281,14 @@ namespace FIX44
       FIELD_SET(*this, FIX::LegSymbolSfx);
       FIELD_SET(*this, FIX::LegSecurityID);
       FIELD_SET(*this, FIX::LegSecurityIDSource);
+      FIELD_SET(*this, FIX::NoLegSecurityAltID);
+      class NoLegSecurityAltID: public FIX::Group
+      {
+      public:
+      NoLegSecurityAltID() : FIX::Group(604,605,FIX::message_order(605,606,0)) {}
+        FIELD_SET(*this, FIX::LegSecurityAltID);
+        FIELD_SET(*this, FIX::LegSecurityAltIDSource);
+      };
       FIELD_SET(*this, FIX::LegProduct);
       FIELD_SET(*this, FIX::LegCFICode);
       FIELD_SET(*this, FIX::LegSecurityType);

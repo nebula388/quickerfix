@@ -30,14 +30,16 @@
 
 namespace FIX
 {
-SessionSettings::SessionSettings( std::istream& stream )
-throw( ConfigError )
+COLDSECTION SessionSettings::SessionSettings( std::istream& stream, bool resolveEnvVars )
+THROW_DECL( ConfigError )
+: m_resolveEnvVars( resolveEnvVars )
 {
   stream >> *this;
 }
 
-SessionSettings::SessionSettings( const std::string& file )
-throw( ConfigError )
+COLDSECTION SessionSettings::SessionSettings( const std::string& file, bool resolveEnvVars )
+THROW_DECL( ConfigError )
+: m_resolveEnvVars( resolveEnvVars )
 {
   std::ifstream fstream( file.c_str() );
   if ( !fstream.is_open() )
@@ -45,10 +47,10 @@ throw( ConfigError )
   fstream >> *this;
 }
 
-std::istream& operator>>( std::istream& stream, SessionSettings& s )
-throw( ConfigError )
+COLDSECTION std::istream& operator>>( std::istream& stream, SessionSettings& s )
+THROW_DECL( ConfigError )
 {
-  Settings settings;
+  Settings settings(s.m_resolveEnvVars);
   stream >> settings;
 
   Settings::Sections section;
@@ -84,7 +86,7 @@ throw( ConfigError )
   return stream;
 }
 
-std::ostream& operator<<( std::ostream& stream, const SessionSettings& s )
+COLDSECTION std::ostream& operator<<( std::ostream& stream, const SessionSettings& s )
 {
   const Dictionary& defaults = s.m_defaults;
   if( defaults.size() )
@@ -123,7 +125,7 @@ bool SessionSettings::has( const SessionID& sessionID ) const
 }
 
 const Dictionary& SessionSettings::get( const SessionID& sessionID ) const
-throw( ConfigError )
+THROW_DECL( ConfigError )
 {
   Dictionaries::const_iterator i;
   i = m_settings.find( sessionID );
@@ -133,7 +135,7 @@ throw( ConfigError )
 
 void SessionSettings::set( const SessionID& sessionID,
                            Dictionary settings )
-throw( ConfigError )
+THROW_DECL( ConfigError )
 {
   if( has(sessionID) )
     throw ConfigError( "Duplicate Session " + sessionID.toString() );
@@ -147,7 +149,8 @@ throw( ConfigError )
   m_settings[ sessionID ] = settings;
 }
 
-void SessionSettings::set( const Dictionary& defaults ) throw( ConfigError ) 
+void SessionSettings::set( const Dictionary& defaults )
+THROW_DECL( ConfigError )
 { 
   m_defaults = defaults;
   Dictionaries::iterator i = m_settings.begin();
@@ -165,7 +168,7 @@ std::set < SessionID > SessionSettings::getSessions() const
 }
 
 void SessionSettings::validate( const Dictionary& dictionary ) const
-throw( ConfigError )
+THROW_DECL( ConfigError )
 {
   std::string beginString = dictionary.getString( BEGINSTRING );
   if( beginString != BeginString_FIX40 &&

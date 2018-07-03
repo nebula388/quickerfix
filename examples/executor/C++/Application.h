@@ -22,18 +22,18 @@
 #ifndef EXECUTOR_APPLICATION_H
 #define EXECUTOR_APPLICATION_H
 
-#include "quickfix/Application.h"
-#include "quickfix/MessageCracker.h"
-#include "quickfix/Values.h"
-#include "quickfix/Utility.h"
-#include "quickfix/Mutex.h"
+#include "Application.h"
+#include "MessageCracker.h"
+#include "Values.h"
+#include "Utility.h"
+#include "Mutex.h"
 
-#include "quickfix/fix40/NewOrderSingle.h"
-#include "quickfix/fix41/NewOrderSingle.h"
-#include "quickfix/fix42/NewOrderSingle.h"
-#include "quickfix/fix43/NewOrderSingle.h"
-#include "quickfix/fix44/NewOrderSingle.h"
-#include "quickfix/fix50/NewOrderSingle.h"
+#include "fix40/NewOrderSingle.h"
+#include "fix41/NewOrderSingle.h"
+#include "fix42/NewOrderSingle.h"
+#include "fix43/NewOrderSingle.h"
+#include "fix44/NewOrderSingle.h"
+#include "fix50/NewOrderSingle.h"
 
 class Application
 : public FIX::Application, public FIX::MessageCracker
@@ -47,11 +47,11 @@ public:
   void onLogout( const FIX::SessionID& sessionID );
   void toAdmin( FIX::Message&, const FIX::SessionID& );
   void toApp( FIX::Message&, const FIX::SessionID& )
-    throw( FIX::DoNotSend );
+    THROW_DECL( FIX::DoNotSend );
   void fromAdmin( const FIX::Message&, const FIX::SessionID& )
-    throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon );
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon );
   void fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
-    throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
+    THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
 
   // MessageCracker overloads
   void onMessage( const FIX40::NewOrderSingle&, const FIX::SessionID& );

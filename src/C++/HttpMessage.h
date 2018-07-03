@@ -43,7 +43,7 @@ public:
 
   /// Construct a message from a string
   HttpMessage( const std::string& string )
-  throw( InvalidMessage );
+  THROW_DECL( InvalidMessage );
 
   HttpMessage( const HttpMessage& copy )
   {
@@ -58,7 +58,7 @@ public:
   std::string& toString( std::string& ) const;
 
   void setString( const std::string& string )
-  throw( InvalidMessage );
+  THROW_DECL( InvalidMessage );
 
   void clear()
   {
@@ -95,7 +95,7 @@ public:
   }
 
   const std::string& getParameter( const std::string& key ) const
-  throw( std::logic_error )
+  THROW_DECL( std::logic_error )
   {
     Parameters::const_iterator find = m_parameters.find( key );
     if( find == m_parameters.end() )

@@ -8,8 +8,9 @@ namespace FIX44
 
   class AllocationReportAck : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AT"); }
   public:
-    AllocationReportAck() : Message(MsgType()) {}
+    AllocationReportAck() : Message(PackedType()) {}
     AllocationReportAck(const FIX::Message& m) : Message(m) {}
     AllocationReportAck(const Message& m) : Message(m) {}
     AllocationReportAck(const AllocationReportAck& m) : Message(m) {}
@@ -20,12 +21,27 @@ namespace FIX44
       const FIX::AllocID& aAllocID,
       const FIX::TransactTime& aTransactTime,
       const FIX::AllocStatus& aAllocStatus )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAllocReportID);
-      set(aAllocID);
-      set(aTransactTime);
-      set(aAllocStatus);
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocStatus);
+      Sequence::push_back_to(*this, aAllocReportID);
+    }
+
+    AllocationReportAck(
+      const FIX::AllocReportID::Pack& aAllocReportID,
+      const FIX::AllocID::Pack& aAllocID,
+      const FIX::TransactTime::Pack& aTransactTime,
+      const FIX::AllocStatus::Pack& aAllocStatus )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aTransactTime);
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocStatus);
+      Sequence::push_back_to(*this, aAllocReportID);
     }
 
     FIELD_SET(*this, FIX::AllocReportID);

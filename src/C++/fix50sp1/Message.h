@@ -23,7 +23,6 @@ namespace FIX50SP1
     : FIX::Message(
       FIX::BeginString::Pack("FIXT.1.1"), msgtype )
      { Sequence::push_back_to( getHeader(), FIX::ApplVerID::Pack("8") ); }
-
   public:
     Message( const FIX::MsgType& msgtype )
     : FIX::Message(

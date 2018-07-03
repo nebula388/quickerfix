@@ -1,13 +1,28 @@
 %module(directors="1") quickfix
 
 #define NOTHROW
+#define HEAVYUSE
+#define LIGHTUSE
+#define PURE_DECL
+#define ALIGN_DECL_DEFAULT
 
 %exceptionclass FIX::Exception;
+
+%include "C++/Config.h"
+
+#ifdef ENABLE_THROW_DECL
+#define THROW_DECL(...) throw(__VA_ARGS__)
+#else
+#define THROW_DECL(...)
+#endif
 
 %include typemaps.i
 %include std_string.i
 %include exception.i
 %include carrays.i
+#ifdef HAVE_STD_UNIQUE_PTR
+%include std_unique_ptr.i
+#endif
 
 %feature("director") FIX::Application;
 %feature("classic") FIX::Exception;
@@ -16,12 +31,23 @@
 
 %ignore _REENTRANT;
 %ignore FIX::SynchronizedApplication::m_mutex;
+%ignore FIX::Type;
+%ignore FIX::StringField::Packed;
 %ignore FIX::FieldMap::Options;
 %ignore FIX::FieldMap::FieldMap;
+%ignore FIX::Message::identifyType;
 %rename("%s") FIX::FieldMap::FieldMap();
 %rename("%s") FIX::FieldMap::FieldMap(message_order const&);
 %rename("%s") FIX::FieldMap::FieldMap(int const []);
 %rename("%s") FIX::FieldMap::FieldMap(FieldMap const&);
+%ignore FIX::Header::Header;
+%rename("%s") FIX::Header::Header();
+%rename("%s") FIX::Header::Header(message_order const&);
+%rename("%s") FIX::Header::Header(Header const&);
+%ignore FIX::Trailer::Trailer;
+%rename("%s") FIX::Trailer::Trailer();
+%rename("%s") FIX::Trailer::Trailer(message_order const&);
+%rename("%s") FIX::Trailer::Trailer(Trailer const&);
 %rename(SocketInitiatorBase) FIX::SocketInitiator;
 %rename(SocketAcceptorBase) FIX::SocketAcceptor;
 

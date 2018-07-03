@@ -33,11 +33,11 @@
 
 namespace FIX
 {
-Acceptor::Acceptor( Application& application,
+COLDSECTION Acceptor::Acceptor( Application& application,
                     MessageStoreFactory& messageStoreFactory,
                     const SessionSettings& settings )
-throw( ConfigError )
-  : m_threadid( 0 ),
+THROW_DECL( ConfigError )
+: m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
   m_settings( settings ),
@@ -49,11 +49,11 @@ throw( ConfigError )
   initialize();
 }
 
-Acceptor::Acceptor( Application& application,
+COLDSECTION Acceptor::Acceptor( Application& application,
                     MessageStoreFactory& messageStoreFactory,
                     const SessionSettings& settings,
                     LogFactory& logFactory )
-throw( ConfigError )
+THROW_DECL( ConfigError )
 : m_threadid( 0 ),
   m_application( application ),
   m_messageStoreFactory( messageStoreFactory ),
@@ -66,7 +66,7 @@ throw( ConfigError )
   initialize();
 }
 
-void Acceptor::initialize() throw ( ConfigError )
+COLDSECTION void Acceptor::initialize() THROW_DECL( ConfigError )
 {
   std::set < SessionID > sessions = m_settings.getSessions();
   std::set < SessionID > ::iterator i;
@@ -90,7 +90,7 @@ void Acceptor::initialize() throw ( ConfigError )
     throw ConfigError( "No sessions defined for acceptor" );
 }
 
-Acceptor::~Acceptor()
+COLDSECTION Acceptor::~Acceptor()
 {
   Sessions::iterator i;
   for ( i = m_sessions.begin(); i != m_sessions.end(); ++i )
@@ -188,7 +188,7 @@ const Dictionary* Acceptor::getSessionSettings( const SessionID& sessionID ) con
   }
 }
 
-void Acceptor::start() throw ( ConfigError, RuntimeError )
+void Acceptor::start() THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -200,7 +200,7 @@ void Acceptor::start() throw ( ConfigError, RuntimeError )
     throw RuntimeError("Unable to spawn thread");
 }
 
-void Acceptor::block() throw ( ConfigError, RuntimeError )
+void Acceptor::block() THROW_DECL( ConfigError, RuntimeError )
 {
   m_stop = false;
   onConfigure( m_settings );
@@ -209,7 +209,7 @@ void Acceptor::block() throw ( ConfigError, RuntimeError )
   startThread(this);
 }
 
-bool Acceptor::poll( double timeout ) throw ( ConfigError, RuntimeError )
+bool Acceptor::poll( double timeout ) THROW_DECL( ConfigError, RuntimeError )
 {
   if( m_firstPoll )
   {

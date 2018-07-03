@@ -20,6 +20,7 @@ namespace FIX42
       const FIX::QuoteReqID& aQuoteReqID )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aQuoteReqID);
     }
 
@@ -27,6 +28,7 @@ namespace FIX42
       const FIX::QuoteReqID::Pack& aQuoteReqID )
     : Message(PackedType())
     {
+      // must be in this order
       Sequence::push_back_to(*this, aQuoteReqID);
     }
 

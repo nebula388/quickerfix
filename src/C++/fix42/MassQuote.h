@@ -8,8 +8,9 @@ namespace FIX42
 
   class MassQuote : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("i"); }
   public:
-    MassQuote() : Message(MsgType()) {}
+    MassQuote() : Message(PackedType()) {}
     MassQuote(const FIX::Message& m) : Message(m) {}
     MassQuote(const Message& m) : Message(m) {}
     MassQuote(const MassQuote& m) : Message(m) {}
@@ -17,9 +18,18 @@ namespace FIX42
 
     MassQuote(
       const FIX::QuoteID& aQuoteID )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteID);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
+    }
+
+    MassQuote(
+      const FIX::QuoteID::Pack& aQuoteID )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteID);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);

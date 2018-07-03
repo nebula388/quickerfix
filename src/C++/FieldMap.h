@@ -58,6 +58,7 @@ class FieldMap
     int first;
     FieldBase second;
 
+    // uses a reference to a message_order member of FieldMap
     struct compare_type : public message_order::comparator {
       typedef message_order::comparator base_type;
       compare_type( const message_order& order ) : base_type( order ) {}
@@ -629,7 +630,7 @@ public:
   : m_order( order ), m_fields( m_order ) {}
 
   FieldMap( const FieldMap& src )
-  : m_order( src.m_order ), m_fields( src.m_fields.value_comp() )
+  : m_order( src.m_order ), m_fields( m_order )
   {
 #if !defined(ENABLE_FLAT_FIELDMAP) && defined(ENABLE_RELAXED_ORDERING)
     if (src.m_fields.list()) m_fields.attach(m_allocator.header());
@@ -642,7 +643,7 @@ public:
   : m_allocator( a ), m_order( order ), m_fields( order ) {}
 
   FieldMap( const allocator_type& a, const FieldMap& src )
-  : m_allocator( a ), m_order( src.m_order ), m_fields( src.m_fields.value_comp() )
+  : m_allocator( a ), m_order( src.m_order ), m_fields( m_order )
   {
 #if !defined(ENABLE_FLAT_FIELDMAP) && defined(ENABLE_RELAXED_ORDERING)
     if (src.m_fields.list()) m_fields.attach(m_allocator.header());
@@ -694,7 +695,7 @@ public:
 
   /// Set a field without type checking
   void setField( const FieldBase& field, bool overwrite = true )
-  throw( RepeatedTag )
+  THROW_DECL( RepeatedTag )
   {
     if ( overwrite )
       assign( field.getTag(), field );
@@ -704,7 +705,7 @@ public:
 
   /// Set a field without a field class
   void setField( int tag, const std::string& value )
-  throw( RepeatedTag, NoTagValue )
+  THROW_DECL( RepeatedTag, NoTagValue )
   { assign( tag, value ); }
 
   /// Get a field if set
@@ -718,21 +719,21 @@ public:
   }
 
   /// Get a field without type checking
-  FieldBase& getField( FieldBase& field )
-  const throw( FieldNotFound )
+  FieldBase& getField( FieldBase& field ) const
+  THROW_DECL( FieldNotFound )
   {
     field = getFieldRef( field.getTag() );
     return field;
   }
 
   /// Get a field without a field class
-  const std::string& getField( int tag )
-  const throw( FieldNotFound )
+  const std::string& getField( int tag ) const
+  THROW_DECL( FieldNotFound )
   { return getFieldRef( tag ).getString(); }
 
   /// Get direct access to a field through a reference
-  const FieldBase& getFieldRef( int tag )
-  const throw( FieldNotFound )
+  const FieldBase& getFieldRef( int tag ) const
+  THROW_DECL( FieldNotFound )
   {
     Fields::const_iterator iter = find( tag );
     if ( iter == m_fields.end() )
@@ -741,8 +742,8 @@ public:
   }
 
   /// Get direct access to a field through a pointer
-  const FieldBase* getFieldPtr( int tag )
-  const throw( FieldNotFound )
+  const FieldBase* getFieldPtr( int tag ) const
+  THROW_DECL( FieldNotFound )
   { return &getFieldRef( tag ); }
 
   /// Get direct access to a field through a pointer
@@ -804,12 +805,12 @@ public:
 
   /// Get a specific instance of a group.
   FieldMap& getGroup( int num, int tag, FieldMap& group ) const
-  throw( FieldNotFound )
+  THROW_DECL( FieldNotFound )
   { return group = getGroupRef( num, tag ); }
 
   /// Get direct access to a field through a reference
   FieldMap& getGroupRef( int num, int tag ) const
-  throw( FieldNotFound )
+  THROW_DECL( FieldNotFound )
   {
     Groups::const_iterator i = m_groups.find( tag );
     if( i == m_groups.end() ) throw FieldNotFound( tag );
@@ -820,7 +821,7 @@ public:
 
   /// Get direct access to a field through a pointer
   FieldMap* getGroupPtr( int num, int tag ) const
-  throw( FieldNotFound )
+  THROW_DECL( FieldNotFound )
   { return &getGroupRef( num, tag ); }
 
   /// Remove a specific instance of a group.
@@ -887,7 +888,7 @@ public:
 
 protected:
   static inline
-  allocator_type create_allocator(std::size_t n = ItemAllocatorTraits::DefaultCapacity)
+  allocator_type create_allocator(unsigned n = ItemAllocatorTraits::DefaultCapacity)
   {
     allocator_type a( allocator_type::buffer_type::create(n) );
 #ifdef ENABLE_FLAT_FIELDMAP

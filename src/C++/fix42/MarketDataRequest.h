@@ -8,8 +8,9 @@ namespace FIX42
 
   class MarketDataRequest : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("V"); }
   public:
-    MarketDataRequest() : Message(MsgType()) {}
+    MarketDataRequest() : Message(PackedType()) {}
     MarketDataRequest(const FIX::Message& m) : Message(m) {}
     MarketDataRequest(const Message& m) : Message(m) {}
     MarketDataRequest(const MarketDataRequest& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX42
       const FIX::MDReqID& aMDReqID,
       const FIX::SubscriptionRequestType& aSubscriptionRequestType,
       const FIX::MarketDepth& aMarketDepth )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aMDReqID);
-      set(aSubscriptionRequestType);
-      set(aMarketDepth);
+      // must be in this order
+      Sequence::push_back_to(*this, aMDReqID);
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aMarketDepth);
+    }
+
+    MarketDataRequest(
+      const FIX::MDReqID::Pack& aMDReqID,
+      const FIX::SubscriptionRequestType::Pack& aSubscriptionRequestType,
+      const FIX::MarketDepth::Pack& aMarketDepth )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aMDReqID);
+      Sequence::push_back_to(*this, aSubscriptionRequestType);
+      Sequence::push_back_to(*this, aMarketDepth);
     }
 
     FIELD_SET(*this, FIX::MDReqID);

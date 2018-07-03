@@ -39,7 +39,7 @@ Mutex Session::s_mutex;
 #define LOGEX( method ) try { method; } catch( std::exception& e ) \
   { m_state.onEvent( e.what() ); }
 
-Session::Session( Application& application,
+COLDSECTION Session::Session( Application& application,
                   MessageStoreFactory& messageStoreFactory,
                   const SessionID& sessionID,
                   const DataDictionaryProvider& dataDictionaryProvider,
@@ -105,9 +105,9 @@ void Session::fill( Header& header, UtcTimeStamp now )
   insertSendingTime( header, now );
 }
 
-Message::admin_trait Session::fill( Header& header, int num, UtcTimeStamp now )
+DataDictionary::MsgInfo::Admin::Trait HEAVYUSE HOTSECTION Session::fill( Header& header, int num, UtcTimeStamp now )
 {
-  Message::admin_trait trait = Message::admin_none;
+  DataDictionary::MsgInfo::Admin::Trait trait = DataDictionary::MsgInfo::Admin::trait_none;
   FieldMap::iterator it = header.begin();
 
   m_state.lastSentTime( now );
@@ -120,7 +120,7 @@ Message::admin_trait Session::fill( Header& header, int num, UtcTimeStamp now )
   if ( it->first == FIX::FIELD::BodyLength )
     ++it;
   if ( it->first == FIX::FIELD::MsgType )
-    trait = Message::msgAdminTrait( it->second );
+    trait = DataDictionary::MsgInfo::msgAdminTrait( it->second );
 
   Message::Sequence::set_in_ordered(header, m_sessionID.getSenderCompID() );
   Message::Sequence::set_in_ordered(header, m_sessionID.getTargetCompID() );
@@ -130,7 +130,7 @@ Message::admin_trait Session::fill( Header& header, int num, UtcTimeStamp now )
   return trait;
 }
 
-void HEAVYUSE Session::next( const UtcTimeStamp& timeStamp )
+void HEAVYUSE HOTSECTION Session::next( const UtcTimeStamp& timeStamp )
 {
   try
   {
@@ -248,7 +248,7 @@ void Session::nextLogon( const Message& logon, const UtcTimeStamp& timeStamp )
   if( !m_state.initiate() && m_resetOnLogon )
     m_state.reset();
 
-  if( !verify( logon, Message::Admin::Logon, false, true ) )
+  if( !verify( logon, DataDictionary::MsgInfo::Admin::Logon, false, true ) )
     return;
   m_state.receivedLogon( true );
 
@@ -284,7 +284,7 @@ void Session::nextLogon( const Message& logon, const UtcTimeStamp& timeStamp )
 
 void Session::nextHeartbeat( const Message& heartbeat, const UtcTimeStamp& timeStamp )
 {
-  if ( !verify( heartbeat, Message::Admin::Heartbeat ) ) return ;
+  if ( !verify( heartbeat, DataDictionary::MsgInfo::Admin::Heartbeat ) ) return ;
   m_state.incrNextTargetMsgSeqNum();
   nextQueued( timeStamp );
 
@@ -292,7 +292,7 @@ void Session::nextHeartbeat( const Message& heartbeat, const UtcTimeStamp& timeS
 
 void Session::nextTestRequest( const Message& testRequest, const UtcTimeStamp& timeStamp )
 {
-  if ( !verify( testRequest, Message::Admin::TestRequest ) ) return ;
+  if ( !verify( testRequest, DataDictionary::MsgInfo::Admin::TestRequest ) ) return ;
   generateHeartbeat( testRequest );
   m_state.incrNextTargetMsgSeqNum();
   nextQueued( timeStamp );
@@ -300,7 +300,7 @@ void Session::nextTestRequest( const Message& testRequest, const UtcTimeStamp& t
 
 void Session::nextLogout( const Message& logout, const UtcTimeStamp& timeStamp )
 {
-  if ( !verify( logout, Message::Admin::Logout, false, false ) ) return ;
+  if ( !verify( logout, DataDictionary::MsgInfo::Admin::Logout, false, false ) ) return ;
   if ( !m_state.sentLogout() )
   {
     m_state.onEvent( "Received logout request" );
@@ -317,7 +317,7 @@ void Session::nextLogout( const Message& logout, const UtcTimeStamp& timeStamp )
 
 void Session::nextReject( const Message& reject, const UtcTimeStamp& timeStamp )
 {
-  if ( !verify( reject, Message::Admin::Reject, false, true ) ) return ;
+  if ( !verify( reject, DataDictionary::MsgInfo::Admin::Reject, false, true ) ) return ;
   m_state.incrNextTargetMsgSeqNum();
   nextQueued( timeStamp );
 }
@@ -331,7 +331,7 @@ void Session::nextSequenceReset( const Message& sequenceReset, const UtcTimeStam
     isGapFill = gapFillFlag;
   }
 
-  if ( !verify( sequenceReset, Message::Admin::SequenceReset, isGapFill, isGapFill ) ) return ;
+  if ( !verify( sequenceReset, DataDictionary::MsgInfo::Admin::SequenceReset, isGapFill, isGapFill ) ) return ;
 
   NewSeqNo newSeqNo;
   if ( sequenceReset.getFieldIfSet( newSeqNo ) )
@@ -349,7 +349,7 @@ void Session::nextSequenceReset( const Message& sequenceReset, const UtcTimeStam
 
 void Session::nextResendRequest( const Message& resendRequest, const UtcTimeStamp& timeStamp )
 {
-  if ( !verify( resendRequest, Message::Admin::ResendRequest, false, false ) ) return ;
+  if ( !verify( resendRequest, DataDictionary::MsgInfo::Admin::ResendRequest, false, false ) ) return ;
 
   Locker l( m_mutex );
 
@@ -439,7 +439,7 @@ void Session::nextResendRequest( const Message& resendRequest, const UtcTimeStam
     m_state.incrNextTargetMsgSeqNum();
 }
 
-bool HEAVYUSE Session::send( Message& message )
+bool HEAVYUSE HOTSECTION Session::send( Message& message )
 {
   int f[2] = { FIELD::PossDupFlag, FIELD::OrigSendingTime };
   message.getHeader().removeFields( f, f + sizeof(f)/sizeof(int));
@@ -447,7 +447,7 @@ bool HEAVYUSE Session::send( Message& message )
   return sendRaw( message );
 }
 
-bool HEAVYUSE Session::sendRaw( Message& message, int num )
+bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
 {
   Locker l( m_mutex );
 
@@ -455,15 +455,16 @@ bool HEAVYUSE Session::sendRaw( Message& message, int num )
   {
     Header& header = message.getHeader();
 
-    Message::admin_trait trait = fill( header, num );
+    DataDictionary::MsgInfo::Admin::Trait trait = fill( header, num );
 
-    if ( trait & ( Message::admin_logon |
-                   Message::admin_status |
-                   Message::admin_session ) )
+    if ( trait & ( DataDictionary::MsgInfo::Admin::trait_logon |
+                   DataDictionary::MsgInfo::Admin::trait_status |
+                   DataDictionary::MsgInfo::Admin::trait_session ) )
     {
       m_application.toAdmin( message, m_sessionID );
 
-      if( trait == Message::admin_logon && !m_state.receivedReset() )
+      if( trait == DataDictionary::MsgInfo::Admin::trait_logon &&
+         !m_state.receivedReset() )
       {
         ResetSeqNumFlag resetSeqNumFlag;
         if( message.getFieldIfSet(resetSeqNumFlag) && resetSeqNumFlag )
@@ -484,7 +485,8 @@ bool HEAVYUSE Session::sendRaw( Message& message, int num )
 		  persist( message, s.iovec(), s.elements() );
 
         if ( isLoggedOn() ||
-           ( trait & ( Message::admin_logon | Message::admin_status ) ) )
+           ( trait & ( DataDictionary::MsgInfo::Admin::trait_logon |
+                       DataDictionary::MsgInfo::Admin::trait_status ) ) )
         {
           tx( s.iovec(), s.elements() );
         }  
@@ -595,7 +597,7 @@ bool Session::resend( Message& message )
 }
 
 void Session::persist( const Message& message,  const std::string& messageString ) 
-throw ( IOException )
+THROW_DECL( IOException )
 {
   if( m_persistMessages )
   {
@@ -608,8 +610,7 @@ throw ( IOException )
 
 void Session::generateLogon()
 {
-  Message logon;
-  logon.getHeader().setField( MsgType::Pack( "A", 1 ) );
+  Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   logon.setField( EncryptMethod::Pack( 0 ) );
   logon.setField( m_state.heartBtInt() );
   if( m_sessionID.isFIXT() )
@@ -631,7 +632,7 @@ void Session::generateLogon()
 
 void Session::generateLogon( const Message& aLogon )
 {
-  Message logon;
+  Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   EncryptMethod encryptMethod;
   HeartBtInt heartBtInt;
   logon.setField( EncryptMethod::Pack( 0 ) );
@@ -640,7 +641,6 @@ void Session::generateLogon( const Message& aLogon )
   if( m_state.receivedReset() )
     logon.setField( ResetSeqNumFlag::Pack(true) );
   aLogon.getField( heartBtInt );
-  logon.getHeader().setField( MsgType::Pack( "A", 1 ) );
   logon.setField( heartBtInt );
   sendRaw( logon );
   m_state.sentLogon( true );
@@ -648,14 +648,13 @@ void Session::generateLogon( const Message& aLogon )
 
 void Session::generateResendRequest( const BeginString& beginString, const MsgSeqNum& msgSeqNum )
 {
-  Message resendRequest;
+  Message resendRequest( MsgType::Pack( "2", 1 ), m_sessionDD, m_sendAllocator );
   BeginSeqNo beginSeqNo( ( int ) getExpectedTargetNum() );
   EndSeqNo endSeqNo( msgSeqNum - 1 );
   if ( beginString >= FIX::BeginString_FIX42 )
     endSeqNo = 0;
   else if( beginString <= FIX::BeginString_FIX41 )
     endSeqNo = 999999;
-  resendRequest.getHeader().setField( MsgType::Pack( "2", 1 ) );
   resendRequest.setField( beginSeqNo );
   resendRequest.setField( endSeqNo );
   sendRaw( resendRequest );
@@ -670,9 +669,8 @@ void Session::generateResendRequest( const BeginString& beginString, const MsgSe
 void Session::generateSequenceReset
 ( int beginSeqNo, int endSeqNo )
 {
-  Message sequenceReset;
+  Message sequenceReset( MsgType::Pack( "4", 1 ), m_sessionDD, m_sendAllocator );
   NewSeqNo newSeqNo( endSeqNo );
-  sequenceReset.getHeader().setField( MsgType::Pack( "4", 1 ) );
   sequenceReset.getHeader().setField( PossDupFlag( true ) );
   sequenceReset.setField( newSeqNo );
   fill( sequenceReset.getHeader() );
@@ -689,15 +687,13 @@ void Session::generateSequenceReset
 
 void Session::generateHeartbeat()
 {
-  Message heartbeat;
-  heartbeat.getHeader().setField( MsgType::Pack( "0", 1 ) );
+  Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   sendRaw( heartbeat );
 }
 
 void Session::generateHeartbeat( const Message& testRequest )
 {
-  Message heartbeat;
-  heartbeat.getHeader().setField( MsgType::Pack( "0", 1 ) );
+  Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   try
   {
     TestReqID testReqID;
@@ -711,8 +707,7 @@ void Session::generateHeartbeat( const Message& testRequest )
 
 void Session::generateTestRequest( const std::string& id )
 {
-  Message testRequest;
-  testRequest.getHeader().setField( MsgType::Pack( "1", 1 ) );
+  Message testRequest( MsgType::Pack( "1", 1 ), m_sessionDD, m_sendAllocator );
 
   TestReqID testReqID( id );
   testRequest.setField( testReqID );
@@ -724,8 +719,7 @@ void Session::generateReject( const Message& message, int err, int field )
 {
   const BeginString& beginString = m_sessionID.getBeginString();
 
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( "3", 1 ) );
+  Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
   reject.reverseRoute( message.getHeader() );
   fill( reject.getHeader() );
 
@@ -819,8 +813,7 @@ void Session::generateReject( const Message& message, const std::string& str )
 {
   const BeginString& beginString = m_sessionID.getBeginString();
 
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( "3", 1 ) );
+  Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
   reject.reverseRoute( message.getHeader() );
   fill( reject.getHeader() );
 
@@ -844,8 +837,8 @@ void Session::generateReject( const Message& message, const std::string& str )
 
 void Session::generateBusinessReject( const Message& message, int err, int field )
 {
-  Message reject;
-  reject.getHeader().setField( MsgType::Pack( MsgType_BusinessMessageReject ) );
+  Message reject( MsgType::Pack( MsgType_BusinessMessageReject ),
+                  m_sessionDD, m_sessionID.isFIXT() ? m_defaultApplicationDD : m_sessionDD, m_sendAllocator );
   if( m_sessionID.isFIXT() )
     reject.setField( DefaultApplVerID::Pack( m_senderDefaultApplVerID ) );
   fill( reject.getHeader() );
@@ -907,8 +900,7 @@ void Session::generateBusinessReject( const Message& message, int err, int field
 
 void Session::generateLogout( const std::string& text )
 {
-  Message logout;
-  logout.getHeader().setField( MsgType::Pack( MsgType_Logout ) );
+  Message logout( MsgType::Pack( MsgType_Logout ), m_sessionDD, m_sendAllocator );
   if ( text.length() )
     logout.setField( Text::Pack( text ) );
   sendRaw( logout );
@@ -940,7 +932,7 @@ void Session::populateRejectReason( Message& reject, const std::string& text )
   reject.setField( Text::Pack( text ) );
 }
 
-bool HEAVYUSE Session::verify( const Message& msg, Message::Admin::AdminType adminType,
+bool HEAVYUSE HOTSECTION Session::verify( const Message& msg, DataDictionary::MsgInfo::Admin::Type adminType,
                                           const UtcTimeStamp& now,
                                           const Header& header,
                                           bool checkTooHigh, bool checkTooLow )
@@ -1033,17 +1025,17 @@ bool Session::shouldSendReset()
 
 bool Session::validLogonState( const MsgType& msgType )
 {
-  return validLogonState( Message::msgAdminType( msgType ) );
+  return validLogonState( DataDictionary::MsgInfo::msgAdminType( msgType ) );
 }
 
-bool Session::validLogonState( Message::Admin::AdminType adminType )
+bool Session::validLogonState( DataDictionary::MsgInfo::Admin::Type adminType )
 {
-  if ( LIKELY(adminType == Message::Admin::None) )
+  if ( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
     return m_state.receivedLogon() ||
            m_state.receivedReset() ||
            m_state.sentLogout();
 
-  if ( LIKELY(adminType != Message::Admin::Logon) )
+  if ( LIKELY(adminType != DataDictionary::MsgInfo::Admin::Logon) )
   { 
     if ( LIKELY(m_state.receivedLogon()) )
       return true;
@@ -1054,7 +1046,7 @@ bool Session::validLogonState( Message::Admin::AdminType adminType )
       return true;
   }
 
-  if ( LIKELY(adminType != Message::Admin::Logout) ) 
+  if ( LIKELY(adminType != DataDictionary::MsgInfo::Admin::Logout) ) 
   {
     if ( m_state.sentLogout() )
       return true;
@@ -1065,17 +1057,17 @@ bool Session::validLogonState( Message::Admin::AdminType adminType )
       return true;
   }
 
-  if ( adminType == Message::Admin::SequenceReset ||
-       adminType == Message::Admin::Reject )
+  if ( adminType == DataDictionary::MsgInfo::Admin::SequenceReset ||
+       adminType == DataDictionary::MsgInfo::Admin::Reject )
     return true;
 
   return m_state.receivedReset();
 }
 
-void Session::fromCallback( Message::Admin::AdminType adminType, const Message& msg,
+void Session::fromCallback( DataDictionary::MsgInfo::Admin::Type adminType, const Message& msg,
                             const SessionID& sessionID )
 {
-  if ( LIKELY(adminType == Message::Admin::None) )
+  if ( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
     m_application.fromApp( msg, m_sessionID );
   else
     m_application.fromAdmin( msg, m_sessionID );
@@ -1183,15 +1175,15 @@ bool Session::OnNextQueued::operator() ( int num, Message& msg)
   session.m_state.onEvent( "Processing QUEUED message: "
                      + IntConvertor::convert( num ) );
   msg.getHeader().getField( msgType );
-  Message::Admin::AdminType adminType = Message::msgAdminType( msgType );
-  if( adminType == Message::Admin::Logon
-      || adminType == Message::Admin::ResendRequest )
+  DataDictionary::MsgInfo::Admin::Type adminType = DataDictionary::MsgInfo::msgAdminType( msgType );
+  if( adminType == DataDictionary::MsgInfo::Admin::Logon
+      || adminType == DataDictionary::MsgInfo::Admin::ResendRequest )
   {
     session.m_state.incrNextTargetMsgSeqNum();
   }
-  else if ( LIKELY(!session.m_sessionID.isFIXT() || adminType != Message::Admin::None) )
+  else if ( LIKELY(!session.m_sessionID.isFIXT() || adminType != DataDictionary::MsgInfo::Admin::None) )
   {
-    DataDictionary::MsgInfo msgInfo( session.m_sessionDD, session.m_sessionDD, &msgType );
+    DataDictionary::MsgInfo msgInfo( session.m_sessionDD, session.m_sessionDD, &msgType, NULL, adminType );
     session.next( msg, msgInfo, session.m_sessionDD, tstamp, true );
   }
   else
@@ -1200,7 +1192,7 @@ bool Session::OnNextQueued::operator() ( int num, Message& msg)
     DataDictionary::MsgInfo msgInfo( session.m_defaultApplicationDD, applVerID
       ? session.m_dataDictionaryProvider.getApplicationDataDictionary( applVerID->forString( String::Rval() ) )
       : session.m_defaultApplicationDD,
-      &msgType );
+      &msgType, NULL, adminType );
     session.next( msg, msgInfo, session.m_sessionDD, tstamp, true );
   }
   return true;
@@ -1215,7 +1207,7 @@ bool Session::nextQueued( int num, const UtcTimeStamp& timeStamp )
   return false;
 }
 
-void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bool queued )
+void HEAVYUSE HOTSECTION Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bool queued )
 {
   const char* msg = Sg::data<const char*>(buf);
   try
@@ -1252,7 +1244,7 @@ void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bo
 
     try
     {
-      if( identifyType( msg, Sg::size(buf) ) == MsgType_Logon )
+      if( Message::identifyType( msg, Sg::size(buf) ).compare<1>(MsgType_Logon) )
       {
         m_state.onEvent( "Logon message is not valid" );
         disconnect();
@@ -1262,7 +1254,7 @@ void HEAVYUSE Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& timeStamp, bo
   }
 }
 
-void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& msgInfo,
+void HEAVYUSE HOTSECTION Session::next( const Message& message, DataDictionary::MsgInfo& msgInfo,
                              const DataDictionary* sessionDD, const UtcTimeStamp& timeStamp, bool queued )
 {
   const Header& header = message.getHeader();
@@ -1280,10 +1272,8 @@ void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& ms
       const BeginString& beginString = FIELD_GET_REF( header, BeginString );
       if( beginString == m_sessionID.getBeginString() )
       {
-        const MsgType& msgType = msgInfo.messageType( header );
-        Message::Admin::AdminType adminType = Message::msgAdminType( msgType );
-    
-        if( LIKELY(adminType == Message::Admin::None) )
+        DataDictionary::MsgInfo::Admin::Type adminType = msgInfo.messageType( header );
+        if( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
         {
           DataDictionary::validate( message, beginString, msgInfo, sessionDD );
           if ( !verify( message, adminType, timeStamp, 
@@ -1292,7 +1282,7 @@ void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& ms
         } 
         else
         {
-          if( adminType == Message::Admin::Logon )
+          if( adminType == DataDictionary::MsgInfo::Admin::Logon )
           {
             if( m_sessionID.isFIXT() )
             {
@@ -1311,22 +1301,22 @@ void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& ms
             DataDictionary::validate( message, beginString, msgInfo, sessionDD );
             switch( adminType )
             {
-              case Message::Admin::Heartbeat:
+              case DataDictionary::MsgInfo::Admin::Heartbeat:
                 nextHeartbeat( message, timeStamp );
                 break;
-              case Message::Admin::TestRequest:
+              case DataDictionary::MsgInfo::Admin::TestRequest:
                 nextTestRequest( message, timeStamp );
                 break;
-              case Message::Admin::SequenceReset:
+              case DataDictionary::MsgInfo::Admin::SequenceReset:
                 nextSequenceReset( message, timeStamp );
                 break;
-              case Message::Admin::Logout:
+              case DataDictionary::MsgInfo::Admin::Logout:
                 nextLogout( message, timeStamp );
                 break;
-              case Message::Admin::ResendRequest:
+              case DataDictionary::MsgInfo::Admin::ResendRequest:
                 nextResendRequest( message,timeStamp );
                 break;
-              case Message::Admin::Reject:
+              case DataDictionary::MsgInfo::Admin::Reject:
                 nextReject( message, timeStamp );
                 break;
               default:
@@ -1423,7 +1413,7 @@ void HEAVYUSE Session::next( const Message& message, DataDictionary::MsgInfo& ms
 }
 
 bool Session::sendToTarget( Message& message, const std::string& qualifier )
-throw( SessionNotFound )
+THROW_DECL( SessionNotFound )
 {
   try
   {
@@ -1434,7 +1424,7 @@ throw( SessionNotFound )
 }
 
 bool Session::sendToTarget( Message& message, const SessionID& sessionID )
-throw( SessionNotFound )
+THROW_DECL( SessionNotFound )
 {
   message.setSessionID( sessionID );
   Session* pSession = lookupSession( sessionID );
@@ -1448,7 +1438,7 @@ bool Session::sendToTarget
   const SenderCompID& senderCompID,
   const TargetCompID& targetCompID,
   const std::string& qualifier )
-throw( SessionNotFound )
+THROW_DECL( SessionNotFound )
 {
   Message::Sequence::set_in_ordered( message.getHeader(), senderCompID );
   Message::Sequence::set_in_ordered( message.getHeader(), targetCompID );
@@ -1458,7 +1448,7 @@ throw( SessionNotFound )
 bool Session::sendToTarget
 ( Message& message, const std::string& sender, const std::string& target,
   const std::string& qualifier )
-throw( SessionNotFound )
+THROW_DECL( SessionNotFound )
 {
   return sendToTarget( message, SenderCompID( sender ),
                        TargetCompID( target ), qualifier );

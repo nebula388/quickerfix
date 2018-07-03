@@ -33,17 +33,19 @@
 namespace FIX
 {
 ThreadedSocketConnection::ThreadedSocketConnection
-( int s, Sessions sessions, Log* pLog )
+(sys_socket_t s, Sessions sessions, Log* pLog )
 : m_socket( s ), m_pLog( pLog ),
   m_sessions( sessions ), m_pSession( 0 ),
   m_disconnect( false ), m_pollspin( 0 )
 {}
 
 ThreadedSocketConnection::ThreadedSocketConnection
-( const SessionID& sessionID, int s,
+( const SessionID& sessionID, sys_socket_t s,
   const std::string& address, short port, 
-  Log* pLog )
+  Log* pLog,
+  const std::string& sourceAddress, short sourcePort )
   : m_socket( s ), m_address( address ), m_port( port ),
+    m_sourceAddress( sourceAddress ), m_sourcePort( sourcePort ),
     m_pLog( pLog ),
     m_pSession( Session::lookupSession( sessionID ) ),
     m_disconnect( false ), m_pollspin( 0 )
@@ -72,6 +74,10 @@ bool ThreadedSocketConnection::send( Sg::sg_buf_ptr bufs, int n )
 
 bool ThreadedSocketConnection::connect()
 {
+  // do the bind in the thread as name resolution may block
+  if ( !m_sourceAddress.empty() || m_sourcePort )
+    socket_bind( m_socket, String::c_str(m_sourceAddress), m_sourcePort );
+
   return socket_connect(getSocket(), String::c_str(m_address), m_port) >= 0;
 }
 
@@ -106,7 +112,7 @@ inline bool HEAVYUSE ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
   return false;
 }
 
-inline void HEAVYUSE ThreadedSocketConnection::processStream()
+void HEAVYUSE HOTSECTION  ThreadedSocketConnection::processStream()
 {
   Sg::sg_buf_t buf;
   while( readMessage( buf ) )
@@ -132,7 +138,7 @@ inline void HEAVYUSE ThreadedSocketConnection::processStream()
   }
 }
 
-bool HEAVYUSE ThreadedSocketConnection::read()
+bool HEAVYUSE HOTSECTION ThreadedSocketConnection::read()
 {
   try
   {
@@ -144,7 +150,7 @@ bool HEAVYUSE ThreadedSocketConnection::read()
       struct pollfd pfd = { m_socket, POLLIN | POLLPRI, 0 };
       result = poll(&pfd, 1, timeout);
 #else
-      struct pollfd pfd = { m_socket, POLLIN, 0 };
+      struct pollfd pfd = { (SOCKET)m_socket, POLLIN, 0 };
       result = WSAPoll(&pfd, 1, timeout);
 #endif
     } while( result == 0 && timeout == 0 );

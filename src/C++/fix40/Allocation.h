@@ -8,8 +8,9 @@ namespace FIX40
 
   class Allocation : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("J"); }
   public:
-    Allocation() : Message(MsgType()) {}
+    Allocation() : Message(PackedType()) {}
     Allocation(const FIX::Message& m) : Message(m) {}
     Allocation(const Message& m) : Message(m) {}
     Allocation(const Allocation& m) : Message(m) {}
@@ -23,15 +24,36 @@ namespace FIX40
       const FIX::Shares& aShares,
       const FIX::AvgPx& aAvgPx,
       const FIX::TradeDate& aTradeDate )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aAllocID);
-      set(aAllocTransType);
-      set(aSide);
-      set(aSymbol);
-      set(aShares);
-      set(aAvgPx);
-      set(aTradeDate);
+      // must be in this order
+      Sequence::push_back_to(*this, aAvgPx);
+      Sequence::push_back_to(*this, aShares);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocTransType);
+      Sequence::push_back_to(*this, aTradeDate);
+    }
+
+    Allocation(
+      const FIX::AllocID::Pack& aAllocID,
+      const FIX::AllocTransType::Pack& aAllocTransType,
+      const FIX::Side::Pack& aSide,
+      const FIX::Symbol::Pack& aSymbol,
+      const FIX::Shares::Pack& aShares,
+      const FIX::AvgPx::Pack& aAvgPx,
+      const FIX::TradeDate::Pack& aTradeDate )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aAvgPx);
+      Sequence::push_back_to(*this, aShares);
+      Sequence::push_back_to(*this, aSide);
+      Sequence::push_back_to(*this, aSymbol);
+      Sequence::push_back_to(*this, aAllocID);
+      Sequence::push_back_to(*this, aAllocTransType);
+      Sequence::push_back_to(*this, aTradeDate);
     }
 
     FIELD_SET(*this, FIX::AllocID);

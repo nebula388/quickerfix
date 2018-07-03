@@ -41,7 +41,7 @@ const std::string MySQLLogFactory::DEFAULT_PASSWORD = "";
 const std::string MySQLLogFactory::DEFAULT_HOST = "localhost";
 const short MySQLLogFactory::DEFAULT_PORT = 0;
 
-MySQLLog::MySQLLog
+COLDSECTION MySQLLog::MySQLLog
 ( const SessionID& s, const DatabaseConnectionID& d, MySQLConnectionPool* p )
 : m_pConnectionPool( p )
 {
@@ -50,7 +50,7 @@ MySQLLog::MySQLLog
   m_pConnection = m_pConnectionPool->create( d );
 }
 
-MySQLLog::MySQLLog
+COLDSECTION MySQLLog::MySQLLog
 ( const DatabaseConnectionID& d, MySQLConnectionPool* p )
 : m_pConnectionPool( p ), m_pSessionID( 0 )
 {
@@ -58,7 +58,7 @@ MySQLLog::MySQLLog
   m_pConnection = m_pConnectionPool->create( d );
 }
 
-MySQLLog::MySQLLog
+COLDSECTION MySQLLog::MySQLLog
 ( const SessionID& s, const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 )
@@ -68,7 +68,7 @@ MySQLLog::MySQLLog
   m_pConnection = new MySQLConnection( database, user, password, host, port );
 }
 
-MySQLLog::MySQLLog
+COLDSECTION MySQLLog::MySQLLog
 ( const std::string& database, const std::string& user,
   const std::string& password, const std::string& host, short port )
   : m_pConnectionPool( 0 ), m_pSessionID( 0 )
@@ -76,14 +76,14 @@ MySQLLog::MySQLLog
   m_pConnection = new MySQLConnection( database, user, password, host, port );
 }
 
-void MySQLLog::init()
+COLDSECTION void MySQLLog::init()
 {
   setIncomingTable( "messages_log" );
   setOutgoingTable( "messages_log" );
   setEventTable( "event_log" );
 }
 
-MySQLLog::~MySQLLog()
+COLDSECTION MySQLLog::~MySQLLog()
 {
   if( m_pConnectionPool )
     m_pConnectionPool->destroy( m_pConnection );
@@ -92,7 +92,7 @@ MySQLLog::~MySQLLog()
   delete m_pSessionID;
 }
 
-Log* MySQLLogFactory::create()
+COLDSECTION Log* MySQLLogFactory::create()
 {
   std::string database;
   std::string user;
@@ -107,7 +107,7 @@ Log* MySQLLogFactory::create()
   return result;
 }
 
-Log* MySQLLogFactory::create( const SessionID& s )
+COLDSECTION Log* MySQLLogFactory::create( const SessionID& s )
 {
   std::string database;
   std::string user;
@@ -126,6 +126,7 @@ Log* MySQLLogFactory::create( const SessionID& s )
   return result;
 }
 
+COLDSECTION
 void MySQLLogFactory::init( const Dictionary& settings, 
                             std::string& database, 
                             std::string& user,
@@ -166,6 +167,7 @@ void MySQLLogFactory::init( const Dictionary& settings,
   }
 }
 
+COLDSECTION
 void MySQLLogFactory::initLog( const Dictionary& settings, MySQLLog& log )
 {
     try { log.setIncomingTable( settings.getString( MYSQL_LOG_INCOMING_TABLE ) ); }
@@ -178,12 +180,12 @@ void MySQLLogFactory::initLog( const Dictionary& settings, MySQLLog& log )
     catch( ConfigError& ) {}
 }
 
-void MySQLLogFactory::destroy( Log* pLog )
+COLDSECTION void MySQLLogFactory::destroy( Log* pLog )
 {
   delete pLog;
 }
 
-void MySQLLog::clear()
+COLDSECTION void MySQLLog::clear()
 {
   std::stringstream whereClause;
 
@@ -223,6 +225,7 @@ void MySQLLog::clear()
   m_pConnection->execute( event );
 }
 
+COLDSECTION
 void MySQLLog::backup()
 {
 }

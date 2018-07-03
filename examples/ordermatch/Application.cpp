@@ -24,9 +24,9 @@
 #endif
 
 #include "Application.h"
-#include "quickfix/Session.h"
+#include "Session.h"
 
-#include "quickfix/fix42/ExecutionReport.h"
+#include "fix42/ExecutionReport.h"
 
 void Application::onLogon( const FIX::SessionID& sessionID ) {}
 
@@ -34,7 +34,7 @@ void Application::onLogout( const FIX::SessionID& sessionID ) {}
 
 void Application::fromApp( const FIX::Message& message,
                            const FIX::SessionID& sessionID )
-throw( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
+THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType )
 {
   crack( message, sessionID );
 }

@@ -8,8 +8,9 @@ namespace FIX41
 
   class Email : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("C"); }
   public:
-    Email() : Message(MsgType()) {}
+    Email() : Message(PackedType()) {}
     Email(const FIX::Message& m) : Message(m) {}
     Email(const Message& m) : Message(m) {}
     Email(const Email& m) : Message(m) {}
@@ -19,11 +20,24 @@ namespace FIX41
       const FIX::EmailThreadID& aEmailThreadID,
       const FIX::EmailType& aEmailType,
       const FIX::Subject& aSubject )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aEmailThreadID);
-      set(aEmailType);
-      set(aSubject);
+      // must be in this order
+      Sequence::push_back_to(*this, aEmailType);
+      Sequence::push_back_to(*this, aSubject);
+      Sequence::push_back_to(*this, aEmailThreadID);
+    }
+
+    Email(
+      const FIX::EmailThreadID::Pack& aEmailThreadID,
+      const FIX::EmailType::Pack& aEmailType,
+      const FIX::Subject::Pack& aSubject )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aEmailType);
+      Sequence::push_back_to(*this, aSubject);
+      Sequence::push_back_to(*this, aEmailThreadID);
     }
 
     FIELD_SET(*this, FIX::EmailThreadID);

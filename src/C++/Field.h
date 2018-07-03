@@ -266,7 +266,7 @@ private:
   {
     if (!m_calculated)
     {
-      m_length = String::size(m_string) ;
+      m_length = (int)String::size(m_string) ;
       m_total = m_tagChecksum +
         Util::CharBuffer::checkSum(String::data(m_string), m_length) +
         (int)'\001';
@@ -414,6 +414,9 @@ class StringField : public FieldBase
       s.assign(m_data, m_length);
     }
 
+    template <std::size_t S> bool compare(const char* p)
+    { return m_length == S && ::strncmp(m_data, p, S) == 0; }
+
     operator string_type () const
     { return string_type(m_data, m_length); }
 
@@ -536,6 +539,9 @@ public:
   friend bool operator>=( const std::string&, const StringField& );
 };
 
+template <> inline bool StringField::Data::compare<1>(const char* p)
+{ return m_length == 1 && *p == m_data[0]; }
+
 inline bool operator<( const StringField& lhs, const char* rhs )
   { return lhs.getRawString() < rhs; }
 inline bool operator<( const char* lhs, const StringField& rhs )
@@ -651,7 +657,7 @@ public:
 
   void setValue( char value )
     { setPacked( Packed<0>(value) ); }
-  char getValue() const throw ( IncorrectDataFormat )
+  char getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -735,7 +741,7 @@ public:
     { setPacked( Packed<0>(value, padding, false ) ); }
   void setValue( double value, int padding, bool rounded )
     { setPacked( Packed<0>(value, padding, rounded ) ); }
-  double getValue() const throw ( IncorrectDataFormat )
+  double getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -810,7 +816,7 @@ public:
 
   void setValue( int value )
     { setPacked( Packed<0>( value ) ); }
-  int getValue() const throw ( IncorrectDataFormat )
+  int getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -945,7 +951,7 @@ public:
 
   void setValue( bool value )
     { setPacked( Packed<0>( value ) ); }
-  bool getValue() const throw ( IncorrectDataFormat )
+  bool getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -1025,7 +1031,7 @@ public:
 
   void setValue( const UtcTimeStamp& value )
     { setPacked( Packed<0>( value ) ); }
-  UtcTimeStamp getValue() const throw ( IncorrectDataFormat )
+  UtcTimeStamp getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -1108,7 +1114,7 @@ public:
 
   void setValue( const UtcDate& value )
     { setPacked( Packed<0>( value ) ); }
-  UtcDate getValue() const throw ( IncorrectDataFormat )
+  UtcDate getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -1195,7 +1201,7 @@ public:
 
   void setValue( const UtcTimeOnly& value )
     { setPacked( Packed<0>( value ) ); }
-  UtcTimeOnly getValue() const throw ( IncorrectDataFormat )
+  UtcTimeOnly getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )
@@ -1279,7 +1285,7 @@ public:
 
   void setValue( int value )
     { setPacked( Packed<0>( value ) ); }
-  int getValue() const throw ( IncorrectDataFormat )
+  int getValue() const THROW_DECL( IncorrectDataFormat )
     { try
       { return Data::Convertor::convert( getRawString() ); }
       catch( FieldConvertError& )

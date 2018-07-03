@@ -38,9 +38,9 @@ class SocketAcceptor : public Acceptor, SocketServer::Strategy
   friend class SocketConnection;
 public:
   SocketAcceptor( Application&, MessageStoreFactory&,
-                  const SessionSettings& ) throw( ConfigError );
+                  const SessionSettings& ) THROW_DECL( ConfigError );
   SocketAcceptor( Application&, MessageStoreFactory&,
-                  const SessionSettings&, LogFactory& ) throw( ConfigError );
+                  const SessionSettings&, LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~SocketAcceptor();
 
@@ -49,19 +49,19 @@ private:
 
   typedef std::set < SessionID > Sessions;
   typedef std::map < int, Sessions > PortToSessions;
-  typedef std::map < int, SocketConnection* > SocketConnections;
+  typedef std::map < sys_socket_t, SocketConnection* > SocketConnections;
 
-  void onConfigure( const SessionSettings& ) throw ( ConfigError );
-  void onInitialize( const SessionSettings& ) throw ( RuntimeError );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll( double timeout );
   void onStop();
 
-  void onConnect( SocketServer&, int, int );
-  void onWrite( SocketServer&, int );
-  bool onData( SocketServer&, int );
-  void onDisconnect( SocketServer&, int );
+  void onConnect( SocketServer&, sys_socket_t, sys_socket_t);
+  void onWrite( SocketServer&, sys_socket_t);
+  bool onData( SocketServer&, sys_socket_t);
+  void onDisconnect( SocketServer&, sys_socket_t);
   void onError( SocketServer& );
   void onTimeout( SocketServer& );
 

@@ -115,7 +115,8 @@ namespace FIX
     return isInRange( startTime, endTime, startDay, endDay, time, time.getWeekDay() );
   }
 
-  bool HEAVYUSE TimeRange::isInSameRange( const DateTime& start,
+  bool HEAVYUSE HOTSECTION
+  TimeRange::isInSameRange( const DateTime& start,
                                  const DateTime& end,
                                  const DateTime& time1,
                                  const DateTime& time2 )
@@ -153,7 +154,8 @@ namespace FIX
     }
   }
 
-  bool HEAVYUSE TimeRange::isInSameRange( const DateTime& startTime,
+  bool HEAVYUSE HOTSECTION
+  TimeRange::isInSameRange( const DateTime& startTime,
                                  const DateTime& endTime,
                                  int startDay,
                                  int endDay,

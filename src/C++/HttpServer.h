@@ -37,26 +37,26 @@ namespace FIX
 class HttpServer : public SocketServer::Strategy
 {
 public:
-  HttpServer( const SessionSettings& ) throw( ConfigError );
+  HttpServer( const SessionSettings& ) THROW_DECL( ConfigError );
 
-  static void startGlobal( const SessionSettings& ) throw ( ConfigError, RuntimeError );
+  static void startGlobal( const SessionSettings& ) THROW_DECL( ConfigError, RuntimeError );
   static void stopGlobal();
 
-  void start() throw ( ConfigError, RuntimeError );
+  void start() THROW_DECL( ConfigError, RuntimeError );
   void stop();
 
 private:
-  void onConfigure( const SessionSettings& ) throw ( ConfigError );
-  void onInitialize( const SessionSettings& ) throw ( RuntimeError );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll();
   void onStop();
 
-  void onConnect( SocketServer&, int, int );
-  void onWrite( SocketServer&, int );
-  bool onData( SocketServer&, int );
-  void onDisconnect( SocketServer&, int );
+  void onConnect( SocketServer&, sys_socket_t, sys_socket_t);
+  void onWrite( SocketServer&, sys_socket_t);
+  bool onData( SocketServer&, sys_socket_t);
+  void onDisconnect( SocketServer&, sys_socket_t);
   void onError( SocketServer& );
   void onTimeout( SocketServer& );
 

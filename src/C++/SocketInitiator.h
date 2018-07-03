@@ -37,32 +37,32 @@ class SocketInitiator : public Initiator, SocketConnector::Strategy
 {
 public:
   SocketInitiator( Application&, MessageStoreFactory&,
-                   const SessionSettings& ) throw( ConfigError );
+                   const SessionSettings& ) THROW_DECL( ConfigError );
   SocketInitiator( Application&, MessageStoreFactory&,
-                   const SessionSettings&, LogFactory& ) throw( ConfigError );
+                   const SessionSettings&, LogFactory& ) THROW_DECL( ConfigError );
 
   virtual ~SocketInitiator();
 
 private:
-  typedef std::map < int, SocketConnection* > SocketConnections;
+  typedef std::map < sys_socket_t, SocketConnection* > SocketConnections;
   typedef std::map < SessionID, int > SessionToHostNum;
 
-  void onConfigure( const SessionSettings& ) throw ( ConfigError );
-  void onInitialize( const SessionSettings& ) throw ( RuntimeError );
+  void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
+  void onInitialize( const SessionSettings& ) THROW_DECL( RuntimeError );
 
   void onStart();
   bool onPoll( double timeout );
   void onStop();
 
   void doConnect( const SessionID&, const Dictionary& d );
-  void onConnect( SocketConnector&, int );
-  void onWrite( SocketConnector&, int );
-  bool onData( SocketConnector&, int );
-  void onDisconnect( SocketConnector&, int );
+  void onConnect( SocketConnector&, sys_socket_t);
+  void onWrite( SocketConnector&, sys_socket_t);
+  bool onData( SocketConnector&, sys_socket_t);
+  void onDisconnect( SocketConnector&, sys_socket_t);
   void onError( SocketConnector& );
   void onTimeout( SocketConnector& );
 
-  void getHost( const SessionID&, const Dictionary&, std::string&, short& );
+  void getHost( const SessionID&, const Dictionary&, std::string&, short&, std::string&, short& );
 
   SessionSettings m_settings;
   SessionToHostNum m_sessionToHostNum;

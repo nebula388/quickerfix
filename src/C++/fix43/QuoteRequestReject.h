@@ -8,8 +8,9 @@ namespace FIX43
 
   class QuoteRequestReject : public Message
   {
+    static FIX::MsgType::Pack PackedType() { return FIX::MsgType::Pack("AG"); }
   public:
-    QuoteRequestReject() : Message(MsgType()) {}
+    QuoteRequestReject() : Message(PackedType()) {}
     QuoteRequestReject(const FIX::Message& m) : Message(m) {}
     QuoteRequestReject(const Message& m) : Message(m) {}
     QuoteRequestReject(const QuoteRequestReject& m) : Message(m) {}
@@ -18,10 +19,21 @@ namespace FIX43
     QuoteRequestReject(
       const FIX::QuoteReqID& aQuoteReqID,
       const FIX::QuoteRequestRejectReason& aQuoteRequestRejectReason )
-    : Message(MsgType())
+    : Message(PackedType())
     {
-      set(aQuoteReqID);
-      set(aQuoteRequestRejectReason);
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteReqID);
+      Sequence::push_back_to(*this, aQuoteRequestRejectReason);
+    }
+
+    QuoteRequestReject(
+      const FIX::QuoteReqID::Pack& aQuoteReqID,
+      const FIX::QuoteRequestRejectReason::Pack& aQuoteRequestRejectReason )
+    : Message(PackedType())
+    {
+      // must be in this order
+      Sequence::push_back_to(*this, aQuoteReqID);
+      Sequence::push_back_to(*this, aQuoteRequestRejectReason);
     }
 
     FIELD_SET(*this, FIX::QuoteReqID);
