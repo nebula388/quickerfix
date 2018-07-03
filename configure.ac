@@ -76,6 +76,12 @@ AM_CONDITIONAL([NO_UNIT_TEST], [test "$build_no_unit_test" = "yes"])
 
 ########################################
 
+# Checks for libraries.
+AC_CHECK_LIB(c,shutdown,true,AC_CHECK_LIB(socket,shutdown))
+AC_CHECK_LIB(c,inet_addr,true,AC_CHECK_LIB(nsl,inet_addr))
+AC_CHECK_LIB(c,nanosleep,true,AC_CHECK_LIB(rt,nanosleep))
+AC_CHECK_LIB(compat,ftime)
+
 # libs
 DEFAULT_LIBS=$LIBS
 LIBS="$OPENSSL_LIBS $STLPORT_LIBS $XML_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $DEFAULT_LIBS"
@@ -96,24 +102,20 @@ CXXFLAGS="$SHAREDFLAGS $CXXFLAGS"
 AC_SUBST(CXXFLAGS)
 
 
-# Checks for libraries.
-AC_CHECK_LIB(c,shutdown,true,AC_CHECK_LIB(socket,shutdown))
-AC_CHECK_LIB(c,inet_addr,true,AC_CHECK_LIB(nsl,inet_addr))
-AC_CHECK_LIB(c,nanosleep,true,AC_CHECK_LIB(rt,nanosleep))
-AC_CHECK_LIB(compat,ftime)
-
 AC_MSG_CHECKING([which threading environment to use])
 # each host OS needs special threading flags
 case $build_os in
 	freebsd*|netbsd*)
-		LIBS="-pthread $LIBS"
+		DEFAULT_LIBS="-pthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-pthread])
 		;;
 	linux-*) 
+		DEFAULT_LIBS="-lpthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-lpthread])
 		AC_CHECK_LIB(pthread, pthread_create)
 		;;
 	solaris*) 
+		DEFAULT_LIBS="-lpthread $DEFAULT_LIBS"
 		AC_MSG_RESULT([-lpthread])
 		AC_CHECK_LIB(pthread, pthread_create)
 		;;
