@@ -183,15 +183,13 @@ public:
   /// Get the length of the fields string representation
   size_t getLength() const
   {
-    calculate_metrics();
-    return m_length;
+    return (LIKELY(m_calculated)) ? m_length : sync(), m_length;
   }
 
   /// Get the total value the fields characters added together
   int getTotal() const
   {
-    calculate_metrics();
-    return m_total;
+    return (LIKELY(m_calculated)) ? m_total : sync(), m_total;
   }
 
   /// Compares fields based on their tag numbers
@@ -260,29 +258,46 @@ protected:
   const string_type& getRawString() const
     { return m_string; }
 
+  inline size_t calcSerializationLength() const
+  { return String::size(m_string) + m_tagLength + 1; }
+
+  inline int HEAVYUSE calcSerializationBytes() const
+  { return m_tagChecksum + Util::CharBuffer::byteSumField(String::data(m_string), String::size(m_string)) + (int)'\001'; }
+
+  inline void HEAVYUSE calcSerializationData( int& length, int& bytesum ) const
+  {
+    std::size_t l = String::size(m_string) ;
+    const char* p = String::data(m_string) ;
+    length = (int)l + m_tagLength + 1;
+    bytesum = m_tagChecksum + Util::CharBuffer::byteSumField(p, l) + (int)'\001';
+  }
+
+  inline void HEAVYUSE addSerializationData( int& length, int& bytesum ) const
+  {
+    if (LIKELY(m_calculated) || sync())
+    {
+      length += m_length;
+      bytesum += m_total;
+    }
+  }
+
 private:
 
-  void calculate_metrics() const
+  inline bool HEAVYUSE HOTSECTION sync() const
   {
-    if (!m_calculated)
-    {
-      m_length = (int)String::size(m_string) ;
-      m_total = m_tagChecksum +
-        Util::CharBuffer::checkSum(String::data(m_string), m_length) +
-        (int)'\001';
-      m_length += m_tagLength + 1;
-      m_calculated = true;
-    }
+    calcSerializationData( m_length, m_total );
+    return m_calculated = true;
   }
   void populate_data() const
   {
-    calculate_metrics();
-  
-    m_data.reserve(m_length);
-    Util::Tag::set(m_data, m_tag, m_tagLength - 1);
-    m_data.push_back('=');
-    String::append(m_data, m_string);
-    m_data.push_back('\001');
+    if (LIKELY(m_calculated) || sync())
+    {
+      m_data.reserve(m_length);
+      Util::Tag::set(m_data, m_tag, m_tagLength - 1);
+      m_data.push_back('=');
+      String::append(m_data, m_string);
+      m_data.push_back('\001');
+    }
   }
 
   int           m_tag;

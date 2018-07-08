@@ -534,6 +534,11 @@ private:
 				return *this;
 			}
 
+                        char& operator[](size_t pos) {
+                          Sg::sg_buf_ptr e = sg_;
+                          for (int i = 0; UNLIKELY(i < n_) && pos > IOV_LEN(*e); e = sg_ + ++i) pos -= IOV_LEN(*e);
+                          return *((char*)IOV_BUF(*e) + pos); // "undefined behavior" if out of range
+                        }
 			Sg::sg_buf_ptr iovec() const { return (Sg::sg_buf_ptr)sg_; }
 			int elements() const { return n_ + 1; }
 		};

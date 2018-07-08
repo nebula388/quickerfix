@@ -1300,128 +1300,8 @@ namespace FIX
 #endif
       }
 
-      static inline int32_t PURE_DECL HEAVYUSE checkSum(const char* p, int size)
-      {
-        int32_t x = 0;
-#if defined(__GNUC__) && defined(__x86_64__)
-        int32_t n = size;
-        const uint8_t* pu = (const uint8_t*)p;
-        const uint64_t mask = 0x0101010101010101ULL;
-
-        if (n >= 8)
-              __asm__ __volatile (
-              " cmpl $16, %2;                      \n\t"
-#ifdef __AVX__
-              " vpxor %%xmm0, %%xmm0, %%xmm0;      \n\t"
-              " vpxor %%xmm2, %%xmm2, %%xmm2;      \n\t"
-              " jl 1f;                \n\t"
-              " vmovq %3, %%xmm1;                  \n\t"
-              " vpunpcklbw %%xmm0, %%xmm1, %%xmm1; \n\t"
-              " .p2align 4,,10;                    \n\t"
-              " .p2align 3;                        \n\t"
-              // loop over 16-byte blocks
-              "0:;                    \n\t"
-              " vlddqu (%1), %%xmm4;               \n\t"
-              " addl $-16, %2;                     \n\t"
-              " vpunpcklbw %%xmm2, %%xmm4, %%xmm3; \n\t"
-              " addq $16, %1;                      \n\t"
-              " vpmaddwd %%xmm1, %%xmm3, %%xmm3;   \n\t"
-              " cmpl $16, %2;                      \n\t"
-              " vpunpckhbw %%xmm2, %%xmm4, %%xmm4; \n\t"
-              " vpaddd %%xmm3, %%xmm0, %%xmm0;     \n\t"
-              " vpmaddwd %%xmm1, %%xmm4, %%xmm4;   \n\t"
-              " vpaddd %%xmm4, %%xmm0, %%xmm0;     \n\t"
-              " jge 0b;               \n\t"
-              " cmpl $4, %2;                       \n\t"
-              " jl 2f;                \n\t"
-              " .p2align 4,,10;                    \n\t"
-              " .p2align 3;                        \n\t"
-              // loop over 4-byte blocks
-              "1:                     \n\t"
-              " vmovd (%1), %%xmm3;                \n\t"
-              " addq $4, %1;                       \n\t"
-              " vpunpcklbw %%xmm2, %%xmm3, %%xmm3; \n\t"
-              " addl $-4, %2;                      \n\t"
-              " vpunpcklwd %%xmm2, %%xmm3, %%xmm3; \n\t"
-              " cmpl $4, %2;                       \n\t"
-              " vpaddd %%xmm3, %%xmm0, %%xmm0;     \n\t"
-              " jge 1b;               \n\t"
-              // accumulate
-              "2:;                    \n\t"
-              " vpsrldq $8, %%xmm0, %%xmm1;        \n\t"
-              " vpaddd %%xmm1, %%xmm0, %%xmm0;     \n\t"
-              " vpsrldq $4, %%xmm0, %%xmm2;        \n\t"
-              " vpaddd %%xmm2, %%xmm0, %%xmm0;     \n\t"
-              " vmovd %%xmm0, %0;                  \n\t"
-#else
-              " pxor %%xmm0, %%xmm0;      \n\t"
-              " movdqa %%xmm0, %%xmm2;    \n\t"
-              " jl 1f;                \n\t"
-              " movq %3, %%xmm1;          \n\t"
-              " punpcklbw %%xmm0, %%xmm1; \n\t"
-              " .p2align 4,,10;           \n\t"
-              " .p2align 3;               \n\t"
-              // loop over 16-byte blocks
-              "0:;                    \n\t"
-              " movdqu (%1), %%xmm4;      \n\t"
-              " movdqa %%xmm4, %%xmm3;    \n\t"
-              " addl $-16, %2;            \n\t"
-              " punpcklbw %%xmm2, %%xmm3; \n\t"
-              " addq $16, %1;             \n\t"
-              " pmaddwd %%xmm1, %%xmm3;   \n\t"
-              " cmpl $16, %2;             \n\t"
-              " punpckhbw %%xmm2, %%xmm4; \n\t"
-              " paddd %%xmm3, %%xmm0;     \n\t"
-              " pmaddwd %%xmm1, %%xmm4;   \n\t"
-              " paddd %%xmm4, %%xmm0;     \n\t"
-              " jge 0b;               \n\t"
-              " cmpl $4, %2;              \n\t"
-              " jl 2f;                \n\t"
-              " .p2align 4,,10;           \n\t"
-              " .p2align 3;               \n\t"
-              // loop over 4-byte blocks
-              "1:                     \n\t"
-              " movd (%1), %%xmm3;        \n\t"
-              " addq $4, %1;              \n\t"
-              " punpcklbw %%xmm2, %%xmm3; \n\t"
-              " addl $-4, %2;             \n\t"
-              " punpcklwd %%xmm2, %%xmm3; \n\t"
-              " cmpl $4, %2;              \n\t"
-              " paddd %%xmm3, %%xmm0;     \n\t"
-              " jge 1b;               \n\t"
-              // accumulate
-              "2:;                    \n\t"
-              " movdqa %%xmm0, %%xmm1;    \n\t"
-              " psrldq $8, %%xmm1;        \n\t"
-              " paddd %%xmm1, %%xmm0;     \n\t"
-              " movdqa %%xmm0, %%xmm2;    \n\t"
-              " psrldq $4, %%xmm2;        \n\t"
-              " paddd %%xmm2, %%xmm0;     \n\t"
-              " movd %%xmm0, %0;          \n\t"
-#endif
-              : "+r"(x), "+r"(pu), "+r"(n)
-              : "r" (mask)
-              : "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-              );
-
-        while(n > 0)
-        {
-            // loop over remaining bytes
-            __asm__ __volatile__ (
-            " movzbl (%1), %%ecx; "
-            " addl %%ecx, %0;   "
-            : "+r" (x), "+r" (pu)
-            :
-            : "ecx" );
-            pu++;
-            n--;
-        }
-#else
-        for (; size > 0; p++, size--)
-          x += *(unsigned char*)p;
-#endif
-        return x;
-      }
+      static inline int32_t PURE_DECL HEAVYUSE byteSumField(const char* p, std::size_t size);
+      static inline int32_t PURE_DECL HEAVYUSE byteSum(const char* p, int size);
 
       template <typename T> static T verify(T a, T b)
       { if ( a != b ) throw std::runtime_error("verification failed"); return a; }
@@ -1469,9 +1349,9 @@ namespace FIX
       };
 
 #ifdef __SSSE3__
-      static ALIGN_DECL_DEFAULT const unsigned char s_vshift[32];
+      static ALIGN_DECL(64) const unsigned char s_vshift[32];
 #endif
-	  static ALIGN_DECL_DEFAULT const unsigned char s_vmask[32];
+      static ALIGN_DECL(64) const unsigned char s_vmask[48];
       static ALIGN_DECL_DEFAULT const Fixed<16> s_uint_charset;
     }; // CharBuffer
 
@@ -1506,6 +1386,17 @@ namespace FIX
 
       char data[8];
       value_type value;
+
+#if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+      static inline value_type load_partial(const char* p, std::size_t lessthan8)
+      {
+        uintptr_t shift = (uintptr_t)p & 7;
+        std::size_t gap = 8 - lessthan8;
+        shift = (shift <= gap) ? shift : 0;
+        return (*(value_type*)(p - shift) >> (shift << 3)) &
+               (((value_type)(lessthan8 == 0) - 1) >> (gap << 3));
+      }
+#endif
     };
 
 #if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
@@ -1525,7 +1416,7 @@ namespace FIX
 #ifdef __SSSE3__
 	    return _mm_and_si128( _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
                                                 _mm_loadu_si128( (__m128i*)(s_vshift + shift) ) ),
-                              _mm_loadu_si128( (__m128i*)(s_vmask + gap) ) );
+                              _mm_loadu_si128( (__m128i*)(s_vmask + 16 + gap) ) );
 #elif defined(_MSC_VER) || defined(__i386__)
 		__m128i v = _mm_loadu_si128((__m128i*)(p - shift));
 		switch (shift)
@@ -1546,7 +1437,7 @@ namespace FIX
 		  case 14: v = _mm_srli_si128(v, 14); break;
 		  case 15: v = _mm_srli_si128(v, 15); break;
 		}
-		return _mm_and_si128( v, _mm_loadu_si128((__m128i*)(s_vmask + gap)) );
+		return _mm_and_si128( v, _mm_loadu_si128((__m128i*)(s_vmask + 16 + gap)) );
 #else
         uint64_t lo, hi;
         lo = *(uint64_t*)(p -= shift);
@@ -1565,7 +1456,7 @@ namespace FIX
 #if defined(__x86_64__) || defined(_M_X64)
         return _mm_unpacklo_epi64( _mm_cvtsi64_si128(lo), _mm_cvtsi64_si128(hi) );
 #else
-		return _mm_castpd_si128(_mm_loadh_pd(_mm_load_sd((double*)&lo), (double*)&hi));
+        return _mm_castpd_si128(_mm_loadh_pd(_mm_load_sd((double*)&lo), (double*)&hi));
 #endif
 #endif // __SSSE3__
       }
@@ -1579,6 +1470,123 @@ namespace FIX
       value_type value;
 #endif
     };
+
+    // p is zero-terminated unless ENABLE_SSO_NOZERO
+    inline int32_t PURE_DECL HEAVYUSE CharBuffer::byteSumField(const char* p, std::size_t size)
+    {
+      std::size_t x = 0;
+#if (defined(_MSC_VER) && defined(_M_X64)) || (defined(__GNUC__) && defined(__x86_64__) && defined(ENABLE_SSO))
+      if ( LIKELY(size > 0) )
+      {
+        __m128i z = _mm_setzero_si128();
+        if ( LIKELY(size <= 8) )
+        {
+          uint64_t v = *(uint64_t*)p & ((uint64_t)-1 >> ((8 - size) << 3));
+          return _mm_cvtsi128_si32( _mm_sad_epu8( _mm_cvtsi64_si128(v), z ) );
+        }
+
+        std::size_t c = 0;
+        if ( size >= 16 )
+        {
+          __m128i r = _mm_setzero_si128();
+          do
+          {
+            __m128i v = _mm_loadu_si128((__m128i*)(p + c));
+            c += 16;
+            r = _mm_add_epi64( r, _mm_sad_epu8( v, z ) );
+          } while ( c <= (size - 16) );
+          x = _mm_cvtsi128_si32( _mm_add_epi64( _mm_srli_si128( r, 8 ), r ) );
+        }
+        if ( c <= (size - 8) )
+        {
+          x += _mm_cvtsi128_si32( _mm_sad_epu8( _mm_loadl_epi64((__m128i*)(p + c)), z ) );
+          c += 8;
+        }
+        if ( size > c )
+        {
+          uint64_t v = *(uint64_t*)(p + size - 8) & ((uint64_t)-1 << ((8 - size) << 3));
+          x += _mm_cvtsi128_si32( _mm_sad_epu8( _mm_cvtsi64_si128(v), z ) );
+        }
+      }
+#elif defined(_MSC_VER) || (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)))
+      if ( LIKELY(size > 0) )
+      {
+        __m128i z = _mm_setzero_si128();
+        if ( size < 4 )
+        {
+#if defined(ENABLE_SSO) && defined(ENABLE_SSO_NONZERO)
+          uint32_t v = *(uint32_t*)p & ((uint32_t)-1 >> ((4 - size) << 3));
+          return _mm_cvtsi128_si32( _mm_sad_epu8( _mm_cvtsi32_si128(v), z ) );
+#else
+          x = *(unsigned char*)p;
+          return x + ((unsigned char*)p)[1] + ((unsigned char*)p)[size & (~size >> 1)];
+#endif
+        }
+
+        std::size_t c = 0;
+        if ( size >= 16 )
+        {
+          __m128i r = _mm_setzero_si128();
+          do
+          {
+            __m128i v = _mm_loadu_si128((__m128i*)(p + c));
+            c += 16;
+            r = _mm_add_epi64( r, _mm_sad_epu8( v, z ) );
+          } while ( c <= (size - 16) );
+          x = _mm_cvtsi128_si32( _mm_add_epi64( _mm_srli_si128( r, 8 ), r ) );
+        }
+        while ( c <= (size - 4) )
+        {
+          x += _mm_cvtsi128_si32( _mm_sad_epu8( _mm_cvtsi32_si128(*(uint32_t*)(p + c)), z ) );
+          c += 4;
+        }
+        if ( size > c )
+        {
+          size -= c;
+#if defined(ENABLE_SSO) && defined(ENABLE_SSO_NONZERO)
+          uint32_t v = *(uint32_t*)(p + c) & ((uint32_t)-1 >> ((4 - size) << 3));
+          x += _mm_cvtsi128_si32( _mm_sad_epu8( _mm_cvtsi32_si128(v), z ) );
+#else
+          x += ((unsigned char*)p)[c] + ((unsigned char*)p)[c + 1] +
+               ((unsigned char*)p)[c + (size & (~size >> 1))];
+#endif
+        }
+      }
+#else
+      for (std::size_t c = 0; c < size; c++) x += (unsigned char)p[c];
+#endif
+      return (int32_t)x;
+    }
+
+    inline int32_t PURE_DECL HEAVYUSE CharBuffer::byteSum(const char* p, int size)
+    {
+      int32_t x = 0;
+#if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+      __m128i z = _mm_setzero_si128();
+      if (LIKELY(size >= 16))
+      {
+        std::size_t c = 0, l = size;
+        __m128i r = _mm_setzero_si128();
+        do
+        {
+          __m128i v = _mm_loadu_si128((__m128i*)(p + c));
+          c += 16;
+          r = _mm_add_epi64( r, _mm_sad_epu8( v, z ) );
+        } while (c <= (l - 16));
+
+        z = _mm_sad_epu8( _mm_and_si128( _mm_loadu_si128((__m128i*)(p + l - 16)),
+                                         _mm_loadu_si128((__m128i*)(s_vmask + l - c)) ), z );
+        z = _mm_add_epi64( r, z );
+      }
+      else
+        z = _mm_sad_epu8( Fixed<16>::loadu_si128_partial(p, size), z );
+
+      x = _mm_cvtsi128_si32( _mm_add_epi64( _mm_srli_si128( z, 8 ), z ) );
+#else
+      for (std::size_t c = 0; c < size; c++) x += (unsigned char)p[c];
+#endif
+      return x;
+    }
 
     template <>
     inline const char* CharBuffer::find<1>(const CharBuffer::Fixed<1>& f,

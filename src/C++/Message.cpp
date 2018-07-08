@@ -35,7 +35,8 @@ const char* Message::FieldReader::ErrSOH = "SOH not found at end of field";
 
 SmartPtr<DataDictionary> Message::s_dataDictionary;
 
-int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
+int HEAVYUSE HOTSECTION
+Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
                                const FieldMap::g_const_iterator& gend)
 {
   int result;
@@ -47,6 +48,21 @@ int Message::FieldCounter::countGroups(FieldMap::g_const_iterator git,
       result += countBody(**it);
   }
   return result;
+}
+
+Message::FieldCounter::Data HEAVYUSE HOTSECTION
+Message::FieldCounter::syncGroups(FieldMap::g_const_iterator git,
+                               const FieldMap::g_const_iterator& gend)
+{
+  Data d;
+  for( ; git != gend; ++git )
+  {
+    FieldMap::g_item_const_iterator end = git->second.end();
+    for ( FieldMap::g_item_const_iterator it = git->second.begin();
+          it != end; ++it )
+      d += syncBody(**it);
+  }
+  return d;
 }
 
 namespace detail {
@@ -87,16 +103,13 @@ namespace detail {
 std::string& HEAVYUSE HOTSECTION
 Message::toString( const FieldCounter& c, std::string& str ) const
 {
-  char* p;
-  const int checkSumField = c.getCheckSumTag();
-  const int bodyLengthField = c.getBodyLengthTag();
-  const int csumPayloadLength = CheckSumConvertor::MaxValueSize + 1;
-  const unsigned csumTagLength = (unsigned)Util::UInt::numDigits(checkSumField) + 1;
-
+  int csuml = c.getCsumFieldLength();
   int l = c.getBodyLength();
-  l += (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(bodyLengthField, l))->second.getLength()
-       + csumTagLength + csumPayloadLength + c.getBeginStringLength();
 
+  FieldBase& bodyLengthField = Sequence::set_in_ordered(m_header, PositiveIntField::Pack(c.getBodyLengthTag(), l))->second;
+  l += c.getBeginStringLength() + bodyLengthField.calcSerializationLength() + csuml;
+
+  // NOTE: make sure string storage is reset so we can write directly to the string buffer even if it's a COW string
   str.clear();
 #ifndef NO_PROXY_BUFFER
   str.resize(l);
@@ -106,31 +119,22 @@ Message::toString( const FieldCounter& c, std::string& str ) const
   std::string& sbuf = str;
 #endif
 
-  // NOTE: We can modify data in place even for Copy-on-Write strings
-  //       as the string is constructed locally
-  if( getStatusBit( serialized_once ) && checkSumField == FIELD::CheckSum )
+  int v = c.getBodyBytes();
+  if( v ) // have field byte sum
+      v = c.getBeginStringBytes() + bodyLengthField.calcSerializationBytes() + v;
+  FieldBase& f = Sequence::set_in_ordered(m_trailer, CheckSumField::Pack(c.getCheckSumTag(), v & 255))->second;
+
+  m_trailer.serializeTo( 
+    FieldMap::serializeTo(
+      m_header.serializeTo( sbuf ) ) );
+
+  if( !v ) // do checksum in place
   {
-    FieldBase& f = Sequence::set_in_ordered(m_trailer, CheckSumField::Pack(checkSumField, 0))->second;
-
-    m_trailer.serializeTo( 
-      FieldMap::serializeTo(
-        m_header.serializeTo( sbuf ) ) );
-
-    l -= csumPayloadLength;
-
-    p = (char*)sbuf.data();
-    int32_t csum = Util::CharBuffer::checkSum( p, l - csumTagLength ) & 255;
-    p += l;
-    CheckSumConvertor::write(p, (unsigned char) csum );
-    f.setPacked( StringField::Pack( checkSumField, p, 3 ) );
-  }
-  else
-  {
-    Sequence::set_in_ordered(m_trailer, CheckSumField::Pack(checkSumField,
-                                           checkSum(checkSumField)));
-    m_trailer.serializeTo( 
-      FieldMap::serializeTo(
-        m_header.serializeTo( sbuf ) ) );
+    char* p = (char*)sbuf.data();
+    v = Util::CharBuffer::byteSum( p, l - csuml ) & 255;
+    p += l - c.getCsumFieldValueLength();
+    CheckSumConvertor::write(p, (unsigned char) v );
+    f.setPacked( StringField::Pack( c.getCheckSumTag(), p, 3 ) );
   }
   return str;
 }

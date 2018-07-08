@@ -336,38 +336,65 @@ private:
 
   class FieldCounter
   {
-    int m_length, m_prefix;
+    struct Data {
+      int m_length, m_bytesum;
+      Data(int l = 0, int c = 0) : m_length(l), m_bytesum(c) {}
+      Data& operator+=(const Data& o)
+      { m_length += o.m_length; m_bytesum += o.m_bytesum; return *this; }
+    };
+    Data m_begin, m_inner;
     const int bodyLengthTag;
     const int checkSumTag;
 
+    // iterate and count without updating per-field serialization data
     int countGroups(FieldMap::g_const_iterator git,
-                          const FieldMap::g_const_iterator& gend);
+                    const FieldMap::g_const_iterator& gend);
     void countHeader(const FieldMap& fields);
     void countHeader(int beginStringTag, int bodyLengthDag,
                      const FieldMap& fields);
     int countBody(const FieldMap& fields);
-    void countTrailer(const FieldMap& fields);
+    void countNonHeader(const FieldMap& body, const FieldMap& trailer);
 
+    // iterate and store updated per-field length and checksum
+    Data syncGroups(FieldMap::g_const_iterator git,
+                     const FieldMap::g_const_iterator& gend);
+    void syncHeader(const FieldMap& fields);
+    void syncHeader(int beginStringTag, int bodyLengthDag,
+                     const FieldMap& fields);
+    Data syncBody(const FieldMap& fields);
+    void syncNonHeader(const FieldMap& body, const FieldMap& trailer);
   public:
 
-    FieldCounter(const Message& msg)
-    : m_length(0), m_prefix(0),
-      bodyLengthTag(FIELD::BodyLength), checkSumTag(FIELD::CheckSum)
+    FieldCounter(const Message& msg, bool oneoff)
+    : bodyLengthTag(FIELD::BodyLength), checkSumTag(FIELD::CheckSum)
     {
-      countHeader(msg.m_header);
-      m_length += countBody(msg);
-      countTrailer(msg.m_trailer);
+      if (oneoff)
+      {
+        countHeader(msg.m_header);
+        countNonHeader(msg, msg.m_trailer);
+      }
+      else
+      {
+        syncHeader(msg.m_header);
+        syncNonHeader(msg, msg.m_trailer);
+      }
     }
-    FieldCounter(const Message& msg,
+    FieldCounter(const Message& msg, bool oneoff,
       int beginStringField,
       int bodyLengthField = FIELD::BodyLength,
       int checkSumField = FIELD::CheckSum )
-    : m_length(0), m_prefix(0),
-      bodyLengthTag(bodyLengthField), checkSumTag(checkSumField)
+    : bodyLengthTag(bodyLengthField), checkSumTag(checkSumField)
     {
-      countHeader(beginStringField, bodyLengthField, msg.m_header);
-      m_length += countBody(msg);
-      countTrailer(msg.m_trailer);
+      if (oneoff)
+      {
+        countHeader(beginStringField, bodyLengthField, msg.m_header);
+        countNonHeader(msg, msg.m_trailer);
+      }
+      else
+      {
+        syncHeader(beginStringField, bodyLengthField, msg.m_header);
+        syncNonHeader(msg, msg.m_trailer);
+      }
     }
 
     int getBodyLengthTag () const
@@ -377,11 +404,26 @@ private:
     { return checkSumTag; }
 
     int getBodyLength() const
-    { return m_length; }
+    { return m_inner.m_length; }
+
+    int getBodyBytes() const
+    { return m_inner.m_bytesum; }
 
     int getBeginStringLength() const
-    { return m_prefix; }
+    { return m_begin.m_length; }
 
+    int getBeginStringBytes() const
+    { return m_begin.m_bytesum; }
+
+    int getCsumFieldLength() const
+    {
+      int csumPayloadLength = CheckSumConvertor::MaxValueSize + 1;
+      int csumTagLength = (unsigned)Util::UInt::numDigits(checkSumTag) + 1;
+      return csumTagLength + csumPayloadLength;
+    }
+    int getCsumFieldValueLength() const {
+      return CheckSumConvertor::MaxValueSize + 1;
+    }
   };
 
   // parses header up to MsgType and returns pointer to the BodyLength field
@@ -573,17 +615,32 @@ private:
 
   std::string& toString( const FieldCounter&, std::string& ) const;
 
-  template <typename S> typename S::buffer_type& toBuffer( S& s ) const
+  template <typename S> typename S::buffer_type& HEAVYUSE toBuffer( S& s ) const
   {
-    FieldCounter c( *this );
-    int bodyLength = c.getBodyLength() + c.getBeginStringLength() + 
-	  (int)Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, c.getBodyLength()))->second.getLength();
-    return m_trailer.serializeTo(
-             FieldMap::serializeTo(
-               m_header.serializeTo(
-                 s.buffer(bodyLength +
-                   Sequence::set_in_ordered(m_trailer, CheckSum::Pack(checkSum()))->second.getLength()
-                 ) ) ) );
+    const int csuml = FieldTag::Traits<FIELD::CheckSum>::length + /*=*/1 + CheckSumConvertor::MaxValueSize + /*\001*/1;
+    bool nosync = getStatusBit( serialized_once );
+    FieldCounter c( *this, nosync );
+    int b, l = c.getBodyLength();
+    const FieldBase& bodyLengthField =
+      Sequence::set_in_ordered(m_header, PositiveIntField::Pack(FIELD::BodyLength, l))->second;
+    l += c.getBeginStringLength() + bodyLengthField.calcSerializationLength() + csuml;
+
+    b = (nosync) ? 0 : (c.getBeginStringBytes() + bodyLengthField.calcSerializationBytes() + c.getBodyBytes());
+    FieldBase& f = Sequence::set_in_ordered(m_trailer, CheckSumField::Pack(FIELD::CheckSum, b & 255))->second;
+
+    typename S::buffer_type& r = m_trailer.serializeTo(
+                                   FieldMap::serializeTo(
+                                     m_header.serializeTo(
+                                       s.buffer( l ) ) ) );
+    if (nosync)
+    {
+      char* p = (char*)&r[0]; // !!! no multi-tier iovecs
+      b = Util::CharBuffer::byteSum( p, l - csuml ) & 255;
+      p += l - c.getCsumFieldValueLength();
+      CheckSumConvertor::write(p, (unsigned char) b );
+      f.setPacked( StringField::Pack( FIELD::CheckSum, p, 3 ) );
+    }
+    return r; 
   }
 
   void HEAVYUSE setGroup( Message::FieldReader& reader, FieldMap& section,
@@ -742,7 +799,8 @@ public:
   /// Get a string representation without making a copy
   inline std::string& toString( std::string& str ) const
   {
-    return toString( FieldCounter( *this ), str );
+    bool nosync = getStatusBit( serialized_once );
+    return toString( FieldCounter( *this, nosync), str );
   }
 
   /// Get a string representation without making a copy
@@ -751,7 +809,8 @@ public:
                          int bodyLengthField = FIELD::BodyLength, 
                          int checkSumField = FIELD::CheckSum ) const
   {
-    return toString( FieldCounter( *this,
+    bool nosync = getStatusBit( serialized_once ) && checkSumField == FIELD::CheckSum;
+    return toString( FieldCounter( *this, nosync,
                                    beginStringField,
                                    bodyLengthField,
                                    checkSumField ), str );
@@ -761,7 +820,8 @@ public:
   inline std::string toString() const
   {
     std::string str;
-    toString( FieldCounter( *this ), str );
+    bool nosync = getStatusBit( serialized_once );
+    toString( FieldCounter( *this, nosync ), str );
     return str;
   }
 
@@ -771,7 +831,8 @@ public:
                         int checkSumField = FIELD::CheckSum ) const
   {
     std::string str;
-    toString( FieldCounter( *this,
+    bool nosync = getStatusBit( serialized_once ) && checkSumField == FIELD::CheckSum;
+    toString( FieldCounter( *this, nosync, 
                             beginStringField,
                             bodyLengthField,
                             checkSumField ), str );
@@ -882,9 +943,10 @@ public:
               int bodyLengthField = FIELD::BodyLength, 
               int checkSumField = FIELD::CheckSum ) const
   {
-    return FieldCounter( *this, beginStringField,
-                                bodyLengthField,
-                                checkSumField ).getBodyLength();
+    return FieldCounter( *this, true,
+                          beginStringField,
+                          bodyLengthField,
+                          checkSumField ).getBodyLength();
   }
 
   int checkSum( int checkSumField = FIELD::CheckSum ) const
@@ -1165,6 +1227,7 @@ inline void Message::FieldReader::skip()
 inline void HEAVYUSE
 Message::FieldCounter::countHeader( const FieldMap& fields )
 {
+  int length = 0;
   FieldMap::const_iterator it = fields.begin();
   const FieldMap::const_iterator end = fields.end();
 
@@ -1172,7 +1235,7 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
   {
     if( LIKELY(it->first == FIELD::BeginString) )
     {
-      m_prefix = (int)it->second.getLength();
+      m_begin.m_length = (int)it->second.calcSerializationLength();
       if( LIKELY(++it != end) )
         if( LIKELY(it->first == FIELD::BodyLength) )
           ++it;
@@ -1184,10 +1247,15 @@ Message::FieldCounter::countHeader( const FieldMap& fields )
     }
     for( ; it != end; ++it )
     {
-      m_length += (int)it->second.getLength();
+      length += (int)it->second.calcSerializationLength();
     }
   }
-  m_length += countGroups(fields.g_begin(), fields.g_end());
+  m_inner.m_length = length;
+
+  FieldMap::g_const_iterator git = fields.g_begin();
+  FieldMap::g_const_iterator gend = fields.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner.m_length += countGroups(git, gend);
 }
 
 inline void HEAVYUSE
@@ -1195,6 +1263,7 @@ Message::FieldCounter::countHeader( int beginStringField,
                                     int bodyLengthField,
                                     const FieldMap& fields )
 {
+  int length = 0;
   const FieldMap::const_iterator end = fields.end();
   for( FieldMap::const_iterator it = fields.begin(); it != end; ++it )
   {
@@ -1202,12 +1271,17 @@ Message::FieldCounter::countHeader( int beginStringField,
     if ( LIKELY(tag != bodyLengthField) )
     {
       if( LIKELY(tag != beginStringField) )
-        m_length += (int)it->second.getLength();
+        length += (int)it->second.calcSerializationLength();
       else
-        m_prefix += (int)it->second.getLength();
+        m_begin.m_length += (int)it->second.calcSerializationLength();
     }
   }
-  m_length += countGroups(fields.g_begin(), fields.g_end());
+  m_inner.m_length = length;
+
+  FieldMap::g_const_iterator git = fields.g_begin();
+  FieldMap::g_const_iterator gend = fields.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner.m_length += countGroups(git, gend);
 }
 
 inline int HEAVYUSE
@@ -1218,22 +1292,125 @@ Message::FieldCounter::countBody(const FieldMap& fields)
   for( FieldMap::const_iterator it = fields.begin();
        LIKELY(it != end); ++it )
   {
-    result += (int)it->second.getLength();
+    result += (int)it->second.calcSerializationLength();
   }
   return result + countGroups(fields.g_begin(), fields.g_end());
 }
 
 inline void HEAVYUSE
-Message::FieldCounter::countTrailer(const FieldMap& fields)
+Message::FieldCounter::countNonHeader(const FieldMap& body, const FieldMap& trailer)
 {
-  const FieldMap::const_iterator end = fields.end();
-  for ( FieldMap::const_iterator it = fields.begin();
+  int length = countBody(body);
+
+  const FieldMap::const_iterator end = trailer.end();
+  for ( FieldMap::const_iterator it = trailer.begin();
         it != end; ++it )
   {
     if ( it->first != checkSumTag )
-      m_length += (int)it->second.getLength();
+      length += (int)it->second.calcSerializationLength();
   }
-  m_length += countGroups(fields.g_begin(), fields.g_end());
+  m_inner.m_length += length;
+
+  FieldMap::g_const_iterator git = trailer.g_begin();
+  FieldMap::g_const_iterator gend = trailer.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner.m_length += countGroups(git, gend);
+}
+
+inline void HEAVYUSE
+Message::FieldCounter::syncHeader( const FieldMap& fields )
+{
+  int length = 0, bytesum = 0;
+  FieldMap::const_iterator it = fields.begin();
+  const FieldMap::const_iterator end = fields.end();
+
+  if( LIKELY(it != end) )
+  {
+    if( LIKELY(it->first == FIELD::BeginString) )
+    {
+      it->second.addSerializationData( m_begin.m_length,
+                                        m_begin.m_bytesum );
+      if( LIKELY(++it != end) )
+        if( LIKELY(it->first == FIELD::BodyLength) )
+          ++it;
+    }
+    else
+    {
+      if( it->first == FIELD::BodyLength )
+        ++it;
+    }
+    for( ; it != end; ++it )
+    {
+      it->second.addSerializationData( length, bytesum );
+    }
+  }
+  m_inner = Data(length, bytesum);
+
+  FieldMap::g_const_iterator git = fields.g_begin();
+  FieldMap::g_const_iterator gend = fields.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner += syncGroups(git, gend);
+}
+
+inline void HEAVYUSE
+Message::FieldCounter::syncHeader( int beginStringField,
+                                   int bodyLengthField,
+                                   const FieldMap& fields )
+{
+  int length = 0, bytesum = 0;
+  const FieldMap::const_iterator end = fields.end();
+  for( FieldMap::const_iterator it = fields.begin(); it != end; ++it )
+  {
+    int tag = it->first;
+    if ( LIKELY(tag != bodyLengthField) )
+    {
+      if( LIKELY(tag != beginStringField) )
+        it->second.addSerializationData( length, bytesum );
+      else
+        it->second.addSerializationData( m_begin.m_length,
+                                          m_begin.m_bytesum );
+    }
+  }
+  m_inner = Data(length, bytesum);
+
+  FieldMap::g_const_iterator git = fields.g_begin();
+  FieldMap::g_const_iterator gend = fields.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner += syncGroups(git, gend);
+}
+
+inline Message::FieldCounter::Data HEAVYUSE
+Message::FieldCounter::syncBody(const FieldMap& fields )
+{
+  int length = 0, bytesum = 0;
+  const FieldMap::const_iterator end = fields.end();
+  for( FieldMap::const_iterator it = fields.begin();
+       LIKELY(it != end); ++it )
+  {
+    it->second.addSerializationData( length, bytesum );
+  }
+  return (Data(length, bytesum) += syncGroups(fields.g_begin(), fields.g_end()));
+}
+
+inline void HEAVYUSE
+Message::FieldCounter::syncNonHeader(const FieldMap& body, const FieldMap& trailer)
+{
+  Data d = syncBody(body);
+  int length = d.m_length, bytesum = d.m_bytesum;
+
+  const FieldMap::const_iterator end = trailer.end();
+  for ( FieldMap::const_iterator it = trailer.begin();
+        it != end; ++it )
+  {
+    if ( it->first != checkSumTag )
+      it->second.addSerializationData( length, bytesum );
+  }
+  m_inner += Data(length, bytesum);
+
+  FieldMap::g_const_iterator git = trailer.g_begin();
+  FieldMap::g_const_iterator gend = trailer.g_end();
+  if (LIKELY(git == gend)) return;
+  m_inner += syncGroups(git, gend);
 }
 
 inline std::ostream& operator <<

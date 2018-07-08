@@ -72,13 +72,14 @@ ALIGN_DECL(64) HOTDATA Util::x86Data::ConvBits const Util::x86Data::cbits =
 };
 
 #ifdef __SSSE3__
-ALIGN_DECL_DEFAULT HOTDATA const unsigned char Util::CharBuffer::s_vshift[32] =
+ALIGN_DECL(64) HOTDATA const unsigned char Util::CharBuffer::s_vshift[32] =
         { 0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    10,   11,   12,   13,   14,   15,
           0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80 };
 #endif
 
-ALIGN_DECL_DEFAULT HOTDATA const unsigned char Util::CharBuffer::s_vmask[32] =
-        { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+ALIGN_DECL(64) HOTDATA const unsigned char Util::CharBuffer::s_vmask[48] =
+        { 0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0 };
 
 ALIGN_DECL_DEFAULT HOTDATA const Util::CharBuffer::Fixed<16> Util::CharBuffer::s_uint_charset =
