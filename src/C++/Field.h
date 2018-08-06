@@ -283,7 +283,7 @@ protected:
 
 private:
 
-  inline bool HEAVYUSE HOTSECTION sync() const
+  inline bool HEAVYUSE sync() const
   {
     calcSerializationData( m_length, m_total );
     return m_calculated = true;
