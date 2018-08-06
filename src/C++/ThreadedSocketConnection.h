@@ -31,6 +31,9 @@
 #include "SessionID.h"
 #include <set>
 #include <map>
+#ifdef HAVE_VMA
+#include <mellanox/vma_extra.h>
+#endif
 
 namespace FIX
 {
@@ -61,6 +64,7 @@ public:
 
 private:
   bool readMessage( Sg::sg_buf_t& msg );
+  bool dispatchMessage( Sg::sg_buf_t& msg );
   void processStream();
   bool setSession( Sg::sg_buf_t& msg );
 
@@ -83,6 +87,36 @@ private:
   Session* m_pSession;
   bool m_disconnect;
   int m_pollspin;
+
+#ifdef HAVE_VMA
+  class VmaPkts {
+    union { 
+      char data[sizeof(struct vma_packets_t) + sizeof(struct vma_packet_t) + sizeof(struct iovec) * 16];
+      struct vma_packets_t packets;
+    } m_value;
+    vma_api_t* m_api;
+    sys_socket_t m_socket;
+    public:
+    VmaPkts(vma_api_t* api, sys_socket_t s) : m_api(api), m_socket(s)
+    { m_value.packets.n_packet_num = 0; }
+    ~VmaPkts()
+    { 
+      if ( m_value.packets.n_packet_num )
+        m_api->free_packets( m_socket, m_value.packets.pkts, m_value.packets.n_packet_num );
+    }
+    struct vma_packets_t& packets() { return m_value.packets; }
+    bool recv()
+    {
+      int flags = MSG_VMA_ZCOPY_FORCE;
+      return m_api->recvfrom_zcopy( m_socket, m_value.data, sizeof(m_value), &flags, NULL, NULL) > 0
+             && LIKELY(flags & MSG_VMA_ZCOPY);
+    }
+  };
+
+  vma_api_t* m_api;
+
+  std::size_t processFragment(char* buf, std::size_t sz);
+#endif
 };
 }
 

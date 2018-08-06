@@ -37,7 +37,16 @@ ThreadedSocketConnection::ThreadedSocketConnection
 : m_socket( s ), m_pLog( pLog ),
   m_sessions( sessions ), m_pSession( 0 ),
   m_disconnect( false ), m_pollspin( 0 )
-{}
+{
+#ifdef HAVE_VMA
+  m_api = vma_get_api();
+  if ( m_api )
+  { // make sure this socket is offloaded
+    uint16_t len;
+    if ( m_api->get_socket_network_header( s, NULL, &len ) == -1 && errno == EINVAL ) m_api = NULL;
+  }
+#endif
+}
 
 ThreadedSocketConnection::ThreadedSocketConnection
 ( const SessionID& sessionID, sys_socket_t s,
@@ -50,6 +59,14 @@ ThreadedSocketConnection::ThreadedSocketConnection
     m_pSession( Session::lookupSession( sessionID ) ),
     m_disconnect( false ), m_pollspin( 0 )
 {
+#ifdef HAVE_VMA
+  m_api = vma_get_api();
+  if ( m_api )
+  { // make sure this socket is offloaded
+    uint16_t len;
+    if ( m_api->get_socket_network_header( s, NULL, &len ) == -1 && errno == EINVAL ) m_api = NULL;
+  }
+#endif
   if ( m_pSession ) m_pSession->setResponder( this );
 }
 
@@ -112,36 +129,71 @@ inline bool HEAVYUSE ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
   return false;
 }
 
+inline bool HEAVYUSE  ThreadedSocketConnection::dispatchMessage( Sg::sg_buf_t& buf )
+{
+  if ( !m_pSession )
+  {
+    if ( !setSession( buf ) )
+    { disconnect(); return false; }
+  }
+  try
+  {
+    m_ts.setCurrent();
+    m_pSession->next( buf, m_ts );
+  }
+  catch( InvalidMessage& )
+  {
+    if( !m_pSession->isLoggedOn() )
+    {
+      disconnect();
+      return false;
+    }
+  }
+  return true;
+}
+
 void HEAVYUSE HOTSECTION  ThreadedSocketConnection::processStream()
 {
   Sg::sg_buf_t buf;
-  while( readMessage( buf ) )
+  while( readMessage( buf ) && dispatchMessage( buf ) );
+}
+
+#ifdef HAVE_VMA
+std::size_t HEAVYUSE HOTSECTION  ThreadedSocketConnection::processFragment(char* p, std::size_t sz)
+{
+  std::size_t parsed = 0;
+  while( parsed < sz )
   {
-    if ( !m_pSession )
-    {
-      if ( !setSession( buf ) )
-      { disconnect(); break; }
-    }
     try
     {
-      m_ts.setCurrent();
-      m_pSession->next( buf, m_ts );
-    }
-    catch( InvalidMessage& )
-    {
-      if( !m_pSession->isLoggedOn() )
+      std::size_t l = m_parser.parse(p, sz);
+      if( l )
       {
-        disconnect();
-        return;
+        Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( p, l );
+        p += l;
+        parsed += l;
+        if ( !dispatchMessage( buf ) ) return 0;
+      }
+      else
+        break;
+    }
+    catch ( MessageParseError& e )
+    {
+      if( m_pLog )
+      {
+        m_pLog->onEvent( e.what() );
       }
     }
   }
+  return parsed;
 }
+#endif
 
 bool HEAVYUSE HOTSECTION ThreadedSocketConnection::read()
 {
   try
   {
+restart:
     int result, timeout, busy = m_pollspin;
     // Wait for input (1 second timeout)
     do {
@@ -158,6 +210,43 @@ bool HEAVYUSE HOTSECTION ThreadedSocketConnection::read()
     if( result > 0 ) // Something to read
     {
       // We can read without blocking
+#ifdef HAVE_VMA
+      if (LIKELY(m_api != NULL && !m_parser.pending()))
+      {
+        VmaPkts u( m_api, m_socket );
+	if ( u.recv() )
+        {
+          size_t n, f;
+          vma_packet_t* pkt = &u.packets().pkts[0];
+          for (n = 0; n < u.packets().n_packet_num; n++)
+          {
+            for (f = 0; f < pkt->sz_iov; f++)
+            {
+              std::size_t l = processFragment((char*)pkt->iov[f].iov_base, pkt->iov[f].iov_len);
+              if (LIKELY(pkt->iov[f].iov_len == l))
+                continue;
+
+              // discontinuity, copy remaining fragments to the receive buffer and go back to the standard path
+              m_parser.addToStream((char*)pkt->iov[f].iov_base + l, pkt->iov[f].iov_len - l);
+              f++;
+              do {
+                for( ; f < pkt->sz_iov; f++ ) {
+                  m_parser.addToStream( (char*)pkt->iov[f].iov_base, pkt->iov[f].iov_len ); 
+                } 
+                processStream();
+                pkt = (vma_packet_t*)&pkt->iov[f]; // as per vma/sock/sockinfo_tcp.cpp
+                f = 0;
+              } while( ++n < u.packets().n_packet_num );
+  
+              goto restart;
+            }
+            pkt = (vma_packet_t*)&pkt->iov[f];
+          }
+          return true;
+        }
+        // either unable to do zerocopy or socket error, retry
+      }
+#endif
       Sg::sg_buf_t buf = m_parser.buffer();
       ssize_t size = recv( m_socket, IOV_BUF(buf), IOV_LEN(buf), 0 );
       if ( LIKELY(size > 0) )

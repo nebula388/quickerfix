@@ -1320,6 +1320,11 @@ namespace FIX
         }
       };
 
+      /// Returns true if f is equal to the data at p
+      template <std::size_t S>
+      static inline bool equal(const Fixed<S>& f, const char* p)
+      { return 0 == ::memcmp(f.data, p, S); }
+
       /// Scans f for character v, returns array index less than S on success
       /// or a value >= S on failure.
       template <std::size_t S>
@@ -1363,6 +1368,8 @@ namespace FIX
     };
     template <> inline std::size_t CharBuffer::find<1>(char v, const Fixed<1>& f)
     { return v != f.value; }
+    template <> inline bool CharBuffer::equal<1>(const Fixed<1>& f, const char* p)
+    { return *p == f.value; }
 
     template <> union CharBuffer::Fixed<2>
     {
@@ -1371,6 +1378,14 @@ namespace FIX
       char data[2];
       value_type value;
     };
+    template <> inline bool CharBuffer::equal<2>(const Fixed<2>& f, const char* p)
+    {
+#if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+      return *(uint16_t*)p == f.value;
+#else
+      return p[0] == f.data[0] && p[1] == f.data[1];
+#endif
+    }
 
     template <> union CharBuffer::Fixed<4>
     {
@@ -1379,6 +1394,14 @@ namespace FIX
       char data[4];
       value_type value;
     };
+    template <> inline bool CharBuffer::equal<4>(const Fixed<4>& f, const char* p)
+    {
+#if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+      return *(uint32_t*)p == f.value;
+#else
+      return p[0] == f.data[0] && p[1] == f.data[1] && p[2] == f.data[2] && p[3] == f.data[3];
+#endif
+    }
 
     template <> union CharBuffer::Fixed<8>
     {
@@ -1400,6 +1423,9 @@ namespace FIX
     };
 
 #if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
+    template <> inline bool CharBuffer::equal<8>(const Fixed<8>& f, const char* p)
+    { return *(uint64_t*)p == f.value; }
+
     // x86 specializations
     template <> union CharBuffer::Fixed<16>
     {
@@ -2519,7 +2545,7 @@ namespace FIX
     typedef WSABUF   sg_buf_t;
     typedef LPWSABUF sg_buf_ptr;
     typedef CHAR*    sg_ptr_t;
-	typedef ULONG    sg_size_t;
+    typedef ULONG    sg_size_t;
 #define IOV_BUF_INITIALIZER(ptr, len) { (ULONG)(len), (CHAR*)(ptr) } 
 #define IOV_BUF(b) ((b).buf)
 #define IOV_LEN(b) ((b).len)

@@ -63,10 +63,9 @@ public:
   {
     m_buffer = (char*)::malloc(m_bufferSize);
   }
-  ~Parser()
-  {
-    ::free(m_buffer);
-  }
+  ~Parser() { ::free(m_buffer); }
+
+  bool pending() const { return m_state != RTR || m_pos != m_cursor; }
 
   void addToStream( const char* p, std::size_t sz )
   {
@@ -95,7 +94,7 @@ public:
   std::size_t extractLength( const char* msg, std::size_t size ) THROW_DECL( MessageParseError );
   bool readFixMessage( std::string& str ) THROW_DECL( MessageParseError )
   {
-    if( parse() )
+    if ( parse() )
     {
       Sg::sg_buf_t buf;
       retrieve( buf );
@@ -111,6 +110,36 @@ public:
     m_state = RTR;
   }
 
+  /// returns the length of the message or 0 if the msg is incomplete
+  std::size_t HEAVYUSE parse(const char* msg, std::size_t sz)
+  {
+    std::size_t l;
+    const char* p;
+    if ( LIKELY( sz > 12 ) )
+    {
+      Util::CharBuffer::Fixed<2> beginStringTag = { { '8', '=' } };
+      if ( LIKELY(Util::CharBuffer::equal( beginStringTag, msg ) ) )
+      {
+        l = extractLength( msg + 2, sz - 2 );
+        if ( LIKELY(l > 0) )
+        { 
+          l += 5;
+          if ( LIKELY( l < sz ) )
+          {
+            Util::CharBuffer::Fixed<4> checkSumTag = { { '\001','1','0','=' } };
+            if ( LIKELY(Util::CharBuffer::equal( checkSumTag, msg + l - 4 )) )
+            {
+              p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), msg + l, sz - l );  
+              return (LIKELY( p != NULL )) ? p - msg + 1: 0;
+            }
+          }
+        }
+      }
+    }
+    return 0;
+  }
+
+  /// scan forward, return true if a message is available
   bool HEAVYUSE parse()
   {
     const char* p;
@@ -119,12 +148,12 @@ public:
     {
       case RTR:
         m_bodyLength = 0;
-        if( LIKELY(m_pos - cursor > 2) )
+        if ( LIKELY(m_pos - cursor > 2) )
         {
           Util::CharBuffer::Fixed<2> beginStringTag = { { '8', '=' } };
           p = Util::CharBuffer::find( beginStringTag,
                                       m_buffer + cursor, m_pos - cursor );
-          if( LIKELY(NULL != p) )
+          if ( LIKELY(NULL != p) )
           {
             m_begin = (int)(p - m_buffer);
             cursor = m_begin + 2;
@@ -142,12 +171,12 @@ public:
           return false;
 
       case HAVE_BEGIN_STRING:
-        if( LIKELY(m_pos - cursor > 3) )
+        if ( LIKELY(m_pos - cursor > 3) )
         {
           Util::CharBuffer::Fixed<3> bodyLengthTag = { { '\001', '9', '=' } };
           p = Util::CharBuffer::find( bodyLengthTag,
                                       m_buffer + cursor, m_pos - cursor );
-          if( LIKELY(NULL != p ) )
+          if ( LIKELY(NULL != p ) )
           {
             cursor = (int)(p - m_buffer + 3);
             m_state = HAVE_BODY_LENGTH;
@@ -165,13 +194,13 @@ public:
         // fall through
 
       case HAVE_BODY_LENGTH:
-        if( LIKELY(cursor < m_pos) )
+        if ( LIKELY(cursor < m_pos) )
         {
           do
           {
             int v = m_buffer[cursor++];
             unsigned a = v - '0';
-            if( a < 10 )
+            if ( a < 10 )
             {
               m_bodyLength = m_bodyLength * 10 + a;
             }
@@ -193,13 +222,13 @@ public:
         // fall through
 
       case HAVE_BODY:
-        if( LIKELY(m_pos >= cursor + m_bodyLength + 3) )
+        if ( LIKELY(m_pos >= cursor + m_bodyLength + 3) )
         {
           Util::CharBuffer::Fixed<4> checkSumTag = { { '\001','1','0','=' } };
           cursor += m_bodyLength - 1;
           p = Util::CharBuffer::find( checkSumTag,
                                       m_buffer + cursor, m_pos - cursor);
-          if( LIKELY(NULL != p) && LIKELY((p - m_buffer) == cursor) )
+          if ( LIKELY(NULL != p) && LIKELY((p - m_buffer) == cursor) )
           {
             cursor = (int)(p - m_buffer + 4);
             m_state = HAVE_CHECKSUM;
@@ -216,7 +245,7 @@ public:
 
         // fall through
       case HAVE_CHECKSUM:
-        if( LIKELY(m_pos - cursor > 0) &&
+        if ( LIKELY(m_pos - cursor > 0) &&
             LIKELY(NULL != (p = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'),
                                                         m_buffer + cursor, m_pos - cursor )) ) )
         {
@@ -232,7 +261,7 @@ public:
         break;
     }
 
-    if( LIKELY(m_pos - m_begin < MaxBufferLength) )
+    if ( LIKELY(m_pos - m_begin < MaxBufferLength) )
     {
       m_cursor = cursor;
       return HAVE_MESSAGE == m_state;
@@ -256,15 +285,15 @@ public:
 
   Sg::sg_buf_t buffer()
   {
-    if( LIKELY(m_state == RTR && m_pos == m_cursor) )
+    if ( LIKELY(m_state == RTR && m_pos == m_cursor) )
     {
       m_pos = m_cursor = 0;
     }
     else
     {
-      if( m_bufferSize - m_pos < LowBufferWatermark )
+      if ( m_bufferSize - m_pos < LowBufferWatermark )
       {
-        if( (int)m_state > RTR && m_begin > (m_bufferSize >> 1) )
+        if ( (int)m_state > RTR && m_begin > (m_bufferSize >> 1) )
         {
           ::memcpy( m_buffer, m_buffer + m_begin, m_pos - m_begin );
           m_cursor -= m_begin;
@@ -288,7 +317,7 @@ public:
   {
     const char* b =
         Util::CharBuffer::find( f, (char*)IOV_BUF(msg), IOV_LEN(msg) );
-    if( LIKELY(NULL != b) )
+    if ( LIKELY(NULL != b) )
     {
       std::size_t offset = ( b += S ) - (char*)IOV_BUF(msg);
       const char* e = Util::CharBuffer::find( Util::CharBuffer::Fixed<1>('\001'), b, IOV_LEN(msg) - offset );
