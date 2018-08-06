@@ -78,7 +78,14 @@ int gettimeofday(struct timeval *tv/*in*/, struct timezone *tz/*in*/)
 
 #define NUM_SAMPLES 100000
 
-timeval last_out, last_in;
+struct TestDuration
+{
+  timeval start, end;
+};
+
+static timeval last_out, last_in;
+static TestDuration test_times[NUM_SAMPLES];
+static std::size_t times_index = 0;
 static unsigned long rt_latency, ow_latency;
 static unsigned long long min_rt_latency = 100000000000UL, min_ow_latency = 100000000000UL;
 static unsigned long long max_rt_latency, max_ow_latency;
@@ -86,8 +93,6 @@ static const unsigned long bucket_step = 2;
 static const int max_bucket = 100;
 static unsigned long rt_latency_buckets[max_bucket + 1];
 static unsigned long ow_latency_buckets[max_bucket + 1];
-FIX::AtomicCount rq_sent(0);
-FIX::AtomicCount rp_matched(0);
 
 FIX::ClOrdID  last_ClOrdID("1234");
 FIX::Symbol   last_Symbol("EUR/USD");
@@ -96,51 +101,46 @@ FIX::Price    last_Price(1.0);
 FIX::Side     last_Side(FIX::Side_BUY);
 
 std::auto_ptr<FIX::Message> last_order;
+FIX::AtomicCount pings(0);
 
-std::queue<timeval> q_out;
-FIX::Mutex	    q_lock;
-FIX::CondVar	    q_cond;
-
-long q_on_send() {
+void q_on_send() {
+  last_in.tv_sec = 0;
   gettimeofday(&last_out, NULL);
-  FIX::Locker l(q_lock);
-  q_out.push(last_out);
-  return ++rq_sent;
 }
 
 void q_on_receive( const FIX::Message& message )
 {
-  ::gettimeofday(&last_in, NULL);
-
-  FIX::Locker l(q_lock);
-  if (!q_out.empty())
+  timeval v;
+  ::gettimeofday(&v, NULL);
+  if (pings)
   {
-    timeval first_out = q_out.front();
-    unsigned long l = (last_in.tv_sec - first_out.tv_sec) * 1000000 + last_in.tv_usec - first_out.tv_usec;
+    unsigned long long l = (v.tv_sec - last_out.tv_sec) * 1000000 + v.tv_usec - last_out.tv_usec;
     if ( l < min_rt_latency ) min_rt_latency = l;
     if ( l > max_rt_latency ) max_rt_latency = l;
-    int b = l / bucket_step;
+    unsigned b = l / bucket_step;
     rt_latency_buckets[b > max_bucket ? max_bucket : b ]++;
     rt_latency += l;
 
     const FIX::FieldBase* p = message.getFieldPtrIfSet( 76767 );
     if ( p )
     {
-      double d = 0.0;
+      double w, f, d = 0.0;
       FIX::DoubleConvertor::parse(p->getString(), d);
-      l = (last_in.tv_sec * 1000000 + last_in.tv_usec) % 1000000000;
-      l = l >= d ? (l - d) : (l + (1000000000 - d));
+      f = ::modf(d, &w);
+      l = (v.tv_sec - w) * 1000000 + v.tv_usec - (f * 1000000);
       if ( l < min_ow_latency ) min_ow_latency = l;
       if ( l > max_ow_latency ) max_ow_latency = l;
       b = l / bucket_step;
       ow_latency_buckets[b > max_bucket ? max_bucket : b ]++;
       ow_latency += l;
-    }
 
-    q_out.pop();
-    ++rp_matched;
-    q_cond.notify_one();
+    }
   }
+  else
+  {
+    test_times[times_index++].end = v;
+  }
+  last_in = v; // signal to proceed
 };
 
 void show_buckets(unsigned long* buckets, std::size_t step, std::size_t sz)
@@ -156,11 +156,9 @@ void show_buckets(unsigned long* buckets, std::size_t step, std::size_t sz)
   }
 }
 
-void wait_receive(long rq)
+void wait_receive()
 {
-   FIX::Locker l(q_lock);
-   while (rq > rp_matched)
-	q_cond.wait(l);
+   while (last_in.tv_sec == 0) FIX::Util::Sys::SchedYield();
 }
 
 void Application::onLogon( const FIX::SessionID& sessionID )
@@ -190,6 +188,7 @@ THROW_DECL( FIX::DoNotSend )
     if ( possDupFlag ) throw FIX::DoNotSend();
   }
   catch ( FIX::FieldNotFound& ) {}
+  // std::cout << "sending " << message.getHeader().getFieldRef(FIX::FIELD::MsgSeqNum) << std::endl;
 }
 
 void Application::onMessage
@@ -219,9 +218,6 @@ void Application::onMessage
 
 void Application::run()
 {
-  FIX::TimeInForce::Pack  tIF(FIX::TimeInForce_IMMEDIATE_OR_CANCEL);
-  FIX::SessionID sid( "FIX.4.2", "CLIENT1", "EXECUTOR");
-  FIX::Session* ps = FIX::Session::lookupSession(sid);
   while ( true )
   {
     try
@@ -229,47 +225,9 @@ void Application::run()
       char action = queryAction();
 
       if ( action == '0' )
-      {
-        FIX::AtomicCount::value_type rp_prev = rp_matched;
-        timeval st, en;
-
-        rt_latency = ow_latency = 0;
-        max_rt_latency = max_ow_latency = 0;
-        min_rt_latency = min_ow_latency = 10000000000UL;
-        ::memset(rt_latency_buckets, 0, sizeof(rt_latency_buckets));
-        ::memset(ow_latency_buckets, 0, sizeof(ow_latency_buckets));
-
-        gettimeofday(&st, NULL);
-        for (int i = 0; i < NUM_SAMPLES; i++)
-        {
-          q_on_send();
-          FIX42::NewOrderSingle order(last_ClOrdID,
-                                      FIX::HandlInst( '1' ),
-                                      last_Symbol,
-                                      last_Side,
-                                      FIX::TransactTime(),
-                                      FIX::OrdType(FIX::OrdType_LIMIT));
-          order.set( last_Qty );
-          order.set( tIF );
-          order.set( last_Price );
-        
-          ps->send( order );
-          wait_receive(rp_prev + rq_sent);
-        }
-
-        ::gettimeofday(&en, NULL);
-	std::cout << "Duration : " << (double)((en.tv_sec - st.tv_sec) * 1000000 + en.tv_usec - st.tv_usec)/1000000.0 << " sec " << std::endl;
-
-	std::cout << "Avg RTT : " << rt_latency / NUM_SAMPLES << " usec " << std::endl;
-	std::cout << "Max RTT : " << max_rt_latency << " usec " << std::endl;
-	std::cout << "Min RTT : " << min_rt_latency << " usec " << std::endl;
-        show_buckets( rt_latency_buckets, bucket_step, max_bucket );
- 
-	std::cout << "Avg ExecutionReport latency : " << ow_latency / NUM_SAMPLES << " usec " << std::endl;
-	std::cout << "Max ExecutionReport latency : " << max_ow_latency << " usec " << std::endl;
-	std::cout << "Min ExecutionReport latency : " << min_ow_latency << " usec " << std::endl;
-        show_buckets( ow_latency_buckets, bucket_step, max_bucket );
-      }
+        testPingPong();
+      if ( action == 'a' )
+        testFlow();
       else if ( action == '1' )
         queryEnterOrder();
       else if ( action == '2' )
@@ -286,6 +244,114 @@ void Application::run()
       std::cout << "Message Not Sent: " << e.what();
     }
   }
+}
+
+void Application::testPingPong()
+{
+  FIX::SessionID sid( "FIX.4.2", "CLIENT1", "EXECUTOR");
+  FIX::Session* ps = FIX::Session::lookupSession(sid);
+  timeval st, en;
+
+  rt_latency = ow_latency = 0;
+  max_rt_latency = max_ow_latency = 0;
+  min_rt_latency = min_ow_latency = 10000000000UL;
+  ::memset(rt_latency_buckets, 0, sizeof(rt_latency_buckets));
+  ::memset(ow_latency_buckets, 0, sizeof(ow_latency_buckets));
+
+  ::gettimeofday(&st, NULL);
+  if (pings == 0) ++pings;
+  for (int i = 0; i < NUM_SAMPLES; i++)
+  {
+    q_on_send();
+    FIX42::NewOrderSingle order(last_ClOrdID,
+                                FIX::HandlInst( '1' ),
+                                last_Symbol,
+                                last_Side,
+                                FIX::TransactTime(),
+                                FIX::OrdType(FIX::OrdType_LIMIT));
+    order.set( last_Qty );
+    order.set( FIX::TimeInForce::Pack(FIX::TimeInForce_IMMEDIATE_OR_CANCEL) );
+    order.set( last_Price );
+  
+    ps->send( order );
+    wait_receive();
+  }
+
+  ::gettimeofday(&en, NULL);
+  std::cout << "Duration : " << (double)((en.tv_sec - st.tv_sec) * 1000000 + en.tv_usec - st.tv_usec)/1000000.0 << " sec " << std::endl;
+
+  std::cout << "Avg RTT : " << rt_latency / NUM_SAMPLES << " usec " << std::endl;
+  std::cout << "Max RTT : " << max_rt_latency << " usec " << std::endl;
+  std::cout << "Min RTT : " << min_rt_latency << " usec " << std::endl;
+  show_buckets( rt_latency_buckets, bucket_step, max_bucket );
+
+  std::cout << "Avg ExecutionReport latency : " << ow_latency / NUM_SAMPLES << " usec " << std::endl;
+  std::cout << "Max ExecutionReport latency : " << max_ow_latency << " usec " << std::endl;
+  std::cout << "Min ExecutionReport latency : " << min_ow_latency << " usec " << std::endl;
+  show_buckets( ow_latency_buckets, bucket_step, max_bucket );
+}
+
+void Application::testFlow()
+{
+  FIX::SessionID sid( "FIX.4.2", "CLIENT1", "EXECUTOR");
+  FIX::Session* ps = FIX::Session::lookupSession(sid);
+  std::string clOrdId("0");
+  timeval st, en;
+  FIX42::NewOrderSingle newOrderSingle( FIX::ClOrdID( clOrdId ),
+                                        FIX::HandlInst( '1' ),
+                                        last_Symbol,
+                                        last_Side,
+                                        FIX::TransactTime(),
+                                        FIX::OrdType(FIX::OrdType_LIMIT));
+  clOrdId.reserve(12);
+
+  rt_latency = ow_latency = 0;
+  max_rt_latency = max_ow_latency = 0;
+  min_rt_latency = min_ow_latency = 10000000000UL;
+  ::memset( rt_latency_buckets, 0, sizeof( rt_latency_buckets ) );
+  ::memset( test_times, 0, sizeof( test_times ) );
+  times_index = 0;
+  ::gettimeofday( &st, NULL );
+  last_in = st;
+  if (pings == 1) --pings;
+  for (int i = 0; i < NUM_SAMPLES; i++)
+  {
+    ::gettimeofday(&test_times[i].start, NULL);
+    FIX::IntConvertor::set( clOrdId, i );
+    newOrderSingle.set( FIX::ClOrdID::Pack( clOrdId.c_str(), clOrdId.size() ) );
+    newOrderSingle.set( FIX::OrderQty::Pack( 1 + i%10 ) );
+    newOrderSingle.set( FIX::TimeInForce::Pack(FIX::TimeInForce_IMMEDIATE_OR_CANCEL) );
+    newOrderSingle.set( FIX::Price::Pack( 30 ) );
+    ps->send( newOrderSingle );
+    // 1K messages per second
+    do
+    {
+      ::gettimeofday(&en, NULL);
+      unsigned long long l = (unsigned long long)(en.tv_sec - test_times[i].start.tv_sec) * 1000000 + en.tv_usec - test_times[i].start.tv_usec;
+      if (l < 1000) FIX::Util::Sys::SchedYield();
+      else break;
+    } while(true);
+  }
+
+  for (int i = 0; i < NUM_SAMPLES; i++)
+  {
+    unsigned long long l = (test_times[i].end.tv_sec - test_times[i].start.tv_sec) * 1000000 +
+                            test_times[i].end.tv_usec - test_times[i].start.tv_usec;
+    if ( l < min_rt_latency ) min_rt_latency = l;
+    if ( l > max_rt_latency ) max_rt_latency = l;
+    unsigned b = l / bucket_step;
+    rt_latency_buckets[b > max_bucket ? max_bucket : b ]++;
+    rt_latency += l;
+  }
+
+  while(times_index < NUM_SAMPLES) FIX::Util::Sys::SchedYield();
+
+  std::cout << "Duration : " << (double)((en.tv_sec - st.tv_sec) * 1000000 + en.tv_usec - st.tv_usec)/1000000.0 << " sec " << std::endl;
+
+  std::cout << "Avg RTT : " << rt_latency / NUM_SAMPLES << " usec " << std::endl;
+  std::cout << "Max RTT : " << max_rt_latency << " usec " << std::endl;
+  std::cout << "Min RTT : " << min_rt_latency << " usec " << std::endl;
+  show_buckets( rt_latency_buckets, bucket_step, max_bucket );
 }
 
 void Application::queryEnterOrder()
@@ -785,7 +851,8 @@ char Application::queryAction()
 {
   char value;
   std::cout << std::endl
-  << "0) Measure latency with the last Order" << std::endl
+  << "0) Measure pingpong latency with the last Order" << std::endl
+  << "a) Measure 1K flow latency with the last Order" << std::endl
   << "1) Enter Order" << std::endl
   << "2) Cancel Order" << std::endl
   << "3) Replace Order" << std::endl
@@ -795,7 +862,7 @@ char Application::queryAction()
   std::cin >> value;
   switch ( value )
   {
-    case '0': case '1': case '2': case '3': case '4': case '5': break;
+    case '0': case 'a': case '1': case '2': case '3': case '4': case '5': break;
     default: throw std::exception();
   }
   return value;

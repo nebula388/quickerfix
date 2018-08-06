@@ -26,6 +26,7 @@
 #include "NullStore.h"
 #include "FileStore.h"
 #include "SocketInitiator.h"
+#include "ThreadedSocketInitiator.h"
 #ifdef HAVE_SSL
 #include "ThreadedSSLSocketInitiator.h"
 #include "SSLSocketInitiator.h"
@@ -49,13 +50,11 @@ int main( int argc, char** argv )
   }
   std::string file = argv[ 1 ];
 
-#ifdef HAVE_SSL
-  std::string isSSL;
+  std::string mode;
   if (argc > 2)
   {
-    isSSL.assign(argv[2]);
+    mode.assign(argv[2]);
   }
-#endif
 
   FIX::Initiator * initiator = 0;
   try
@@ -67,12 +66,15 @@ int main( int argc, char** argv )
     FIX::NullStoreFactory storeFactory;
     FIX::ScreenLogFactory logFactory( settings );
 #ifdef HAVE_SSL
-    if (isSSL.compare("SSL") == 0)
+    if (mode.compare("SSL") == 0 || mode.compare("SSL-MT") == 0)
       initiator = new FIX::ThreadedSSLSocketInitiator ( application, storeFactory, settings, logFactory );
-    else if (isSSL.compare("SSL-ST") == 0)
+    else if (mode.compare("SSL-ST") == 0)
       initiator = new FIX::SSLSocketInitiator ( application, storeFactory, settings, logFactory );
     else
 #endif
+    if (mode.compare("MT") == 0)
+      initiator = new FIX::ThreadedSocketInitiator ( application, storeFactory, settings ); // logFactory );
+    else
       initiator = new FIX::SocketInitiator( application, storeFactory, settings ); // logFactory );
 
     initiator->start();

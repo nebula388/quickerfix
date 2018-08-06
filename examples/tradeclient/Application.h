@@ -82,7 +82,7 @@ private:
   void toAdmin( FIX::Message&, const FIX::SessionID& ) {}
   void toApp( FIX::Message&, const FIX::SessionID& )
     THROW_DECL( FIX::DoNotSend );
-  void fromAdmin( const FIX::Message&, const FIX::SessionID& )
+  void fromAdmin( const FIX::Message& message, const FIX::SessionID& )
     THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::RejectLogon ) {}
   void fromApp( const FIX::Message& message, const FIX::SessionID& sessionID )
     THROW_DECL( FIX::FieldNotFound, FIX::IncorrectDataFormat, FIX::IncorrectTagValue, FIX::UnsupportedMessageType );
@@ -100,6 +100,8 @@ private:
   void onMessage( const FIX50::ExecutionReport&, const FIX::SessionID& );
   void onMessage( const FIX50::OrderCancelReject&, const FIX::SessionID& );
 
+  void testPingPong();
+  void testFlow();
   void queryEnterOrder();
   void queryCancelOrder();
   void queryReplaceOrder();
