@@ -183,12 +183,15 @@ THROW_DECL( FIX::DoNotSend )
 {
   try
   {
+    const FIX::FieldBase* possDupFlag = message.getHeader().getFieldPtrIfSet( FIX::FIELD::PossDupFlag );
+    if ( possDupFlag && *static_cast<const FIX::PossDupFlag*>(possDupFlag) ) throw FIX::DoNotSend();
+/*
     FIX::PossDupFlag possDupFlag;
     message.getHeader().getField( possDupFlag );
     if ( possDupFlag ) throw FIX::DoNotSend();
+*/
   }
   catch ( FIX::FieldNotFound& ) {}
-  // std::cout << "sending " << message.getHeader().getFieldRef(FIX::FIELD::MsgSeqNum) << std::endl;
 }
 
 void Application::onMessage
@@ -263,6 +266,7 @@ void Application::testPingPong()
   for (int i = 0; i < NUM_SAMPLES; i++)
   {
     q_on_send();
+    DTRACE_PROBE(tradeclient, send__start);
     FIX42::NewOrderSingle order(last_ClOrdID,
                                 FIX::HandlInst( '1' ),
                                 last_Symbol,
@@ -274,6 +278,7 @@ void Application::testPingPong()
     order.set( last_Price );
   
     ps->send( order );
+    DTRACE_PROBE(tradeclient, send__end);
     wait_receive();
   }
 
@@ -316,6 +321,7 @@ void Application::testFlow()
   if (pings == 1) --pings;
   for (int i = 0; i < NUM_SAMPLES; i++)
   {
+    DTRACE_PROBE(tradeclient, send__start);
     ::gettimeofday(&test_times[i].start, NULL);
     FIX::IntConvertor::set( clOrdId, i );
     newOrderSingle.set( FIX::ClOrdID::Pack( clOrdId.c_str(), clOrdId.size() ) );
@@ -323,7 +329,9 @@ void Application::testFlow()
     newOrderSingle.set( FIX::TimeInForce::Pack(FIX::TimeInForce_IMMEDIATE_OR_CANCEL) );
     newOrderSingle.set( FIX::Price::Pack( 30 ) );
     ps->send( newOrderSingle );
-    // 1K messages per second
+    DTRACE_PROBE(tradeclient, send__end);
+
+    // rate limit to 1K messages per second
     do
     {
       ::gettimeofday(&en, NULL);

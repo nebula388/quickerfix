@@ -169,30 +169,22 @@ void Application::onMessage( const FIX42::NewOrderSingle& message,
   message.get( price );
   message.get( clOrdID );
 
-  FIX42::ExecutionReport executionReport = FIX42::ExecutionReport
-      ( FIX::OrderID( genOrderID() ),
-        FIX::ExecID( genExecID() ),
-        FIX::ExecTransType( FIX::ExecTransType_NEW ),
-        FIX::ExecType( FIX::ExecType_FILL ),
-        FIX::OrdStatus( FIX::OrdStatus_FILLED ),
-        symbol,
-        side,
-        FIX::LeavesQty( 0 ),
-        FIX::CumQty( orderQty ),
-        FIX::AvgPx( price ) );
+  // example of using references to the body fields of the answer42 message
+  symbol42 = symbol;
+  clOrdID42 = clOrdID;
+  orderQty42 = orderQty;
+  price42 = price;
 
-  executionReport.set( clOrdID );
-  executionReport.set( orderQty );
-  executionReport.set( FIX::LastShares( orderQty ) );
-  executionReport.set( FIX::LastPx( price ) );
+  answer42.set( FIX::LastShares( orderQty ) );
+  answer42.set( FIX::LastPx( price ) );
 
   if( message.isSet(account) )
-    executionReport.setField( message.get(account) );
+    answer42.setField( message.get(account) );
 
-  executionReport.addField( FIX::DoubleField::Pack( 76767, (FIX::Util::Sys::TickCount::now() - FIX::Util::Sys::TickCount()).seconds() ) );
+  answer42.setField( FIX::DoubleField::Pack( 76767, (FIX::Util::Sys::TickCount::now() - FIX::Util::Sys::TickCount()).seconds() ) );
   try
   {
-    FIX::Session::sendToTarget( executionReport, sessionID );
+    FIX::Session::sendToTarget( answer42, sessionID );
   }
   catch ( FIX::SessionNotFound& ) {}
 }

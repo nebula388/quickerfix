@@ -35,11 +35,32 @@
 #include "fix44/NewOrderSingle.h"
 #include "fix50/NewOrderSingle.h"
 
+#include "fix42/ExecutionReport.h"
+
 class Application
 : public FIX::Application, public FIX::MessageCracker
 {
+  template <typename F> static inline F& ref(FIX::FieldMap& f)
+  { 
+    f.setField( F(), false ); // make sure it's present first
+    return const_cast<F&>( static_cast<const F&>( f.getFieldRef( F::Pack::Tag ) ) );
+  }
 public:
-  Application() : m_orderID(0), m_execID(0) {}
+  Application()
+  : m_orderID(0), m_execID(0),
+    answer42( FIX::OrderID( genOrderID() ),
+              FIX::ExecID( genExecID() ),
+              FIX::ExecTransType( FIX::ExecTransType_NEW ),
+              FIX::ExecType( FIX::ExecType_FILL ),
+              FIX::OrdStatus( FIX::OrdStatus_FILLED ),
+              FIX::Symbol( "" ),
+              FIX::Side( FIX::Side_BUY ),
+              FIX::LeavesQty( 0 ),
+              FIX::CumQty( 0 ),
+              FIX::AvgPx( 0 ) ),
+    symbol42( ref<FIX::Symbol>( answer42 ) ), clOrdID42( ref<FIX::ClOrdID>( answer42 ) ),
+    price42( ref<FIX::Price>( answer42 ) ), orderQty42( ref<FIX::OrderQty>( answer42 ) )
+  {}
 
   // Application overloads
   void onCreate( const FIX::SessionID& );
@@ -73,6 +94,11 @@ public:
   }
 private:
   int m_orderID, m_execID;
+  FIX42::ExecutionReport answer42;
+  FIX::Symbol& symbol42;
+  FIX::ClOrdID& clOrdID42;
+  FIX::Price& price42;
+  FIX::OrderQty& orderQty42;
 };
 
 #endif

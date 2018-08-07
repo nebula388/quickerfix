@@ -26,6 +26,7 @@
 #include "NullStore.h"
 #include "FileStore.h"
 #include "ThreadedSocketAcceptor.h"
+#include "SocketAcceptor.h"
 #ifdef HAVE_SSL
 #include "ThreadedSSLSocketAcceptor.h"
 #include "SSLSocketAcceptor.h"
@@ -55,13 +56,12 @@ int main( int argc, char** argv )
     return 0;
   }
   std::string file = argv[ 1 ];
-#ifdef HAVE_SSL
-  std::string isSSL;
+
+  std::string mode;
   if (argc > 2)
   {
-    isSSL.assign(argv[2]);
+    mode.assign(argv[2]);
   }
-#endif
 
   FIX::Acceptor * acceptor = 0;
   try
@@ -72,15 +72,17 @@ int main( int argc, char** argv )
     // FIX::FileStoreFactory storeFactory( settings );
     FIX::NullStoreFactory storeFactory;
     FIX::ScreenLogFactory logFactory( settings );
-
 #ifdef HAVE_SSL
-    if (isSSL.compare("SSL") == 0)
+    if (mode.compare("SSL") == 0 || mode.compare("SSL-MT") == 0)
       acceptor = new FIX::ThreadedSSLSocketAcceptor ( application, storeFactory, settings, logFactory );
-    else if (isSSL.compare("SSL-ST") == 0)
+    else if (mode.compare("SSL-ST") == 0)
       acceptor = new FIX::SSLSocketAcceptor ( application, storeFactory, settings, logFactory );
     else
 #endif
-    acceptor = new FIX::ThreadedSocketAcceptor ( application, storeFactory, settings ); // , logFactory );
+    if (mode.compare("MT") == 0)
+      acceptor = new FIX::ThreadedSocketAcceptor ( application, storeFactory, settings ); // logFactory );
+    else
+      acceptor = new FIX::SocketAcceptor ( application, storeFactory, settings ); // , logFactory );
 
     acceptor->start();
     wait();
