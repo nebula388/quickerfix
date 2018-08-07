@@ -9,6 +9,8 @@ m4_include([m4/ax_sso.m4])
 m4_include([m4/ax_throw_decl.m4])
 m4_include([m4/ax_fieldorder.m4])
 m4_include([m4/ax_emx.m4])
+m4_include([m4/ax_vma.m4])
+m4_include([m4/ax_systemtap.m4])
 m4_include([m4/ax_lib_mysql.m4])
 m4_include([m4/ax_lib_postgresql.m4])
 m4_include([m4/ax_lib_boost.m4])
@@ -37,6 +39,7 @@ AX_ORDERING()
 AX_FIELDMAP()
 AX_SSO()
 AX_VMA()
+AX_SYSTEMTAP()
 AX_THROW_DECL()
 AX_FIELD_ORDER()
 AX_EMX()
@@ -88,12 +91,12 @@ DEFAULT_LIBS=$LIBS
 LIBS="$OPENSSL_LIBS $STLPORT_LIBS $MYSQL_LIBS $POSTGRESQL_LDFLAGS $TBB_LIBS $BOOST_LIBS $DEFAULT_LIBS"
 # gcc flags
 if test `uname` == SunOS; then
-   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $JAVA_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS"
+   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $JAVA_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS $SYSTEMTAP_CFLAGS"
 else
   if test `uname` == AIX; then
-   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS"
+   	SHAREDFLAGS="$TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $JAVA_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS $SYSTEMTAP_CFLAGS"
   else
-    SHAREDFLAGS="-Wall -ansi -Wno-unused-command-line-argument -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual -Wno-deprecated-declarations -Wno-deprecated $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS"
+    SHAREDFLAGS="-Wall -ansi -Wno-unused-command-line-argument -Wpointer-arith -Wwrite-strings -Wno-overloaded-virtual -Wno-deprecated-declarations -Wno-deprecated $TBB_CFLAGS $BOOST_CFLAGS $STLPORT_CFLAGS $MYSQL_CFLAGS $POSTGRESQL_CFLAGS $PYTHON_CFLAGS $RUBY_CFLAGS $VMA_CFLAGS $SYSTEMTAP_CFLAGS"
   fi
 fi
 
@@ -280,6 +283,9 @@ AX_EMX_CHECK()
 
 # check for Mellanox VMA header 
 AX_VMA_CHECK()
+
+# check for Mellanox VMA header 
+AX_SYSTEMTAP_CHECK()
 
 # check for tbb
 AX_LIB_TBB_CHECK()

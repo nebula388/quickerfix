@@ -141,6 +141,38 @@ typedef int ssize_t;
 #include <boost/range.hpp>
 #endif
 
+#ifdef HAVE_SYSTEMTAP
+#include <sys/sdt.h>
+// "smart" probe definitions
+#define DTRACE_AUTO(name, provider, in, out)    \
+  struct {                                      \
+    struct inner {                              \
+      inner() { DTRACE_PROBE(provider, in); }   \
+      ~inner() { DTRACE_PROBE(provider, out); } \
+    } value;                                    \
+  } name
+
+#define DTRACE_AUTO_BOOL(name, v, provider, in, out)  \
+  struct {                                            \
+    struct inner {                                    \
+      bool r_;                                        \
+      inner() : r_(v) { DTRACE_PROBE(provider, in); } \
+      ~inner() { DTRACE_PROBE1(provider, out, r_); }  \
+    } value;                                          \
+  } name
+
+#define DTRACE_AUTO_SET(name, v) name.value.r_ = (v)
+#else
+#define DTRACE_PROBE(...) 
+#define DTRACE_PROBE1(...) 
+#define DTRACE_PROBE2(...) 
+#define DTRACE_PROBE3(...) 
+#define DTRACE_PROBE4(...) 
+#define DTRACE_AUTO(...) 
+#define DTRACE_AUTO_BOOL(...) 
+#define DTRACE_AUTO_SET(...) 
+#endif
+
 #if !defined(HAVE_STD_UNIQUE_PTR)
 #define SmartPtr std::auto_ptr
 #else

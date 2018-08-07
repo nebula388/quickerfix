@@ -441,6 +441,7 @@ void Session::nextResendRequest( const Message& resendRequest, const UtcTimeStam
 
 bool HEAVYUSE HOTSECTION Session::send( Message& message )
 {
+  DTRACE_AUTO(probe, quickfix, session__send__start, session__send__end);
   int f[2] = { FIELD::PossDupFlag, FIELD::OrigSendingTime };
   message.getHeader().removeFields( f, f + sizeof(f)/sizeof(int));
 
@@ -461,7 +462,9 @@ bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
                    DataDictionary::MsgInfo::Admin::trait_status |
                    DataDictionary::MsgInfo::Admin::trait_session ) )
     {
+      DTRACE_PROBE( quickfix, to__admin__start );
       m_application.toAdmin( message, m_sessionID );
+      DTRACE_PROBE( quickfix, to__admin__end );
 
       if( trait == DataDictionary::MsgInfo::Admin::trait_logon &&
          !m_state.receivedReset() )
@@ -471,19 +474,24 @@ bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
         {
           m_state.reset();
           header.setField( MsgSeqNum::Pack(getExpectedSenderNum()) );
-		  m_state.sentReset( true );
+          m_state.sentReset( true );
         } 
-		else
-		  m_state.sentReset( false );
+        else
+          m_state.sentReset( false );
       }
 
       if( m_pResponder )
       {
-		const SgBufferFactory::SgBuffer& s =
+        DTRACE_PROBE( quickfix, sg__serialize__start );
+        const SgBufferFactory::SgBuffer& s =
                        message.toBuffer( sg_buffer_factory );
-		if( !num )
-		  persist( message, s.iovec(), s.elements() );
+        DTRACE_PROBE( quickfix, sg__serialize__end );
 
+        if( !num )
+        {
+          DTRACE_AUTO( probe, quickfix, persist__start, persist__end );
+          persist( message, s.iovec(), s.elements() );
+        }
         if ( isLoggedOn() ||
            ( trait & ( DataDictionary::MsgInfo::Admin::trait_logon |
                        DataDictionary::MsgInfo::Admin::trait_status ) ) )
@@ -493,10 +501,15 @@ bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
       }
       else
       {
+        DTRACE_PROBE( quickfix, string__serialize__start );
         const std::string& s = message.toBuffer( s_buffer_factory );
+        DTRACE_PROBE( quickfix, string__serialize__end );
 
         if( !num )
+        {
+          DTRACE_AUTO( probe, quickfix, persist__start, persist__end );
           persist( message, s );
+        }
       }
     }
     else
@@ -507,25 +520,37 @@ bool HEAVYUSE HOTSECTION Session::sendRaw( Message& message, int num )
 
       try
       {
+	DTRACE_PROBE( quickfix, to__app__start );
         m_application.toApp( message, m_sessionID );
+	DTRACE_PROBE( quickfix, to__app__end );
 
 	if( m_pResponder )
         {
-	  const SgBufferFactory::SgBuffer& s =
-                        message.toBuffer( sg_buffer_factory );
+          DTRACE_PROBE( quickfix, sg__serialize__start );
+          const SgBufferFactory::SgBuffer& s =
+                         message.toBuffer( sg_buffer_factory );
+          DTRACE_PROBE( quickfix, sg__serialize__end );
 
 	  if( !num )
+          {
+            DTRACE_AUTO( probe, quickfix, persist__start, persist__end );
 	    persist( message, s.iovec(), s.elements() );
+          }
 
 	  if ( isLoggedOn() )
 	    tx ( s.iovec(), s.elements() );
         }
         else
         {
+          DTRACE_PROBE( quickfix, string__serialize__start );
           const std::string& s = message.toBuffer( s_buffer_factory );
+          DTRACE_PROBE( quickfix, string__serialize__end );
 
           if( !num )
+          {
+            DTRACE_AUTO( probe, quickfix, persist__start, persist__end );
             persist( message, s );
+          }
         }
       }
       catch ( DoNotSend& ) { return false; }
@@ -610,6 +635,7 @@ THROW_DECL( IOException )
 
 void Session::generateLogon()
 {
+  DTRACE_PROBE(quickfix, generate__logon);
   Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   logon.setField( EncryptMethod::Pack( 0 ) );
   logon.setField( m_state.heartBtInt() );
@@ -632,6 +658,7 @@ void Session::generateLogon()
 
 void Session::generateLogon( const Message& aLogon )
 {
+  DTRACE_PROBE(quickfix, generate__logon);
   Message logon( MsgType::Pack( "A", 1 ), m_sessionDD, m_sendAllocator );
   EncryptMethod encryptMethod;
   HeartBtInt heartBtInt;
@@ -648,6 +675,7 @@ void Session::generateLogon( const Message& aLogon )
 
 void Session::generateResendRequest( const BeginString& beginString, const MsgSeqNum& msgSeqNum )
 {
+  DTRACE_PROBE(quickfix, generate__resend__request);
   Message resendRequest( MsgType::Pack( "2", 1 ), m_sessionDD, m_sendAllocator );
   BeginSeqNo beginSeqNo( ( int ) getExpectedTargetNum() );
   EndSeqNo endSeqNo( msgSeqNum - 1 );
@@ -669,6 +697,7 @@ void Session::generateResendRequest( const BeginString& beginString, const MsgSe
 void Session::generateSequenceReset
 ( int beginSeqNo, int endSeqNo )
 {
+  DTRACE_PROBE(quickfix, generate__sequence__reset);
   Message sequenceReset( MsgType::Pack( "4", 1 ), m_sessionDD, m_sendAllocator );
   NewSeqNo newSeqNo( endSeqNo );
   sequenceReset.getHeader().setField( PossDupFlag( true ) );
@@ -687,12 +716,14 @@ void Session::generateSequenceReset
 
 void Session::generateHeartbeat()
 {
+  DTRACE_PROBE(quickfix, generate__heartbeat);
   Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   sendRaw( heartbeat );
 }
 
 void Session::generateHeartbeat( const Message& testRequest )
 {
+  DTRACE_PROBE(quickfix, generate__heartbeat);
   Message heartbeat( MsgType::Pack( "0", 1 ), m_sessionDD, m_sendAllocator );
   try
   {
@@ -717,6 +748,7 @@ void Session::generateTestRequest( const std::string& id )
 
 void Session::generateReject( const Message& message, int err, int field )
 {
+  DTRACE_PROBE(quickfix, generate__reject);
   const BeginString& beginString = m_sessionID.getBeginString();
 
   Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
@@ -811,6 +843,7 @@ void Session::generateReject( const Message& message, int err, int field )
 
 void Session::generateReject( const Message& message, const std::string& str )
 {
+  DTRACE_PROBE(quickfix, generate__reject);
   const BeginString& beginString = m_sessionID.getBeginString();
 
   Message reject( MsgType::Pack( "3", 1 ), m_sessionDD, m_sendAllocator );
@@ -837,6 +870,7 @@ void Session::generateReject( const Message& message, const std::string& str )
 
 void Session::generateBusinessReject( const Message& message, int err, int field )
 {
+  DTRACE_PROBE(quickfix, generate__business__reject);
   Message reject( MsgType::Pack( MsgType_BusinessMessageReject ),
                   m_sessionDD, m_sessionID.isFIXT() ? m_defaultApplicationDD : m_sessionDD, m_sendAllocator );
   if( m_sessionID.isFIXT() )
@@ -900,6 +934,7 @@ void Session::generateBusinessReject( const Message& message, int err, int field
 
 void Session::generateLogout( const std::string& text )
 {
+  DTRACE_PROBE(quickfix, generate__logout);
   Message logout( MsgType::Pack( MsgType_Logout ), m_sessionDD, m_sendAllocator );
   if ( text.length() )
     logout.setField( Text::Pack( text ) );
@@ -1068,9 +1103,17 @@ void Session::fromCallback( DataDictionary::MsgInfo::Admin::Type adminType, cons
                             const SessionID& sessionID )
 {
   if ( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
+  {
+    DTRACE_PROBE( quickfix, from__app__start );
     m_application.fromApp( msg, m_sessionID );
+    DTRACE_PROBE( quickfix, from__app__end );
+  }
   else
+  {
+    DTRACE_PROBE( quickfix, from__admin__start );
     m_application.fromAdmin( msg, m_sessionID );
+    DTRACE_PROBE( quickfix, from__admin__end );
+  }
 }
 
 void Session::doBadTime( const Message& msg )
@@ -1212,6 +1255,7 @@ void HEAVYUSE HOTSECTION Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& ti
   const char* msg = Sg::data<const char*>(buf);
   try
   {
+    DTRACE_PROBE( quickfix, session__dispatch__start );
     m_state.onIncoming( &buf, 1 );
     Message::reset_allocator( m_rcvAllocator );
 
@@ -1237,9 +1281,12 @@ void HEAVYUSE HOTSECTION Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& ti
       if ( !msgInfo.applicationDictionary() ) msgInfo.applicationDictionary( m_defaultApplicationDD );
       next( message, msgInfo, m_sessionDD, timeStamp, queued );
     }
+
+    DTRACE_PROBE1( quickfix, session__dispatch__end, true );
   }
   catch( InvalidMessage& e )
   {
+    DTRACE_PROBE1( quickfix, session__dispatch__end, false );
     m_state.onEvent( e.what() );
 
     try
@@ -1257,152 +1304,157 @@ void HEAVYUSE HOTSECTION Session::next( Sg::sg_buf_t buf, const UtcTimeStamp& ti
 void HEAVYUSE HOTSECTION Session::next( const Message& message, DataDictionary::MsgInfo& msgInfo,
                              const DataDictionary* sessionDD, const UtcTimeStamp& timeStamp, bool queued )
 {
-  const Header& header = message.getHeader();
-
-  try
   {
-    if( LIKELY(checkSessionTime(timeStamp)) )
+    DTRACE_AUTO_BOOL(probe, false, quickfix, session__validate__start, session__validate__end);
+    const Header& header = message.getHeader();
+  
+    try
     {
-      // make sure these fields are present
-      if (!message.getStatusBit(Message::has_sender_comp_id))
-        FIELD_THROW_IF_NOT_FOUND( header, SenderCompID );
-      if (!message.getStatusBit(Message::has_target_comp_id))
-        FIELD_THROW_IF_NOT_FOUND( header, TargetCompID );
-
-      const BeginString& beginString = FIELD_GET_REF( header, BeginString );
-      if( beginString == m_sessionID.getBeginString() )
+      if( LIKELY(checkSessionTime(timeStamp)) )
       {
-        DataDictionary::MsgInfo::Admin::Type adminType = msgInfo.messageType( header );
-        if( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
+        // make sure these fields are present
+        if (!message.getStatusBit(Message::has_sender_comp_id))
+          FIELD_THROW_IF_NOT_FOUND( header, SenderCompID );
+        if (!message.getStatusBit(Message::has_target_comp_id))
+          FIELD_THROW_IF_NOT_FOUND( header, TargetCompID );
+  
+        const BeginString& beginString = FIELD_GET_REF( header, BeginString );
+        if( beginString == m_sessionID.getBeginString() )
         {
-          DataDictionary::validate( message, beginString, msgInfo, sessionDD );
-          if ( !verify( message, adminType, timeStamp, 
-                                 header, true, true ) ) return ;
-          m_state.incrNextTargetMsgSeqNum();
-        } 
-        else
-        {
-          if( adminType == DataDictionary::MsgInfo::Admin::Logon )
+          DataDictionary::MsgInfo::Admin::Type adminType = msgInfo.messageType( header );
+          if( LIKELY(adminType == DataDictionary::MsgInfo::Admin::None) )
           {
-            if( m_sessionID.isFIXT() )
+            DataDictionary::validate( message, beginString, msgInfo, sessionDD );
+            if ( !verify( message, adminType, timeStamp, 
+                                   header, true, true ) ) return ;
+            m_state.incrNextTargetMsgSeqNum();
+          } 
+          else
+          {
+            if( adminType == DataDictionary::MsgInfo::Admin::Logon )
             {
-              const DefaultApplVerID& applVerID = FIELD_GET_REF( message, DefaultApplVerID );
-              setTargetDefaultApplVerID(applVerID);
+              if( m_sessionID.isFIXT() )
+              {
+                const DefaultApplVerID& applVerID = FIELD_GET_REF( message, DefaultApplVerID );
+                setTargetDefaultApplVerID(applVerID);
+              }
+              else
+              {
+                setTargetDefaultApplVerID(Message::toApplVerID(beginString));
+              }
+              DataDictionary::validate( message, beginString, msgInfo, sessionDD );
+              nextLogon( message, timeStamp );
             }
             else
             {
-              setTargetDefaultApplVerID(Message::toApplVerID(beginString));
-            }
-            DataDictionary::validate( message, beginString, msgInfo, sessionDD );
-            nextLogon( message, timeStamp );
-          }
-          else
-          {
-            DataDictionary::validate( message, beginString, msgInfo, sessionDD );
-            switch( adminType )
-            {
-              case DataDictionary::MsgInfo::Admin::Heartbeat:
-                nextHeartbeat( message, timeStamp );
-                break;
-              case DataDictionary::MsgInfo::Admin::TestRequest:
-                nextTestRequest( message, timeStamp );
-                break;
-              case DataDictionary::MsgInfo::Admin::SequenceReset:
-                nextSequenceReset( message, timeStamp );
-                break;
-              case DataDictionary::MsgInfo::Admin::Logout:
-                nextLogout( message, timeStamp );
-                break;
-              case DataDictionary::MsgInfo::Admin::ResendRequest:
-                nextResendRequest( message,timeStamp );
-                break;
-              case DataDictionary::MsgInfo::Admin::Reject:
-                nextReject( message, timeStamp );
-                break;
-              default:
-                if ( !verify( message, adminType, timeStamp, 
-                                     header, true, true ) ) return ;
-                m_state.incrNextTargetMsgSeqNum();
+              DataDictionary::validate( message, beginString, msgInfo, sessionDD );
+              switch( adminType )
+              {
+                case DataDictionary::MsgInfo::Admin::Heartbeat:
+                  nextHeartbeat( message, timeStamp );
+                  break;
+                case DataDictionary::MsgInfo::Admin::TestRequest:
+                  nextTestRequest( message, timeStamp );
+                  break;
+                case DataDictionary::MsgInfo::Admin::SequenceReset:
+                  nextSequenceReset( message, timeStamp );
+                  break;
+                case DataDictionary::MsgInfo::Admin::Logout:
+                  nextLogout( message, timeStamp );
+                  break;
+                case DataDictionary::MsgInfo::Admin::ResendRequest:
+                  nextResendRequest( message,timeStamp );
+                  break;
+                case DataDictionary::MsgInfo::Admin::Reject:
+                  nextReject( message, timeStamp );
+                  break;
+                default:
+                  if ( !verify( message, adminType, timeStamp, 
+                                       header, true, true ) ) return ;
+                  m_state.incrNextTargetMsgSeqNum();
+              }
             }
           }
         }
+        else
+          throw UnsupportedVersion();
       }
       else
-        throw UnsupportedVersion();
-    }
-    else
-    {
-      reset();
-      return;
-    }
-  }
-  catch ( MessageParseError& e )
-  { m_state.onEvent( e.what() ); }
-  catch ( RequiredTagMissing & e )
-  { LOGEX( generateReject( message, SessionRejectReason_REQUIRED_TAG_MISSING, e.field ) ); }
-  catch ( FieldNotFound & e )
-  {
-    if( header.getField(FIELD::BeginString) >= FIX::BeginString_FIX42 && message.isApp() )
-    {
-      LOGEX( generateBusinessReject( message, BusinessRejectReason_CONDITIONALLY_REQUIRED_FIELD_MISSING, e.field ) );
-    }
-    else
-    {
-      LOGEX( generateReject( message, SessionRejectReason_REQUIRED_TAG_MISSING, e.field ) );
-      if ( header.getField(FIELD::MsgType) == MsgType_Logon )
       {
-        m_state.onEvent( "Required field missing from logon" );
-        disconnect();
+        reset();
+        return;
       }
     }
-  }
-  catch ( InvalidTagNumber & e )
-  { LOGEX( generateReject( message, SessionRejectReason_INVALID_TAG_NUMBER, e.field ) ); }
-  catch ( NoTagValue & e )
-  { LOGEX( generateReject( message, SessionRejectReason_TAG_SPECIFIED_WITHOUT_A_VALUE, e.field ) ); }
-  catch ( TagNotDefinedForMessage & e )
-  { LOGEX( generateReject( message, SessionRejectReason_TAG_NOT_DEFINED_FOR_THIS_MESSAGE_TYPE, e.field ) ); }
-  catch ( InvalidMessageType& )
-  { LOGEX( generateReject( message, SessionRejectReason_INVALID_MSGTYPE ) ); }
-  catch ( UnsupportedMessageType& )
-  {
-    if ( header.getField(FIELD::BeginString) >= FIX::BeginString_FIX42 )
-      { LOGEX( generateBusinessReject( message, BusinessRejectReason_UNKNOWN_MESSAGE_TYPE ) ); }
-    else
-      { LOGEX( generateReject( message, "Unsupported message type" ) ); }
-  }
-  catch ( TagOutOfOrder & e )
-  { LOGEX( generateReject( message, SessionRejectReason_TAG_SPECIFIED_OUT_OF_REQUIRED_ORDER, e.field ) ); }
-  catch ( IncorrectDataFormat & e )
-  { LOGEX( generateReject( message, SessionRejectReason_INCORRECT_DATA_FORMAT_FOR_VALUE, e.field ) ); }
-  catch ( IncorrectTagValue & e )
-  { LOGEX( generateReject( message, SessionRejectReason_VALUE_IS_INCORRECT, e.field ) ); }
-  catch ( RepeatedTag & e )
-  { LOGEX( generateReject( message, SessionRejectReason_TAG_APPEARS_MORE_THAN_ONCE, e.field ) ); }
-  catch ( RepeatingGroupCountMismatch & e )
-  { LOGEX( generateReject( message, SessionRejectReason_INCORRECT_NUMINGROUP_COUNT_FOR_REPEATING_GROUP, e.field ) ); }
-  catch ( InvalidMessage& e )
-  { m_state.onEvent( e.what() ); }
-  catch ( RejectLogon& e )
-  {
-    m_state.onEvent( e.what() );
-    generateLogout( e.what() );
-    disconnect();
-  }
-  catch ( UnsupportedVersion& )
-  {
-    if ( header.getField(FIELD::MsgType) == MsgType_Logout )
-      nextLogout( message, timeStamp );
-    else
+    catch ( MessageParseError& e )
+    { m_state.onEvent( e.what() ); }
+    catch ( RequiredTagMissing & e )
+    { LOGEX( generateReject( message, SessionRejectReason_REQUIRED_TAG_MISSING, e.field ) ); }
+    catch ( FieldNotFound & e )
     {
-      generateLogout( "Incorrect BeginString" );
-      m_state.incrNextTargetMsgSeqNum();
+      if( header.getField(FIELD::BeginString) >= FIX::BeginString_FIX42 && message.isApp() )
+      {
+        LOGEX( generateBusinessReject( message, BusinessRejectReason_CONDITIONALLY_REQUIRED_FIELD_MISSING, e.field ) );
+      }
+      else
+      {
+        LOGEX( generateReject( message, SessionRejectReason_REQUIRED_TAG_MISSING, e.field ) );
+        if ( header.getField(FIELD::MsgType) == MsgType_Logon )
+        {
+          m_state.onEvent( "Required field missing from logon" );
+          disconnect();
+        }
+      }
     }
-  }
-  catch ( IOException& e )
-  {
-    m_state.onEvent( e.what() );
-    disconnect();
+    catch ( InvalidTagNumber & e )
+    { LOGEX( generateReject( message, SessionRejectReason_INVALID_TAG_NUMBER, e.field ) ); }
+    catch ( NoTagValue & e )
+    { LOGEX( generateReject( message, SessionRejectReason_TAG_SPECIFIED_WITHOUT_A_VALUE, e.field ) ); }
+    catch ( TagNotDefinedForMessage & e )
+    { LOGEX( generateReject( message, SessionRejectReason_TAG_NOT_DEFINED_FOR_THIS_MESSAGE_TYPE, e.field ) ); }
+    catch ( InvalidMessageType& )
+    { LOGEX( generateReject( message, SessionRejectReason_INVALID_MSGTYPE ) ); }
+    catch ( UnsupportedMessageType& )
+    {
+      if ( header.getField(FIELD::BeginString) >= FIX::BeginString_FIX42 )
+        { LOGEX( generateBusinessReject( message, BusinessRejectReason_UNKNOWN_MESSAGE_TYPE ) ); }
+      else
+        { LOGEX( generateReject( message, "Unsupported message type" ) ); }
+    }
+    catch ( TagOutOfOrder & e )
+    { LOGEX( generateReject( message, SessionRejectReason_TAG_SPECIFIED_OUT_OF_REQUIRED_ORDER, e.field ) ); }
+    catch ( IncorrectDataFormat & e )
+    { LOGEX( generateReject( message, SessionRejectReason_INCORRECT_DATA_FORMAT_FOR_VALUE, e.field ) ); }
+    catch ( IncorrectTagValue & e )
+    { LOGEX( generateReject( message, SessionRejectReason_VALUE_IS_INCORRECT, e.field ) ); }
+    catch ( RepeatedTag & e )
+    { LOGEX( generateReject( message, SessionRejectReason_TAG_APPEARS_MORE_THAN_ONCE, e.field ) ); }
+    catch ( RepeatingGroupCountMismatch & e )
+    { LOGEX( generateReject( message, SessionRejectReason_INCORRECT_NUMINGROUP_COUNT_FOR_REPEATING_GROUP, e.field ) ); }
+    catch ( InvalidMessage& e )
+    { m_state.onEvent( e.what() ); }
+    catch ( RejectLogon& e )
+    {
+      m_state.onEvent( e.what() );
+      generateLogout( e.what() );
+      disconnect();
+    }
+    catch ( UnsupportedVersion& )
+    {
+      if ( header.getField(FIELD::MsgType) == MsgType_Logout )
+        nextLogout( message, timeStamp );
+      else
+      {
+        generateLogout( "Incorrect BeginString" );
+        m_state.incrNextTargetMsgSeqNum();
+      }
+    }
+    catch ( IOException& e )
+    {
+      m_state.onEvent( e.what() );
+      disconnect();
+    }
+
+    DTRACE_AUTO_SET(probe, true);
   }
 
   if( !queued )

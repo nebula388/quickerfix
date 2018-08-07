@@ -153,6 +153,7 @@ Config.h: Makefile $(top_builddir)/config.h
 	grep "HAVE_SSL" $(top_builddir)/config.h >>$@
 	grep "HAVE_EMX" $(top_builddir)/config.h >>$@
 	grep "HAVE_VMA" $(top_builddir)/config.h >>$@
+	grep "HAVE_SYSTEMTAP" $(top_builddir)/config.h >>$@
 	grep "HAVE_STD_UNIQUE_PTR" $(top_builddir)/config.h >>$@
 	grep "ENABLE_SSO" $(top_builddir)/config.h >>$@
 	grep "ENABLE_THROW_DECL" $(top_builddir)/config.h >>$@

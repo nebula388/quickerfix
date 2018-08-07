@@ -86,6 +86,7 @@ bool ThreadedSocketConnection::send( const std::string& msg )
 
 bool ThreadedSocketConnection::send( Sg::sg_buf_ptr bufs, int n )
 {
+  DTRACE_AUTO(probe, quickfix, threaded__socket__tx__start, threaded__socket__tx__end);
   return Sg::send(m_socket, bufs, n) > 0;
 }
 
@@ -111,6 +112,7 @@ inline bool HEAVYUSE ThreadedSocketConnection::readMessage( Sg::sg_buf_t& msg )
   {
     try
     {
+      DTRACE_AUTO(probe, quickfix, parse_start, parse_end);
       if( m_parser.parse() )
       {
         m_parser.retrieve( msg );
@@ -161,12 +163,16 @@ void HEAVYUSE HOTSECTION  ThreadedSocketConnection::processStream()
 #ifdef HAVE_VMA
 std::size_t HEAVYUSE HOTSECTION  ThreadedSocketConnection::processFragment(char* p, std::size_t sz)
 {
+  DTRACE_AUTO(probe, quickfix, vma__fragment__start, vma__fragment__end);
+
   std::size_t parsed = 0;
   while( parsed < sz )
   {
     try
     {
+      DTRACE_PROBE(quickfix, parse_start);
       std::size_t l = m_parser.parse(p, sz);
+      DTRACE_PROBE(quickfix, parse_end);
       if( l )
       {
         Sg::sg_buf_t buf = IOV_BUF_INITIALIZER( p, l );
@@ -209,6 +215,8 @@ restart:
 
     if( result > 0 ) // Something to read
     {
+      DTRACE_AUTO(probe, quickfix, threaded__socket__receive__start, threaded__socket__receive__end);
+
       // We can read without blocking
 #ifdef HAVE_VMA
       if (LIKELY(m_api != NULL && !m_parser.pending()))
