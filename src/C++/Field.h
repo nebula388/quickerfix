@@ -439,8 +439,9 @@ class StringField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data 
+  template <int TagValue> struct Packed : public Data 
   {
+    static const int Tag = TagValue;
     typedef StringField result_type;
 
     explicit Packed(const std::string& data)
@@ -627,8 +628,9 @@ class CharField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef CharField result_type;
 
     explicit Packed(char data )
@@ -706,8 +708,9 @@ class DoubleField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef DoubleField result_type;
 
     explicit Packed( double data, int padding = 0, bool rounded = false )
@@ -786,8 +789,9 @@ class IntField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef IntField result_type;
 
     explicit Packed( int data )
@@ -862,8 +866,9 @@ class PositiveIntField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef PositiveIntField result_type;
 
     explicit Packed( int data )
@@ -921,8 +926,9 @@ class BoolField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef BoolField result_type;
 
     explicit Packed( bool data )
@@ -998,8 +1004,9 @@ class UtcTimeStampField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef UtcTimeStampField result_type;
 
     explicit Packed( const UtcTimeStamp& data, int precision = 0 )
@@ -1084,8 +1091,9 @@ class UtcDateField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef UtcDateField result_type;
 
     explicit Packed( const UtcDate& data )
@@ -1168,8 +1176,9 @@ class UtcTimeOnlyField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef UtcTimeOnlyField result_type;
 
     explicit Packed( const UtcTimeOnly& data, int precision = 0 )
@@ -1255,8 +1264,9 @@ class CheckSumField : public FieldBase
 
 protected:
 
-  template <int Tag> struct Packed : public Data
+  template <int TagValue> struct Packed : public Data
   {
+    static const int Tag = TagValue;
     typedef CheckSumField result_type;
 
     explicit Packed( int data )
