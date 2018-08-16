@@ -48,12 +48,21 @@ public:
 private:
   struct AcceptorThreadInfo
   {
-    AcceptorThreadInfo( ThreadedSocketAcceptor* pAcceptor, sys_socket_t socket, int port )
-    : m_pAcceptor( pAcceptor ), m_socket( socket ), m_port( port ) {}
+    struct Attr
+    {
+      sys_socket_t m_socket;
+      int m_port;
+      size_t m_affinity;
+
+      Attr( sys_socket_t socket = 0, int port = 0, size_t affinity = -1 )
+      : m_socket( socket ), m_port( port ), m_affinity( affinity ) {}
+    };
+
+    AcceptorThreadInfo( ThreadedSocketAcceptor* pAcceptor, const Attr& attr )
+    : m_pAcceptor( pAcceptor ), m_attr( attr ) {}
 
     ThreadedSocketAcceptor* m_pAcceptor;
-	sys_socket_t m_socket;
-    int m_port;
+    Attr m_attr;
   };
 
   struct ConnectionThreadInfo
@@ -71,7 +80,7 @@ private:
   typedef std::set < sys_socket_t >  Sockets;
   typedef std::set < SessionID > Sessions;
   typedef std::map < int, Sessions > PortToSessions;
-  typedef std::map < sys_socket_t, int > SocketToPort;
+  typedef std::map < sys_socket_t, AcceptorThreadInfo::Attr > SocketToAttr;
   typedef std::map < sys_socket_t, thread_id > SocketToThread;
 
   void onConfigure( const SessionSettings& ) THROW_DECL( ConfigError );
@@ -88,7 +97,7 @@ private:
 
   Sockets m_sockets;
   PortToSessions m_portToSessions;
-  SocketToPort m_socketToPort;
+  SocketToAttr m_socketThreadAttr;
   SocketToThread m_threads;
   Mutex m_mutex;
 };

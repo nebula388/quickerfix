@@ -196,7 +196,9 @@ void Acceptor::start() THROW_DECL( ConfigError, RuntimeError )
 
   HttpServer::startGlobal( m_settings );
 
-  if( !thread_spawn( &startThread, this, m_threadid ) )
+  const Dictionary& global = m_settings.get();
+  size_t affinity = (size_t)(global.has( THREAD_AFFINITY ) ? global.getInt( THREAD_AFFINITY ) : -1);
+  if( !thread_spawn( &startThread, affinity, this, m_threadid ) ) 
     throw RuntimeError("Unable to spawn thread");
 }
 

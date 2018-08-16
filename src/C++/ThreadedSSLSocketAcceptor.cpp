@@ -256,8 +256,10 @@ THROW_DECL( RuntimeError )
     const int rcvBufSize = settings.has(SOCKET_RECEIVE_BUFFER_SIZE)
                                ? settings.getInt(SOCKET_RECEIVE_BUFFER_SIZE)
                                : 0;
+    const size_t affinity = (size_t)(settings.has(THREAD_AFFINITY)
+                               ? settings.getInt(THREAD_AFFINITY) : -1);
 
-	sys_socket_t socket = socket_createAcceptor(port, reuseAddress);
+    sys_socket_t socket = socket_createAcceptor(port, reuseAddress);
     if (socket < 0)
     {
       SocketException e;
@@ -273,7 +275,7 @@ THROW_DECL( RuntimeError )
     if (rcvBufSize)
       socket_setsockopt(socket, SO_RCVBUF, rcvBufSize);
 
-    m_socketToPort[socket] = port;
+    m_socketThreadAttr[socket] = AcceptorThreadInfo::Attr( socket, port, affinity );
     m_sockets.insert(socket);
   }
 }
@@ -284,10 +286,12 @@ void ThreadedSSLSocketAcceptor::onStart()
   for (i = m_sockets.begin(); i != m_sockets.end(); ++i)
   {
     Locker l(m_mutex);
-    int port = m_socketToPort[*i];
-    AcceptorThreadInfo *info = new AcceptorThreadInfo(this, *i, port);
+    AcceptorThreadInfo *info = new AcceptorThreadInfo(this, m_socketThreadAttr[*i]);
     thread_id thread;
-    thread_spawn(&socketAcceptorThread, info, thread);
+
+    const Dictionary& global = m_settings.get();
+    size_t affinity = (size_t)(global.has( THREAD_AFFINITY ) ? global.getInt( THREAD_AFFINITY ) : -1);
+    thread_spawn(&socketAcceptorThread, affinity, info, thread);
     addThread(SocketKey(*i, 0), thread);
   }
 }
@@ -351,8 +355,9 @@ THREAD_PROC ThreadedSSLSocketAcceptor::socketAcceptorThread(void *p)
   AcceptorThreadInfo *info = reinterpret_cast< AcceptorThreadInfo * >(p);
 
   ThreadedSSLSocketAcceptor *pAcceptor = info->m_pAcceptor;
-  sys_socket_t s = info->m_socket;
-  int port = info->m_port;
+  sys_socket_t s = info->m_attr.m_socket;
+  int port = info->m_attr.m_port;
+  size_t affinity = info->m_attr.m_affinity;
   delete info;
 
   int noDelay = 0;
@@ -398,7 +403,7 @@ THREAD_PROC ThreadedSSLSocketAcceptor::socketAcceptorThread(void *p)
         pAcceptor->getLog()->onEvent(stream.str());
 
       thread_id thread;
-      if (!thread_spawn(&socketConnectionThread, info, thread))
+      if (!thread_spawn(&socketConnectionThread, affinity, info, thread))
       {
         delete info;
         delete pConnection;

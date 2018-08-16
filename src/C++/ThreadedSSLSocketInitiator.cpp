@@ -330,9 +330,10 @@ void ThreadedSSLSocketInitiator::doConnect(const SessionID &s,
     ThreadPair *pair = new ThreadPair(this, pConnection);
 
     {
+      size_t affinity = d.has( THREAD_AFFINITY ) ? d.getInt( THREAD_AFFINITY ) : -1;
       Locker l(m_mutex);
       thread_id thread;
-      if (thread_spawn(&socketThread, pair, thread))
+      if (thread_spawn(&socketThread, affinity, pair, thread))
       {
         addThread(SocketKey(socket, ssl), thread);
       }

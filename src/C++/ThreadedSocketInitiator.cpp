@@ -36,7 +36,7 @@ ThreadedSocketInitiator::ThreadedSocketInitiator(
   const SessionSettings& settings ) THROW_DECL( ConfigError )
 : Initiator( application, factory, settings ),
   m_lastConnect( 0 ), m_reconnectInterval( 30 ), m_noDelay( false ), 
-  m_sendBufSize( 0 ), m_rcvBufSize( 0 ) 
+  m_sendBufSize( 0 ), m_rcvBufSize( 0 )
 { 
   socket_init(); 
 }
@@ -149,7 +149,7 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
     short sourcePort = 0;
     getHost( s, d, address, port, sourceAddress, sourcePort );
 
-	sys_socket_t socket = socket_createConnector();
+    sys_socket_t socket = socket_createConnector();
     if( m_noDelay )
       socket_setsockopt( socket, TCP_NODELAY );
     if( m_sendBufSize )
@@ -166,9 +166,10 @@ void ThreadedSocketInitiator::doConnect( const SessionID& s, const Dictionary& d
     ThreadPair* pair = new ThreadPair( this, pConnection );
 
     {
+      size_t affinity = d.has( THREAD_AFFINITY ) ? d.getInt( THREAD_AFFINITY ) : -1;
       Locker l( m_mutex );
       thread_id thread;
-      if ( thread_spawn( &socketThread, pair, thread ) )
+      if ( thread_spawn( &socketThread, affinity, pair, thread ) )
       {
         addThread( socket, thread );
       }

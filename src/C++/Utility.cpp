@@ -611,25 +611,36 @@ tm time_localtime( const time_t* t)
 #endif
 }
 
-bool thread_spawn( THREAD_START_ROUTINE func, void* var, thread_id& thread )
+bool thread_spawn( THREAD_START_ROUTINE func, size_t affinity, void* var, thread_id& thread )
 {
 #ifdef _MSC_VER
   uintptr_t result = 0;
   unsigned id = 0;
   result = _beginthreadex( NULL, 0, func, var, 0, &id );
   if ( result == 0 ) return false;
+  if ( affinty != -1 )
+  {
+    SetThreadAffinityMask( (HANDLE)result, affinity );
+  }
 #else
   thread_id result = 0;
-  if( pthread_create( &result, 0, func, var ) != 0 ) return false;
+  if( ::pthread_create( &result, 0, func, var ) != 0 ) return false;
+  if( affinity != (size_t)-1 )
+  {
+    cpu_set_t cpus;
+    CPU_ZERO(&cpus);
+    CPU_SET( affinity, &cpus );
+    ::pthread_setaffinity_np( result, sizeof(cpus), &cpus );
+  }
 #endif
   thread = result;
   return true;
 }
 
-bool thread_spawn( THREAD_START_ROUTINE func, void* var )
+bool thread_spawn( THREAD_START_ROUTINE func, size_t affinity, void* var )
 { 
   thread_id thread = 0;
-  return thread_spawn( func, var, thread );
+  return thread_spawn( func, affinity, var, thread );
 }
 
 void thread_join( thread_id thread )

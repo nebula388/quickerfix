@@ -151,15 +151,21 @@ public:
 private:
   struct AcceptorThreadInfo
   {
-    AcceptorThreadInfo(ThreadedSSLSocketAcceptor *pAcceptor, sys_socket_t socket,
-                       int port)
-        : m_pAcceptor(pAcceptor), m_socket(socket), m_port(port)
+    struct Attr
     {
-    }
+      sys_socket_t m_socket;
+      int m_port;
+      size_t m_affinity;
 
-    ThreadedSSLSocketAcceptor *m_pAcceptor;
-	sys_socket_t m_socket;
-    int m_port;
+      Attr( sys_socket_t socket = 0, int port = 0, size_t affinity = -1 )
+      : m_socket( socket ), m_port( port ), m_affinity( affinity ) {}
+    };
+
+    AcceptorThreadInfo( ThreadedSSLSocketAcceptor* pAcceptor, const Attr& attr )
+    : m_pAcceptor( pAcceptor ), m_attr( attr ) {}
+
+    ThreadedSSLSocketAcceptor* m_pAcceptor;
+    Attr m_attr;
   };
 
   struct ConnectionThreadInfo
@@ -179,7 +185,7 @@ private:
   typedef std::set< sys_socket_t > Sockets;
   typedef std::set< SessionID > Sessions;
   typedef std::map< int, Sessions > PortToSessions;
-  typedef std::map< sys_socket_t, int > SocketToPort;
+  typedef std::map< sys_socket_t, AcceptorThreadInfo::Attr > SocketToAttr;
   typedef std::pair< sys_socket_t, SSL * > SocketKey;
   typedef std::map< SocketKey, thread_id > SocketToThread;
 
@@ -200,7 +206,7 @@ private:
 
   Sockets m_sockets;
   PortToSessions m_portToSessions;
-  SocketToPort m_socketToPort;
+  SocketToAttr m_socketThreadAttr;
   SocketToThread m_threads;
   Mutex m_mutex;
   bool m_sslInit;

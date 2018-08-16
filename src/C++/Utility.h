@@ -427,8 +427,8 @@ namespace FIX
   FILE_OFFSET_TYPE file_handle_seek( FILE_HANDLE_TYPE,
                                      FILE_OFFSET_TYPE offset, int whence );
 
-  bool thread_spawn( THREAD_START_ROUTINE func, void* var, thread_id& thread );
-  bool thread_spawn( THREAD_START_ROUTINE func, void* var );
+  bool thread_spawn( THREAD_START_ROUTINE func, size_t affinity, void* var, thread_id& thread );
+  bool thread_spawn( THREAD_START_ROUTINE func, size_t affinity, void* var );
   void thread_join( thread_id thread );
   void thread_detach( thread_id thread );
   thread_id thread_self();
