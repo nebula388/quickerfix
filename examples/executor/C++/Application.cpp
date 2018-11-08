@@ -150,36 +150,56 @@ void Application::onMessage( const FIX41::NewOrderSingle& message,
 void Application::onMessage( const FIX42::NewOrderSingle& message,
                              const FIX::SessionID& sessionID )
 {
-  FIX::Symbol symbol;
-  FIX::Side side;
-  FIX::OrdType ordType;
-  FIX::OrderQty orderQty;
-  FIX::Price price;
-  FIX::ClOrdID clOrdID;
-  FIX::Account account;
+  FIX::Account account; // 1
+  // FIX::ClOrdID clOrdID; // 11
+  FIX::HandlInst handlInst; // 21
+  // FIX::OrderQty orderQty; // 38
+  FIX::OrdType ordType; // 40
+  // FIX::Price price; // 44
+  FIX::Side side; // 54
+  // FIX::Symbol symbol; // 55
 
-  message.get( ordType );
-
+  FIX::FieldMap::iterator it = message.begin();
+  // try to read expected fields one by one in their sort order 
+  switch( get( it, message, account) ? answer42.setField(account)
+          , ( get( it, message, clOrdID42)
+              ? ( get( it, message, handlInst)
+                  ? ( get( it, message, orderQty42)
+                      ? ( get( it, message, ordType)
+                          ? ( get( it, message, price42)
+                              ? ( get( it, message, side)
+                                  ? ( get( it, message, symbol42)
+                                      ? 0 // success
+                                      : 1)
+                                  : 2)
+                              : 3)
+                          : 4)
+                      : 5)
+                  : 6)
+              : 7)
+          : 8 )  {
+        // slow path fallback when the order is not what we expect (missing or extra fields)
+	case 8: if( message.isSet(account) ) answer42.setField( message.get(account) );
+	case 7: message.get(clOrdID42);
+	case 6: // handlInst is optional
+	case 5: message.get(orderQty42);
+	case 4: message.get(ordType);
+	case 3: message.get(price42);
+	case 2: message.get(side);
+	case 1: message.get(symbol42);
+	case 0: break;
+  }
   if ( ordType != FIX::OrdType_LIMIT )
     throw FIX::IncorrectTagValue( ordType.getField() );
 
-  message.get( symbol );
-  message.get( side );
-  message.get( orderQty );
-  message.get( price );
-  message.get( clOrdID );
-
   // example of using references to the body fields of the answer42 message
-  symbol42 = symbol;
-  clOrdID42 = clOrdID;
-  orderQty42 = orderQty;
-  price42 = price;
+  // symbol42 = symbol;
+  // clOrdID42 = clOrdID;
+  // orderQty42 = orderQty;
+  // price42 = price;
 
-  answer42.set( FIX::LastShares( orderQty ) );
-  answer42.set( FIX::LastPx( price ) );
-
-  if( message.isSet(account) )
-    answer42.setField( message.get(account) );
+  answer42.set( FIX::LastShares( orderQty42 ) );
+  answer42.set( FIX::LastPx( price42 ) );
 
   answer42.setField( FIX::DoubleField::Pack( 76767, (FIX::Util::Sys::TickCount::now() - FIX::Util::Sys::TickCount()).seconds() ) );
   try

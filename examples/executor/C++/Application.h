@@ -40,10 +40,20 @@
 class Application
 : public FIX::Application, public FIX::MessageCracker
 {
+  // return a stable reference to a message field
   template <typename F> static inline F& ref(FIX::FieldMap& f)
   { 
     f.setField( F(), false ); // make sure it's present first
     return const_cast<F&>( static_cast<const F&>( f.getFieldRef( F::Pack::Tag ) ) );
+  }
+  // read the field from the current iterator position if it matches and increment the iterator
+  template <typename F> static inline bool get(FIX::FieldMap::iterator& it, const FIX::FieldMap& f, F& field) {
+    if (LIKELY(it != f.end()) && LIKELY(it->first == F::Pack::Tag)) {
+      static_cast<FIX::FieldBase&>(field) = it->second;
+      ++it;
+      return true;
+    }
+    return false;
   }
 public:
   Application()
