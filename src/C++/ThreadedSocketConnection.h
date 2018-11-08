@@ -90,12 +90,12 @@ private:
 
 #ifdef HAVE_VMA
   class VmaPkts {
+    vma_api_t* m_api;
+    sys_socket_t m_socket;
     union { 
       char data[sizeof(struct vma_packets_t) + sizeof(struct vma_packet_t) + sizeof(struct iovec) * 16];
       struct vma_packets_t packets;
     } m_value;
-    vma_api_t* m_api;
-    sys_socket_t m_socket;
     public:
     VmaPkts(vma_api_t* api, sys_socket_t s) : m_api(api), m_socket(s)
     { m_value.packets.n_packet_num = 0; }
