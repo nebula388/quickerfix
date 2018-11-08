@@ -516,13 +516,13 @@ public:
   operator const std::string&() const
     { return getString(); }
 
-  bool operator<( const StringField& rhs ) const
+  inline bool operator<( const StringField& rhs ) const
     { return getRawString() < rhs.getRawString(); }
-  bool operator>( const StringField& rhs ) const
+  inline bool operator>( const StringField& rhs ) const
     { return getRawString() > rhs.getRawString(); }
-  bool operator==( const StringField& rhs ) const
+  inline bool operator==( const StringField& rhs ) const
     { return getRawString() == rhs.getRawString(); }
-  bool operator!=( const StringField& rhs ) const
+  inline bool operator!=( const StringField& rhs ) const
     { return getRawString() != rhs.getRawString(); }
   bool operator<=( const StringField& rhs ) const
     { return getRawString() <= rhs.getRawString(); }

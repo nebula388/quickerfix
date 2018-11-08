@@ -317,9 +317,9 @@ THROW_DECL( FIX::Exception )
 
   if( LIKELY(pSessionDD != 0) )
   {
-    if( pSessionDD->m_hasVersion )
+    if( LIKELY(pSessionDD->m_hasVersion) )
     {
-      if( pSessionDD->getVersion() != beginString )
+      if( UNLIKELY(beginString != pSessionDD->getVersion()) )
       {
         throw UnsupportedVersion();
       }

@@ -1356,6 +1356,12 @@ namespace FIX
       template <std::size_t S>
       static inline bool equal(const Fixed<S>& f, const char* p)
       { return 0 == ::memcmp(f.data, p, S); }
+      template <std::size_t S>
+      static inline bool equal(const Fixed<S>& a, const char* p, std::size_t l) // l <= S
+      { return 0 == ::memcmp(a.data, p, l); }
+      template <std::size_t S>
+      static inline bool equal(const Fixed<S>& a, const Fixed<S>& b, std::size_t l) // l <= S
+      { return 0 == ::memcmp(a.data, b.data, l); }
 
       /// Scans f for character v, returns array index less than S on success
       /// or a value >= S on failure.
@@ -1447,9 +1453,9 @@ namespace FIX
       {
         uintptr_t shift = (uintptr_t)p & 7;
         std::size_t gap = 8 - lessthan8;
-        shift = (shift <= gap) ? shift : 0;
-        return (*(value_type*)(p - shift) >> (shift << 3)) &
-               (((value_type)(lessthan8 == 0) - 1) >> (gap << 3));
+        if (shift > gap) shift = 0;
+        return (*(value_type*)(p - shift) >> (shift * 8)) &
+               (((value_type)(lessthan8 == 0) - 1) >> (gap * 8));
       }
 #endif
     };
@@ -1815,6 +1821,7 @@ namespace FIX
     {
       char data[15];
 
+      template <typename T> const T* ptr(uintptr_t offset = 0) const { return (T*)(data + offset); }
       inline bool set(const char* s, std::size_t len, std::size_t pos = 0, std::size_t narrow = 1) {
         if (LIKELY(len + pos <= (15 - narrow))) {
 	  if (len == 1) {
@@ -1837,6 +1844,23 @@ namespace FIX
 	return false;
       }
     };
+
+    typedef uint64_t MAY_ALIAS aliased_uint64_t;
+
+    template <> inline bool CharBuffer::equal<15>(const Fixed<15>& a, const char* p, std::size_t l)
+    { 
+      uintptr_t shift;
+      uint64_t v = *a.ptr<uint64_t>();
+      return (l < 8) ? shift = (uintptr_t)p & 7, shift &= -(shift <= (8 - l)),
+                      (((*(uint64_t*)(p - shift) >> (shift * 8)) ^ v) & (((uint64_t)1 << (l * 8)) - 1)) == 0
+                     : ((v == *(uint64_t*)(p)) & (*(aliased_uint64_t*)(a.data + l - 8) == *(uint64_t*)(p + l - 8)));
+    }
+
+    template <> inline bool CharBuffer::equal<15>(const Fixed<15>& a, const Fixed<15>& b, std::size_t l)
+    { 
+      return (l < 8) ? ((*a.ptr<uint64_t>() ^ *b.ptr<uint64_t>()) & (((uint64_t)1 << (l * 8)) - 1)) == 0
+                     : ((*a.ptr<uint64_t>() == *b.ptr<uint64_t>()) & (*a.ptr<uint64_t>(l - 8) == *b.ptr<uint64_t>(l - 8)));
+    }
 
     template <> union CharBuffer::Fixed<23>
     {
@@ -1868,6 +1892,27 @@ namespace FIX
       }
     };
 
+#ifdef __SSSE3__
+    template <> inline bool CharBuffer::equal<23>(const Fixed<23>& a, const char* p, std::size_t l)
+    {
+      uintptr_t shift;
+      __m128i v = _mm_loadu_si128((__m128i*)a.data);
+      return (l < 16)  ? shift = (uintptr_t)p & 15, shift &= -(shift <= (16 - l)),
+                         (_mm_movemask_epi8( _mm_cmpeq_epi8(v, _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
+                                                _mm_loadu_si128( (__m128i*)(s_vshift + shift) ) ) ) ) | -1 << l ) == -1
+                       : (_mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_loadu_si128((__m128i*)p))) == (0xffff +
+                         (*(aliased_uint64_t*)(a.data + l - 8) != *(uint64_t*)(p + l - 8))));
+    }
+#endif
+
+    template <> inline bool CharBuffer::equal<23>(const Fixed<23>& a, const Fixed<23>& b, std::size_t l)
+    { 
+      int32_t m =  _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128((__m128i*)a.data),
+                                                     _mm_loadu_si128((__m128i*)b.data)));
+      return (l <= 16) ? (m | -1 << l) == -1
+                       :((m & ((*(aliased_uint64_t*)(a.data + l - 8) != *(aliased_uint64_t*)(b.data + l - 8)) - 1)) == 0xffff);
+    }
+
     template <> union CharBuffer::Fixed<31>
     {
       char data[31];
@@ -1897,6 +1942,30 @@ namespace FIX
 	return false;
       }
     };
+
+#ifdef __SSSE3__
+    template <> inline bool CharBuffer::equal<31>(const Fixed<31>& a, const char* p, std::size_t l)
+    {
+      uintptr_t shift;
+      __m128i v = _mm_loadu_si128((__m128i*)a.data);
+      return (l < 16)  ? shift = (uintptr_t)p & 15, shift &= -(shift <= (16 - l)),
+                         (_mm_movemask_epi8( _mm_cmpeq_epi8(v, _mm_shuffle_epi8( _mm_loadu_si128( (__m128i*)(p - shift) ),
+                                                _mm_loadu_si128( (__m128i*)(s_vshift + shift) ) ) ) ) | -1 << l ) == -1
+                       : (_mm_movemask_epi8(_mm_cmpeq_epi8(v, _mm_loadu_si128((__m128i*)p))) &
+                          _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128((__m128i*)(a.data + l - 16)),
+                                                _mm_loadu_si128((__m128i*)(p + l - 16))))) == 0xffff;
+    }
+#endif
+
+    template <> inline bool CharBuffer::equal<31>(const Fixed<31>& a, const Fixed<31>& b, std::size_t l)
+    { 
+      int32_t m =  _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128((__m128i*)a.data),
+                                                     _mm_loadu_si128((__m128i*)b.data)));
+      return (l <= 16) ? (m | -1 << l) == -1
+                       : (m & _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_loadu_si128((__m128i*)(a.data + l - 16)),
+                                                _mm_loadu_si128((__m128i*)(b.data + l - 16))))) == 0xffff;
+    }
+
 #else // if (defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))) || defined(_MSC_VER)
 
     template <>
