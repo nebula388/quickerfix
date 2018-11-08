@@ -610,6 +610,50 @@ protected:
     { return map.m_order.group_compare( x, y ); }
   };
 
+  // only when the group set is non-empty
+  template <typename S> void groupSerializeTo( S& sink, field_iterator i ) const
+  {
+    if ( LIKELY(i != end()) )
+    {
+#if !defined(ENABLE_FLAT_FIELDMAP) && !defined(ENABLE_RELAXED_ORDERING)
+      if ( LIKELY(m_order.mode() == message_order::normal) )
+      {
+        Groups::const_iterator gi = m_groups.begin();
+        Groups::const_iterator ge = m_groups.end();
+        do
+        {
+          i->second.pushValue(sink);
+          if ( i->first == gi->first )
+          {
+            GroupItem::const_iterator ke = gi->second.end();
+            for ( GroupItem::const_iterator k = gi->second.begin(); k != ke; ++k )
+              ( *k ) ->serializeTo( sink );
+  
+            if ( ++gi == ge )
+            {
+              while ( ++i != end() ) i->second.pushValue(sink);
+              break;
+            }
+          }
+        } while( ++i != end() );
+      }
+      else
+#endif // !defined(ENABLE_FLAT_FIELDMAP) && !defined(ENABLE_RELAXED_ORDERING)
+      {
+        do
+        {
+          i->second.pushValue(sink);
+  
+          Groups::const_iterator j = m_groups.find( i->first );
+          if ( j == m_groups.end() ) continue;
+          GroupItem::const_iterator ke = j->second.end();
+          for ( GroupItem::const_iterator k = j->second.begin(); k != ke; ++k )
+            ( *k ) ->serializeTo( sink );
+        } while( ++i != end() );
+      }
+    }
+  }
+
 public:
 
   typedef store_type Fields;
@@ -869,20 +913,17 @@ public:
   g_iterator g_begin() const { return m_groups.begin(); }
   g_iterator g_end() const { return m_groups.end(); }
 
-  template <typename S> S& serializeTo( S& sink ) const
+  template <typename S> S& HEAVYUSE serializeTo( S& sink ) const
   {
-    iterator i;
-    for ( i = begin(); i != end(); ++i )
-    {
-      i->second.pushValue(sink);
+    iterator i = begin();
 
-      if( m_groups.empty() ) continue;
-      Groups::const_iterator j = m_groups.find( i->first );
-      if ( j == m_groups.end() ) continue;
-      GroupItem::const_iterator ke = j->second.end();
-      for ( GroupItem::const_iterator k = j->second.begin(); k != ke; ++k )
-        ( *k ) ->serializeTo( sink );
-    }
+    if ( LIKELY(m_groups.empty()) )
+      for ( ; i != end(); ++i )
+      {
+        i->second.pushValue(sink);
+      }
+    else
+      groupSerializeTo( sink, i );
     return sink;
   }
 

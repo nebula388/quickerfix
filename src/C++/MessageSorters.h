@@ -199,6 +199,8 @@ public:
   , m_groupOrder( copy.m_groupOrder )
   {}
 
+  cmp_mode mode() const { return m_mode; }
+
   inline bool PURE_DECL NOTHROW HEAVYUSE operator() ( const int x, const int y ) const
   {
     if ( LIKELY(m_mode == normal) ) return x < y;
