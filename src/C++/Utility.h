@@ -1159,7 +1159,7 @@ namespace FIX
 #ifdef __x86_64__
         __asm__ __volatile__ ( "bsrq %0, %0; " : "+r" (log2) : : "cc" );
 #elif defined __i386__
-        log2 = log2 ? __builtin_clzll(log2) : 0;
+        log2 = log2 ? 63 - __builtin_clzll(log2) : 0;
 #elif defined _M_X64
         log2 = _BitScanReverse64((unsigned long*)&log2, log2) ? (unsigned long)log2 : 0;
 #else // _M_IX86
