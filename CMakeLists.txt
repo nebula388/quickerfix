@@ -23,6 +23,9 @@ else()
   endif()
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=corei7-avx -mavx -falign-functions=16 -falign-jumps=16")
+
+
 option(ENABLE_SSO "Build with short-string optimizations")
 if(ENABLE_SSO)
   set(SSO_VALUES ON TRUE YES Y 1 2 3)
