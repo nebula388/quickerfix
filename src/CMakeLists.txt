@@ -7,7 +7,7 @@ add_executable(at at.cpp getopt.c)
 target_include_directories(at PRIVATE ${CMAKE_SOURCE_DIR} 
   ${CMAKE_SOURCE_DIR}/src/C++ ${CMAKE_SOURCE_DIR}/UnitTest++/src)
   
-#target_link_libraries(at ${PROJECT_NAME} ${BOOST_DEPS} ${SYS_DEPS})
+target_link_libraries(at ${PROJECT_NAME} ${RT_LIBS})
 if(HAVE_BOOST)
   target_link_libraries(at ${PROJECT_NAME} boost_system)
 endif()
@@ -64,7 +64,7 @@ add_executable(ut ut.cpp getopt.c ${ut_SOURCES})
 target_include_directories(ut PRIVATE ${CMAKE_SOURCE_DIR} 
   ${CMAKE_SOURCE_DIR}/src/C++ ${CMAKE_SOURCE_DIR}/UnitTest++/src ${CMAKE_SOURCE_DIR}/src/C++/test/)
   
-target_link_libraries(ut ${PROJECT_NAME} UnitTest++)
+target_link_libraries(ut ${PROJECT_NAME} UnitTest++ ${RT_LIBS})
 if(HAVE_BOOST)
   target_link_libraries(ut ${PROJECT_NAME} boost_system)
 endif()
