@@ -98,24 +98,8 @@ THROW_DECL( RuntimeError )
     const int rcvBufSize = settings.has( SOCKET_RECEIVE_BUFFER_SIZE ) ?
       settings.getInt( SOCKET_RECEIVE_BUFFER_SIZE ) : 0;
 
-    const size_t affinity = (size_t)-1;
-    if (settings.has( THREAD_AFFINITY ))
-    {
-      if (settings.getString( THREAD_AFFINITY, true ) == "SOCKET")
-      {
-#ifdef SO_INCOMING_CPU
-        int cpu; socklen_t len = sizeof(cpu);
-        if ( 0 == ::getsockopt( socket, SOL_SOCKET, SO_INCOMING_CPU, &cpu, &len ) )
-        {
-          affinity = (size_t)cpu;
-        }
-#else
-        throw ConfigError( "Thread affinity via automatic socket to CPU mapping is not supported" );
-#endif
-      }
-      else
-        settings.getInt( THREAD_AFFINITY );
-    }
+    const size_t affinity = (size_t)(settings.has( THREAD_AFFINITY ) ?
+      settings.getInt( THREAD_AFFINITY ) : -1);
 
     int socket = socket_createAcceptor( port, reuseAddress );
     if( socket < 0 )

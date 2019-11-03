@@ -1,0 +1,26 @@
+To get the lowest latency you need to turn off validation, FIX logging and message persistence.
+Also make sure your system has enough memory and there is no other system load
+
+Quickfix derivative with a large number of optimizations, much faster than the current release, especially for short messages. Includes sample application that measures latency over the loopback interface.
+
+https://github.com/akorobka/quickfix/tree/quickerfix
+
+Summary of the improvements
+
+There are several things that have an adverse impact on the performance of the current reference implementation.
+
+Most of them have to do with a large amount of redundant object copying, implicit type conversions and small block memory allocations. These changes try to reduce these as much as possible through a redesign of the field object, use of more efficient field containers (Boost, Google Sparsehash) with a custom pool allocator, and streamlined Tx/Rx pipelines.
+
+Other changes are basically brute force optimizations using more efficient serialization/deserialization code, each contributing 0-20% to the total speedup.
+
+Extensions
+
+Each field type defines a nested Pack type that can be used for in-place field construction when adding a field to the message,
+
+msg.setField( FIX::ClOrdID::Pack( "4" ) );
+
+Double field constructors get an optional bool argument that specifies whether the value should be rounded.
+
+msg.setField( FIX::DoubleField( field, value, precision, true ) );
+msg.setField( FIX::Price( value, precision, true ) );
+msg.setField( FIX::Price::Pack( value, precision, true ) );

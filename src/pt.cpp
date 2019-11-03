@@ -90,8 +90,8 @@ const bool DONT_VALIDATE = false;
 
 int main( int argc, char** argv )
 {
-  int count = 0;
-  short port = 0;
+  int count = 1000000;
+  short port = 1234;
 
   int opt;
   while ( (opt = getopt( argc, argv, "+p:+c:" )) != -1 )
