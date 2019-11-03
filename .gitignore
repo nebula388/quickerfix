@@ -61,3 +61,4 @@ INSTALL
 /cmake-build-debug/
 /cmake_files/
 /cmake-build-release/
+/bin/
