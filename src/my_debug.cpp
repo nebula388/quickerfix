@@ -29,6 +29,7 @@
 #include <memory>
 #include "getopt-repl.h"
 #include <iostream>
+#include <thread>
 #include "Application.h"
 #include "FieldConvertors.h"
 #include "Values.h"
@@ -114,117 +115,35 @@ int main( int argc, char** argv )
 
   s_dataDictionary.reset( new FIX::DataDictionary( "../spec/FIX42.xml" ) );
 
-  std::cout << "Converting integers to strings: ";
-  report( testIntegerToString( count ), count );
-
-  std::cout << "Converting strings to integers: ";
-  report( testStringToInteger( count ), count );
-
-  std::cout << "Converting doubles to strings: ";
-  report( testDoubleToString( count ), count );
-
-  std::cout << "Converting strings to doubles: ";
-  report( testStringToDouble( count ), count );
-
-  std::cout << "Creating Heartbeat messages: ";
-  report( testCreateHeartbeat( count ), count );
-
-  std::cout << "Identifying message types: ";
-  report( testIdentifyType( count ), count );
-
-  std::cout << "Serializing Heartbeat messages to strings: ";
-  report( testSerializeToStringHeartbeat( count ), count );
-
-  std::cout << "Serializing Heartbeat messages from strings: ";
-  report( testSerializeFromStringHeartbeat( count ), count );
-
-  std::cout << "Serializing Heartbeat messages from strings and validation: ";
-  report( testSerializeFromStringAndValidateHeartbeat( count ), count );
-
-  std::cout << "Creating NewOrderSingle messages: ";
-  report( testCreateNewOrderSingle( count ), count );
-
-  std::cout << "Creating NewOrderSingle messages (packed): ";
-  report( testCreateNewOrderSinglePacked( count ), count );
-
-  std::cout << "Serializing NewOrderSingle messages to strings: ";
-  report( testSerializeToStringNewOrderSingle( count ), count );
-
-  std::cout << "Serializing NewOrderSingle messages from strings: ";
-  report( testSerializeFromStringNewOrderSingle( count ), count );
-
-  std::cout << "Serializing NewOrderSingle messages from strings and validation: ";
-  report( testSerializeFromStringAndValidateNewOrderSingle( count ), count );
-
-//  std::cout << "Creating QuoteRequest messages: ";
-//  report( testCreateQuoteRequest( count ), count );
+//    std::cout << "Serializing NewOrderSingle messages to strings: ";
+//    report( testSerializeToStringNewOrderSingle( count ), count );
 //
-//  std::cout << "Creating QuoteRequest messages (packed): ";
-//  report( testCreateQuoteRequestPacked( count ), count );
+//    std::cout << "Serializing NewOrderSingle messages to strings: ";
+//    report( testSerializeToStringNewOrderSingle( count ), count );
+
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket";
+//  report( testSendOnSocket( count, port, false, false ), count );
 //
-//  std::cout << "Creating QuoteRequest messages (packed, in place): ";
-//  report( testCreateQuoteRequestPackedInplace( count ), count );
-//
-//  std::cout << "Serializing QuoteRequest messages to strings: ";
-//  report( testSerializeToStringQuoteRequest( count ), count );
-//
-//  std::cout << "Serializing QuoteRequest messages from strings: ";
-//  report( testSerializeFromStringQuoteRequest( count ), count );
-//
-//  std::cout << "Serializing QuoteRequest messages from strings and validation: ";
-//  report( testSerializeFromStringAndValidateQuoteRequest( count ), count );
-//
-//  std::cout << "Reading fields from QuoteRequest message: ";
-//  report( testReadFromQuoteRequest( count ), count );
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket (low latency profile)";
+//  report( testSendOnSocket( count, port, false, true ), count );
 
-  std::cout << "Storing NewOrderSingle messages: ";
-  report( testFileStoreNewOrderSingle( count ), count );
-
-  std::cout << "Validating NewOrderSingle messages with no data dictionary: ";
-  report( testValidateNewOrderSingle( count ), count );
-
-  std::cout << "Validating NewOrderSingle messages with data dictionary: ";
-  report( testValidateDictNewOrderSingle( count ), count );
-
-//  std::cout << "Validating QuoteRequest messages with no data dictionary: ";
-//  report( testValidateQuoteRequest( count ), count );
-//
-//  std::cout << "Validating QuoteRequest messages with data dictionary: ";
-//  report( testValidateDictQuoteRequest( count ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket";
-  report( testSendOnSocket( count, port, false, false ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket (low latency profile)";
-  report( testSendOnSocket( count, port, false, true ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket";
-  report( testSendOnThreadedSocket( count, port, false, false ), count );
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket";
+//  report( testSendOnThreadedSocket( count, port, false, false ), count );
 
   std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket (low latency profile)";
   report( testSendOnThreadedSocket( count, port, false, true ), count );
 
-#if (HAVE_SSL > 0)
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket";
-  report( testSendOnThreadedSSLSocket( count, port, false ), count );
-#endif
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary";
+//  report( testSendOnSocket( count, port, true, false ), count );
+//
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary (low latency profile)";
+//  report( testSendOnSocket( count, port, true, true ), count );
+//
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary";
+//  report( testSendOnThreadedSocket( count, port, true, false ), count );
 
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary";
-  report( testSendOnSocket( count, port, true, false ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on Socket with dictionary (low latency profile)";
-  report( testSendOnSocket( count, port, true, true ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary";
-  report( testSendOnThreadedSocket( count, port, true, false ), count );
-
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary (low latency profile)";
-  report( testSendOnThreadedSocket( count, port, true, true ), count );
-
-#if (HAVE_SSL > 0)
-  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSSLSocket with dictionary";
-  report( testSendOnThreadedSSLSocket( count, port, true ), count );
-#endif
+//  std::cout << "Sending/Receiving NewOrderSingle/ExecutionReports on ThreadedSocket with dictionary (low latency profile)";
+//  report( testSendOnThreadedSocket( count, port, true, true ), count );
 
   return 0;
 }
@@ -925,7 +844,7 @@ double testSendOnSocket( int count, short port, bool dictionary, bool lowlat )
   TestApplication application;
   FIX::MemoryStoreFactory factory;
   FIX::SessionSettings settings( stream );
-  FIX::ScreenLogFactory logFactory( settings );
+//  FIX::ScreenLogFactory logFactory( settings );
 
   FIX::SocketAcceptor acceptor( application, factory, settings );
   acceptor.start();
@@ -1006,30 +925,43 @@ double testSendOnThreadedSocket( int count, short port, bool dictionary, bool lo
   FIX::TransactTime transactTime;
   FIX::OrdType ordType( FIX::OrdType_MARKET );
   FIX42::NewOrderSingle message( clOrdID, handlInst, symbol, side, transactTime, ordType );
+  FIX42::NewOrderSingle message2( clOrdID, handlInst, symbol, side, transactTime, ordType );
 
-  FIX::SessionID sessionID( "FIX.4.2", "CLIENT", "SERVER" );
+  FIX::SessionID sessionID_c2s("FIX.4.2", "CLIENT", "SERVER" );
+  FIX::SessionID sessionID_s2c("FIX.4.2", "SERVER", "CLIENT" );
 
-  TestApplication application;
+  FIX::NullApplication server_app;
+  TestApplication client_app;
   FIX::MemoryStoreFactory factory;
   FIX::SessionSettings settings( stream );
 
-  FIX::ThreadedSocketAcceptor acceptor( application, factory, settings );
+//  FIX::SocketAcceptor acceptor(server_app, factory, settings );
+  FIX::ThreadedSocketAcceptor acceptor(server_app, factory, settings );
   acceptor.start();
 
-  FIX::ThreadedSocketInitiator initiator( application, factory, settings );
+//  FIX::SocketInitiator initiator(client_app, factory, settings );
+  FIX::ThreadedSocketInitiator initiator(client_app, factory, settings );
   initiator.start();
 
   FIX::process_sleep( 1 );
 
-  FIX::Session* pSession = FIX::Session::lookupSession(sessionID);
+  FIX::Session* pSession_c2s = FIX::Session::lookupSession(sessionID_c2s);
+  FIX::Session* pSession_s2c = FIX::Session::lookupSession(sessionID_s2c);
   FIX::Util::Sys::TickCount start = FIX::Util::Sys::TickCount::now();
+    std::thread t([&pSession_s2c, &count, &message2]() {
+        for ( int i = 0; i <= count; ++i )
+            pSession_s2c->send(message2 );
+    });
   for ( int i = 0; i <= count; ++i )
-    pSession->send( message );
+    pSession_c2s->send(message );
 
-  while( application.getCount() < count )
+
+  while(client_app.getCount() < count )
     FIX::process_sleep( 0.1 );
 
   double ticks = (FIX::Util::Sys::TickCount::now() - start).seconds();
+
+  t.join();
 
   initiator.stop();
   acceptor.stop();

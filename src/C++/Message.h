@@ -675,7 +675,7 @@ public:
     m_status( createStatus(serialized_once, hint == SerializedOnce) ) {}
 
   /// Construct a message from a string
-  HEAVYUSE Message( const std::string& string, bool validate = true )
+  HEAVYUSE Message( const std::string& string, bool validate = false )
   THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
@@ -688,7 +688,7 @@ public:
 
   /// Construct a message from a string using a data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& dataDictionary,
-           bool validate = true )
+           bool validate = false )
   THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
@@ -702,7 +702,7 @@ public:
 
   /// Construct a message from a string using a session and application data dictionary
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
-           const FIX::DataDictionary& applicationDataDictionary, bool validate = true )
+           const FIX::DataDictionary& applicationDataDictionary, bool validate = false )
   THROW_DECL( InvalidMessage )
   : FieldMap( FieldMap::create_allocator(), message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false ) ),
     m_header( get_allocator(), message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),
@@ -716,7 +716,7 @@ public:
 
   HEAVYUSE Message( const std::string& string, const FIX::DataDictionary& sessionDataDictionary,
            const FIX::DataDictionary& applicationDataDictionary,
-           FieldMap::allocator_type& allocator, bool validate = true )
+           FieldMap::allocator_type& allocator, bool validate = false )
   THROW_DECL( InvalidMessage )
   : FieldMap( allocator, message_order( message_order::normal ), Options( bodyFieldCountEstimate(), false) ),
     m_header( allocator, message_order( message_order::header ), Options( HeaderFieldCountEstimate ) ),

@@ -89,6 +89,13 @@ if(HAVE_BOOST)
   target_link_libraries(pt ${PROJECT_NAME} boost_system)
 endif()
 
+add_executable(my_debug my_debug.cpp getopt.c)
+
+target_include_directories(my_debug PRIVATE ${CMAKE_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/C++ ${CMAKE_SOURCE_DIR}/UnitTest++/src)
+
+target_link_libraries(my_debug ${PROJECT_NAME} ${RT_LIBS})
+
 if (NOT WIN32)
   ADD_CUSTOM_TARGET(pt_target ALL
                     COMMAND ${CMAKE_COMMAND} -E create_symlink $<TARGET_FILE:pt> ${CMAKE_SOURCE_DIR}/test/pt)

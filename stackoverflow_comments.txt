@@ -24,3 +24,18 @@ Double field constructors get an optional bool argument that specifies whether t
 msg.setField( FIX::DoubleField( field, value, precision, true ) );
 msg.setField( FIX::Price( value, precision, true ) );
 msg.setField( FIX::Price::Pack( value, precision, true ) );
+
+
+------------------------------------------------------------------------------------------------------------------------
+Are parallel calls to send/recv on the same socket valid?
+1. Can we call send from one thread and recv from another on the same socket?
+2. Can we call multiple sends parallely from different threads on the same socket?
+https://stackoverflow.com/questions/1981372/are-parallel-calls-to-send-recv-on-the-same-socket-valid
+
+POSIX defines send/recv as atomic operations, so assuming you're talking about POSIX send/recv then yes, you can call them simultaneously from multiple threads and things will work.
+
+This doesn't necessarily mean that they'll be executed in parallel -- in the case of multiple sends, the second will likely block until the first completes. You probably won't notice this much, as a send completes once its put its data into the socket buffer.
+
+If you're using SOCK_STREAM sockets, trying to do things a parallel is less likely to be useful as send/recv might send or receive only part of a message, which means things could get split up.
+
+Blocking send/recv on SOCK_STREAM sockets only block until they send or recv at least 1 byte, so the difference between blocking and non-blocking is not useful.
