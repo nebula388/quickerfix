@@ -2,12 +2,12 @@ if (HAVE_SSL AND WIN32)
 set(applink_SOURCE ${OPENSSL_INCLUDE_DIR}/openssl/applink.c)
 endif()
 
-add_executable(tradeclient Application.cpp tradeclient.cpp ${applink_SOURCE})
+add_executable(tradeclient Application.cpp tradeclient.cpp ../../src/C++/FileStore.cpp ${applink_SOURCE})
 
 target_include_directories(tradeclient PRIVATE ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include/quickfix ${CMAKE_SOURCE_DIR})
 
 
-target_link_libraries(tradeclient ${PROJECT_NAME} ${RT_LIBS})
+target_link_libraries(tradeclient tbbmalloc ${PROJECT_NAME} ${RT_LIBS})
 if(HAVE_BOOST)
   target_link_libraries(tradeclient boost_system boost_thread)
 endif()

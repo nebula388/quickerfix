@@ -37,6 +37,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <src/C++/FileLog.h>
 
 #include "../../src/getopt-repl.h"
 
@@ -50,11 +51,11 @@ int main( int argc, char** argv )
   }
   std::string file = argv[ 1 ];
 
-  std::string mode;
-  if (argc > 2)
-  {
-    mode.assign(argv[2]);
-  }
+//  std::string mode;
+//  if (argc > 2)
+//  {
+//    mode.assign(argv[2]);
+//  }
 
   FIX::Initiator * initiator = 0;
   try
@@ -63,8 +64,8 @@ int main( int argc, char** argv )
 
     Application application;
     // FIX::FileStoreFactory storeFactory( settings );
-    FIX::NullStoreFactory storeFactory;
-    FIX::ScreenLogFactory logFactory( settings );
+    FIX::FileStoreFactory storeFactory(settings);
+    FIX::FileLogFactory logFactory( settings );
 #ifdef HAVE_SSL
     if (mode.compare("SSL") == 0 || mode.compare("SSL-MT") == 0)
       initiator = new FIX::ThreadedSSLSocketInitiator ( application, storeFactory, settings, logFactory );
@@ -72,10 +73,10 @@ int main( int argc, char** argv )
       initiator = new FIX::SSLSocketInitiator ( application, storeFactory, settings, logFactory );
     else
 #endif
-    if (mode.compare("MT") == 0)
-      initiator = new FIX::ThreadedSocketInitiator ( application, storeFactory, settings ); // logFactory );
-    else
-      initiator = new FIX::SocketInitiator( application, storeFactory, settings ); // logFactory );
+//    if (mode.compare("MT") == 0)
+      initiator = new FIX::ThreadedSocketInitiator ( application, storeFactory, settings  , logFactory );
+//    else
+//      initiator = new FIX::SocketInitiator( application, storeFactory, settings ); // logFactory );
 
     initiator->start();
     application.run();

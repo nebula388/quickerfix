@@ -75,6 +75,9 @@ class Application :
 public:
   void run();
 
+    FIX::SessionID cur_sess;
+    int64_t clordid{0};
+
 private:
   void onCreate( const FIX::SessionID& ) {}
   void onLogon( const FIX::SessionID& sessionID );

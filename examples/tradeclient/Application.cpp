@@ -164,6 +164,7 @@ void wait_receive()
 void Application::onLogon( const FIX::SessionID& sessionID )
 {
   std::cout << std::endl << "Logon - " << sessionID << std::endl;
+    cur_sess = sessionID;
 }
 
 void Application::onLogout( const FIX::SessionID& sessionID )
@@ -251,49 +252,78 @@ void Application::run()
 
 void Application::testPingPong()
 {
-  FIX::SessionID sid( "FIX.4.2", "CLIENT1", "EXECUTOR");
-  FIX::Session* ps = FIX::Session::lookupSession(sid);
-  timeval st, en;
+    FIX42::NewOrderSingle new_ord_req;
+    new_ord_req.getHeader().set(FIX::SenderSubID("568"));
+//    new_ord_req.setField(1, acct);
+//    new_ord_req.setField(11, "ABCDEFGH12345678");
+    new_ord_req.setField(15, "SGD");
+    new_ord_req.set(FIX::HandlInst(FIX::HandlInst_AUTOMATED_EXECUTION_ORDER_PRIVATE_NO_BROKER_INTERVENTION));
+    new_ord_req.set(FIX::IDSource(FIX::IDSource_EXCHANGE_SYMBOL));
+    new_ord_req.set(FIX::OrderQty(100));
+    new_ord_req.set(FIX::OrdType(FIX::OrdType_LIMIT));
+    new_ord_req.set(FIX::Price(0.0));
+    new_ord_req.set(FIX::Side(FIX::Side_BUY));
+    new_ord_req.setField(55, "BS6");
+    new_ord_req.set(FIX::TimeInForce(FIX::TimeInForce_DAY));
+    new_ord_req.set(FIX::TransactTime());
+    new_ord_req.setField(100, "XSES");
 
-  rt_latency = ow_latency = 0;
-  max_rt_latency = max_ow_latency = 0;
-  min_rt_latency = min_ow_latency = 10000000000UL;
-  ::memset(rt_latency_buckets, 0, sizeof(rt_latency_buckets));
-  ::memset(ow_latency_buckets, 0, sizeof(ow_latency_buckets));
+    char buf[300];
+    sprintf(buf, "%lx", clordid++);
+    new_ord_req.setField(11, buf);
+    new_ord_req.set(FIX::OrderQty(100));
+    new_ord_req.set(FIX::Price(1.02));
+    new_ord_req.set(FIX::Side(FIX::Side_BUY));
+    new_ord_req.set(FIX::TimeInForce(FIX::TimeInForce_DAY));
+    new_ord_req.set(FIX::TransactTime());
 
-  ::gettimeofday(&st, NULL);
-  if (pings == 0) ++pings;
-  for (int i = 0; i < NUM_SAMPLES; i++)
-  {
-    q_on_send();
-    DTRACE_PROBE(tradeclient, send__start);
-    FIX42::NewOrderSingle order(last_ClOrdID,
-                                FIX::HandlInst( '1' ),
-                                last_Symbol,
-                                last_Side,
-                                FIX::TransactTime(),
-                                FIX::OrdType(FIX::OrdType_LIMIT));
-    order.set( last_Qty );
-    order.set( FIX::TimeInForce::Pack(FIX::TimeInForce_IMMEDIATE_OR_CANCEL) );
-    order.set( last_Price );
-  
-    ps->send( order );
-    DTRACE_PROBE(tradeclient, send__end);
-    wait_receive();
-  }
+    FIX::Session* ps = FIX::Session::lookupSession(cur_sess);
+    ps->send( new_ord_req );
 
-  ::gettimeofday(&en, NULL);
-  std::cout << "Duration : " << (double)((en.tv_sec - st.tv_sec) * 1000000 + en.tv_usec - st.tv_usec)/1000000.0 << " sec " << std::endl;
 
-  std::cout << "Avg RTT : " << rt_latency / NUM_SAMPLES << " usec " << std::endl;
-  std::cout << "Max RTT : " << max_rt_latency << " usec " << std::endl;
-  std::cout << "Min RTT : " << min_rt_latency << " usec " << std::endl;
-  show_buckets( rt_latency_buckets, bucket_step, max_bucket );
-
-  std::cout << "Avg ExecutionReport latency : " << ow_latency / NUM_SAMPLES << " usec " << std::endl;
-  std::cout << "Max ExecutionReport latency : " << max_ow_latency << " usec " << std::endl;
-  std::cout << "Min ExecutionReport latency : " << min_ow_latency << " usec " << std::endl;
-  show_buckets( ow_latency_buckets, bucket_step, max_bucket );
+//  FIX::SessionID sid( "FIX.4.2", "CLIENT1", "EXECUTOR");
+//  FIX::Session* ps = FIX::Session::lookupSession(sid);
+//  timeval st, en;
+//
+//  rt_latency = ow_latency = 0;
+//  max_rt_latency = max_ow_latency = 0;
+//  min_rt_latency = min_ow_latency = 10000000000UL;
+//  ::memset(rt_latency_buckets, 0, sizeof(rt_latency_buckets));
+//  ::memset(ow_latency_buckets, 0, sizeof(ow_latency_buckets));
+//
+//  ::gettimeofday(&st, NULL);
+//  if (pings == 0) ++pings;
+//  for (int i = 0; i < NUM_SAMPLES; i++)
+//  {
+//    q_on_send();
+//    DTRACE_PROBE(tradeclient, send__start);
+//    FIX42::NewOrderSingle order(last_ClOrdID,
+//                                FIX::HandlInst( '1' ),
+//                                last_Symbol,
+//                                last_Side,
+//                                FIX::TransactTime(),
+//                                FIX::OrdType(FIX::OrdType_LIMIT));
+//    order.set( last_Qty );
+//    order.set( FIX::TimeInForce::Pack(FIX::TimeInForce_IMMEDIATE_OR_CANCEL) );
+//    order.set( last_Price );
+//
+//    ps->send( order );
+//    DTRACE_PROBE(tradeclient, send__end);
+//    wait_receive();
+//  }
+//
+//  ::gettimeofday(&en, NULL);
+//  std::cout << "Duration : " << (double)((en.tv_sec - st.tv_sec) * 1000000 + en.tv_usec - st.tv_usec)/1000000.0 << " sec " << std::endl;
+//
+//  std::cout << "Avg RTT : " << rt_latency / NUM_SAMPLES << " usec " << std::endl;
+//  std::cout << "Max RTT : " << max_rt_latency << " usec " << std::endl;
+//  std::cout << "Min RTT : " << min_rt_latency << " usec " << std::endl;
+//  show_buckets( rt_latency_buckets, bucket_step, max_bucket );
+//
+//  std::cout << "Avg ExecutionReport latency : " << ow_latency / NUM_SAMPLES << " usec " << std::endl;
+//  std::cout << "Max ExecutionReport latency : " << max_ow_latency << " usec " << std::endl;
+//  std::cout << "Min ExecutionReport latency : " << min_ow_latency << " usec " << std::endl;
+//  show_buckets( ow_latency_buckets, bucket_step, max_bucket );
 }
 
 void Application::testFlow()
