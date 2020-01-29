@@ -459,7 +459,7 @@ private:
 			public:
 
 			SgBuffer() : sz_(UIO_ARENA_SIZE), n_(0) {
-				ALIGNED_ALLOC(IOV_BUF(sg_[0]), sz_ + 16, 16);
+				auto alloc_res = ALIGNED_ALLOC(IOV_BUF(sg_[0]), sz_ + 16, 16);
 				IOV_LEN(sg_[0]) = 0;
 			}
 			~SgBuffer() {
@@ -526,7 +526,7 @@ private:
 			SgBuffer& reset(std::size_t sz) {
 				if (sz > sz_) {
 					ALIGNED_FREE(IOV_BUF(sg_[0]));
-					ALIGNED_ALLOC(IOV_BUF(sg_[0]), sz_ + 16, 16);
+                    auto alloc_res = ALIGNED_ALLOC(IOV_BUF(sg_[0]), sz_ + 16, 16);
 					sz_ = sz;
 				}
 				n_ = 0;
