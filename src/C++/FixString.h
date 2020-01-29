@@ -43,9 +43,9 @@ namespace FIX
 #if defined(__GNUC__) && defined(__GLIBCXX__)
        if( sizeof(std::string) == sizeof(uintptr_t) )
        {
-         register uintptr_t* MAY_ALIAS pa = reinterpret_cast<uintptr_t*>(&a);
-         register uintptr_t* MAY_ALIAS pb = reinterpret_cast<uintptr_t*>(&b);
-         register uintptr_t  a_dataplus = *pa;
+         uintptr_t* MAY_ALIAS pa = reinterpret_cast<uintptr_t*>(&a);
+         uintptr_t* MAY_ALIAS pb = reinterpret_cast<uintptr_t*>(&b);
+         uintptr_t  a_dataplus = *pa;
          *pa = *pb;
          *pb = a_dataplus;
        }
@@ -61,8 +61,8 @@ namespace FIX
 #if defined(__GNUC__) && defined(__GLIBCXX__)
        if( sizeof(std::string) == sizeof(uintptr_t) )
        {
-         register uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
-         register const _Rep_base* MAY_ALIAS p = (const _Rep_base*)v - 1;
+         uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
+         const _Rep_base* MAY_ALIAS p = (const _Rep_base*)v - 1;
          return p->_M_length;
        }
 #endif
@@ -76,8 +76,8 @@ namespace FIX
 #if defined(__GNUC__) && defined(__GLIBCXX__)
        if( sizeof(std::string) == sizeof(uintptr_t) )
        {
-         register uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
-         register const _Rep_base* MAY_ALIAS p = (const _Rep_base*)v - 1;
+         uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
+         const _Rep_base* MAY_ALIAS p = (const _Rep_base*)v - 1;
          return p->_M_length;
        }
 #endif
@@ -91,7 +91,7 @@ namespace FIX
 #if defined(__GNUC__) && defined(__GLIBCXX__)
        if( sizeof(std::string) == sizeof(uintptr_t) )
        {
-         register uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
+         uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
          return (const char*)v;
        }
 #endif
@@ -105,7 +105,7 @@ namespace FIX
 #if defined(__GNUC__) && defined(__GLIBCXX__)
        if( sizeof(std::string) == sizeof(uintptr_t) )
        {
-         register uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
+         uintptr_t v = reinterpret_cast<const uintptr_t&>(r);
          return (const char*)v;
        }
 #endif
